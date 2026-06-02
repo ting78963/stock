@@ -847,6 +847,37 @@ function f(v,d=1){return v!=null?v.toFixed(d):'—';}
 function p(v){return v!=null?(v>=0?'+':'')+v.toFixed(1)+'%':'—';}
 function sc(s){return s>=70?'#f5c842':s>=40?'var(--amber)':'var(--green)';}
 function ih(v){const c=v===true?'ip':v===false?'if2':v==='warn'?'iw':'in';const i=v===true?'✓':v===false?'✕':v==='warn'?'△':'?';return`<div class="ico ${c}">${i}</div>`;}
+function calcRisk(ma20w){
+  const price = parseFloat(document.getElementById('riskPrice').value);
+  const shares = parseFloat(document.getElementById('riskShares').value);
+  const result = document.getElementById('riskResult');
+  if(!price || price<=0){ result.style.display='none'; return; }
+  result.style.display='block';
+  const gap = price - ma20w;
+  const loss = gap * (shares||1000);
+  const deviation = ((price - ma20w) / ma20w * 100);
+  document.getElementById('riskGap').textContent = (gap>=0?'+':'') + gap.toFixed(1) + ' 元';
+  document.getElementById('riskGap').style.color = gap>=0 ? 'var(--red)' : 'var(--green)';
+  document.getElementById('riskLoss').textContent = (loss>=0?'+':'') + Math.round(loss).toLocaleString() + ' 元';
+  document.getElementById('riskLoss').style.color = loss>=0 ? 'var(--red)' : 'var(--green)';
+  const devEl = document.getElementById('riskDeviation');
+  const devNote = document.getElementById('riskDeviationNote');
+  devEl.textContent = (deviation>=0?'+':'') + deviation.toFixed(2) + '%';
+  if(deviation > 7){
+    devEl.style.color = 'var(--red)';
+    devNote.textContent = '⚠️ 乖離過大，追高風險高，建議等回測';
+  } else if(deviation > 3){
+    devEl.style.color = 'var(--amber)';
+    devNote.textContent = '△ 乖離稍大，需評估風險';
+  } else if(deviation >= 0){
+    devEl.style.color = 'var(--green)';
+    devNote.textContent = '✓ 乖離正常，位置合理';
+  } else {
+    devEl.style.color = 'var(--green)';
+    devNote.textContent = '✓ 股價在20週MA下方，風險較低';
+  }
+}
+
 function fmtVol(v){return Math.round(v).toLocaleString()+'張';}
 
 function vcpStatusHtml(vcp, a){
@@ -1096,6 +1127,50 @@ ${(()=>{
 <div class="ci">${ih(a.pt_p)}<div class="cb"><div class="cn">③ 型態判斷</div><div class="cd">偵測型態：${a.pat}<br>${a.pat==='W底'?'✓ W底型態，偏多':a.pat==='M頭'?'✕ M頭型態，偏空避開':'△ 盤整中，等待突破方向'}</div></div></div>
 <div class="ci">${ih(a.vl_p)}<div class="cb"><div class="cn">④ 成交量 — 有無大人</div><div class="cd">量比 ${f(a.volR,2)}x（今日 ${fmtVol(a.curVol)} vs 5日均量 ${fmtVol(a.avgV5)}）<br>${a.vl_p===true?'✓ 明顯爆量（≥1.5x），主力進駐':a.vl_p==='warn'?'△ 量能放大（1.1~1.5x），持續觀察':'✕ 量能低迷，主力未介入'}</div></div></div>
 </div></div>
+
+<div class="card">
+  <div class="card-head"><div class="card-title">📐 風險計算工具</div></div>
+  <div style="padding:4px 0 8px;font-size:var(--fs-xs);color:var(--text3);line-height:1.6">
+    均差距 = 買進價 − 20週均線 &nbsp;｜&nbsp; 可能虧損值 = 均差距 × 買進股數
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+    <div>
+      <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:5px">買進價格（元）</div>
+      <input id="riskPrice" type="number" inputmode="decimal"
+        placeholder="${f(a.cur,1)}"
+        style="width:100%;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:10px 12px;color:var(--text);font-size:var(--fs-md);outline:none"
+        oninput="calcRisk(${f(a.ma20w,2)})">
+    </div>
+    <div>
+      <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:5px">買進股數（股）</div>
+      <input id="riskShares" type="number" inputmode="numeric"
+        placeholder="1000"
+        style="width:100%;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:10px 12px;color:var(--text);font-size:var(--fs-md);outline:none"
+        oninput="calcRisk(${f(a.ma20w,2)})">
+    </div>
+  </div>
+  <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:8px">20週均線：<strong style="color:var(--text)">${f(a.ma20w,2)} 元</strong>（停損基準）</div>
+  <div id="riskResult" style="display:none;background:var(--bg2);border-radius:var(--rs);padding:12px 14px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div>
+        <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:3px">均差距</div>
+        <div id="riskGap" style="font-size:var(--fs-lg);font-weight:600;color:var(--red)">—</div>
+        <div style="font-size:var(--fs-xs);color:var(--text3);margin-top:2px">買進價 − 20週MA</div>
+      </div>
+      <div>
+        <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:3px">可能虧損值</div>
+        <div id="riskLoss" style="font-size:var(--fs-lg);font-weight:600;color:var(--red)">—</div>
+        <div style="font-size:var(--fs-xs);color:var(--text3);margin-top:2px">均差距 × 股數</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border)">
+      <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:3px">乖離率</div>
+      <div id="riskDeviation" style="font-size:var(--fs-md);font-weight:600">—</div>
+      <div id="riskDeviationNote" style="font-size:var(--fs-xs);color:var(--text3);margin-top:2px"></div>
+    </div>
+  </div>
+</div>
+
 <div class="card"><div class="card-head"><div class="card-title">VCP波動收縮系統</div></div>${vcpStatusHtml(a.vcp, a)}<div class="cl" style="margin-top:12px">
 <div class="ci">${(()=>{
   const vs=a.vcp.status;
