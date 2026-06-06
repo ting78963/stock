@@ -776,6 +776,37 @@ function analyze(raw){
   const pe=pivot20*1.005,stop=pe*0.93,tgt1=pe*1.10,tgt2=pe*1.20;
   const wk_p=ma20w!=null?cur>ma20w:null;
   const dy_p=ma20d!=null?cur>ma20d:null;
+  const dy100_p=ma100d!=null?cur>ma100d:null;
+
+  // 日20MA vs 日100MA 黃金/死亡交叉（14天內）
+  let dayGoldenCross=false,dayDeathCross=false;
+  if(n>=101){
+    for(let i=Math.max(1,n-14);i<n;i++){
+      const prev20=maOf(cl.slice(0,i),20);
+      const prev100=maOf(cl.slice(0,i),100);
+      const cur20=maOf(cl.slice(0,i+1),20);
+      const cur100=maOf(cl.slice(0,i+1),100);
+      if(prev20&&prev100&&cur20&&cur100){
+        if(prev20<=prev100&&cur20>cur100) dayGoldenCross=true;
+        if(prev20>=prev100&&cur20<cur100) dayDeathCross=true;
+      }
+    }
+  }
+
+  // 站上/跌破日100MA（21天內）
+  let daysCrossed100=0,daysDropped100=0;
+  for(let i=n-2;i>=Math.max(0,n-21);i--){
+    if(cl[i]<ma100d&&cl[i+1]>=ma100d){daysCrossed100=n-1-i;break;}
+  }
+  for(let i=n-2;i>=Math.max(0,n-21);i--){
+    if(cl[i]>=ma100d&&cl[i+1]<ma100d){daysDropped100=n-1-i;break;}
+  }
+
+  // 跌破日20MA（21天內）
+  let daysDropped20=0;
+  for(let i=n-2;i>=Math.max(0,n-21);i--){
+    if(ma20dArr[i]!=null&&cl[i]>=ma20dArr[i]&&cl[i+1]<ma20dArr[i+1]){daysDropped20=n-1-i;break;}
+  }
   const pt_p=pat==='W底'?true:pat==='M頭'?false:null;
   const vl_p=volR>=1.5?true:volR>=1.1?'warn':false;
   const ec1=wk_p===true;
