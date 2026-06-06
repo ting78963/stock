@@ -708,6 +708,7 @@ function analyze(raw){
   const ma100w_w_prev2=wk.length>=102?maOf(wk.slice(0,-2),100):null;
   const wkGoldenCrossPrev=ma20w_prev&&ma100w_w_prev&&ma20w_prev2&&ma100w_w_prev2?(ma20w_prev2<=ma100w_w_prev2&&ma20w_prev>ma100w_w_prev):false;
   // ma20dArr：每日的20MA值陣列（供7天站上判斷用）
+  const ma100d=maOf(cl,100);
   const ma20dArr=cl.map((_,i)=>i>=19?cl.slice(i-19,i+1).reduce((a,b)=>a+b,0)/20:null);
   const ma200_4w=cl.length>=220?maOf(cl.slice(0,-20),200):null;
   const ma100w=maOf(cl,500); // 100週MA（約500個交易日）
