@@ -840,7 +840,7 @@ function analyze(raw){
     breakValidation = 'none';
   }
 
-  return{cur,prev,dayChg,isLimitUp,curHigh,curLow,ma20d,ma20w,ma60,ma150,ma200,ma200_4w,ma100w,wkGoldenCross,wkGoldenCrossPrev,ma20w_prev,ma100w_w,ma100w_w_prev,closes:cl,ma20dArr,hi52,lo52,fromHi,fromLo,volR,volR20,curVol,avgV5,avgV20,reqVol,rsVal,t7,pat,wk_p,dy_p,pt_p,vl_p,t1,t2,t3,t_100w,t6,vcp,pe,stop,tgt1,tgt2,pivot20,ec1,ec2,ec2status,ec2vcpStatus,ec3,ec4,ecReady,ecPartial,ecCount,overall,verdict,breakValidation,breakReason};
+  return{cur,prev,dayChg,isLimitUp,curHigh,curLow,ma20d,ma100d,ma20w,ma60,ma150,ma200,ma200_4w,ma100w,dayGoldenCross,dayDeathCross,daysCrossed100,daysDropped100,daysDropped20,dy100_p,wkGoldenCross,wkGoldenCrossPrev,ma20w_prev,ma100w_w,ma100w_w_prev,closes:cl,ma20dArr,hi52,lo52,fromHi,fromLo,volR,volR20,curVol,avgV5,avgV20,reqVol,rsVal,t7,pat,wk_p,dy_p,pt_p,vl_p,t1,t2,t3,t_100w,t6,vcp,pe,stop,tgt1,tgt2,pivot20,ec1,ec2,ec2status,ec2vcpStatus,ec3,ec4,ecReady,ecPartial,ecCount,overall,verdict,breakValidation,breakReason};
 }
 
 function f(v,d=1){return v!=null?v.toFixed(d):'—';}
@@ -965,12 +965,12 @@ function vcpStatusHtml(vcp, a){
       <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:6px">突破驗證（收盤結果）</div>
       ${a.breakValidation==='failed'?`
         <div style="background:var(--rbg);border:1.5px solid var(--red);border-radius:var(--rs);padding:10px 12px;animation:goldPulse 1s ease-in-out infinite">
-          <div style="font-size:var(--fs-sm);font-weight:700;color:var(--red);margin-bottom:4px">⚠️ 突破失敗！考慮出場</div>
+          <div style="font-size:var(--fs-sm);font-weight:700;color:var(--red);margin-bottom:4px">⚠️ 收盤跌回Pivot以下</div>
           <div style="font-size:var(--fs-xs);color:var(--text2);line-height:1.5">${a.breakReason}</div>
         </div>`:
       a.breakValidation==='true'?`
         <div style="background:linear-gradient(135deg,#3d2e00,#2a1f00);border:1px solid #f5c842;border-radius:var(--rs);padding:10px 12px;animation:goldPulse 1.5s ease-in-out infinite">
-          <div style="font-size:var(--fs-sm);font-weight:700;color:#f5c842;margin-bottom:4px">✦ 有效突破確認！可考慮進場</div>
+          <div style="font-size:var(--fs-sm);font-weight:700;color:#f5c842;margin-bottom:4px">✦ 三項條件達標且突破Pivot</div>
           <div style="font-size:var(--fs-xs);color:#c9a227;line-height:1.5">${a.breakReason}</div>
         </div>`:
       a.breakValidation==='warning'?`
@@ -1006,7 +1006,7 @@ function entryConfirmHtml(a){
   const allPass=ec3Count===3;
   const cls=allPass?'ec-ready':ec3Count>=1||hasWarn?'ec-partial':'ec-not';
   const title=allPass?'✅ 進場條件全部達標':ec3Count>=1||hasWarn?`⏳ 進場條件達標 ${ec3Count}/3`:'⛔ 進場條件尚未達標';
-  const verdict=allPass?'可以考慮進場':ec3Count>=1?'繼續觀察，等待條件到位':'暫不進場';
+  const verdict=allPass?'三項條件全部達標':ec3Count>=1?'部分條件達標':'條件未達標';
 
   // 有效突破金色橫幅
   const isValidBreak = a.breakValidation==='true';
@@ -1046,7 +1046,7 @@ function entryConfirmHtml(a){
     <div class="ec-verdict" style="${allPass?'background:linear-gradient(135deg,#3d2e00,#2a1f00);border:1px solid #f5c842;color:#f5c842;animation:goldPulse 1.5s ease-in-out infinite':ec3Count>=1||hasWarn?'background:var(--abg);border:0.5px solid var(--abr);color:var(--amber)':'background:var(--bg2);border:0.5px solid var(--border);color:var(--text3)'}">${verdict}</div>
     ${goldBanner}
     <div class="entry-point-box">
-      <div class="ep-title">📌 明日進場條件</div>
+      <div class="ep-title">📌 明日參考數值</div>
       <div style="font-size:var(--fs-sm);color:var(--text2);margin-bottom:6px">股價需站穩</div>
       <div class="ep-price">${f(a.pe,1)} 元以上</div>
       <div class="ep-vol-title">當日成交量需達 <strong style="color:#f0f0f0">${fmtVol(a.reqVol)}</strong>（20日均量 ${fmtVol(Math.round(a.avgV20))} × 1.5倍）</div>
@@ -1096,29 +1096,57 @@ function rResult(raw,a){
     <div class="dnote">📅 資料來源：台灣證交所，收盤後更新</div>
   </div>
 <div class="scard ${a.overall>=70?'scard-gold':'scard-normal'}"><div class="rw" style="width:84px;height:84px;border-radius:50%;background:${col}22;border:3px solid ${col};${a.overall>=70?'box-shadow:0 0 16px '+col+'60;animation:goldPulse 1.5s ease-in-out infinite':''}"><div class="rc"><div class="rnum" style="color:${col}">${a.overall}</div><div class="rden">/100</div></div></div><div class="sinfo"><div class="sverdict" style="color:${col}">${a.verdict}</div><div class="sbreak">加分條件 ${bonusCount}/5 項達標<br>70分以上為強勢候選</div></div></div>
-<div class="card"><div class="card-head"><div class="card-title">四大法寶 — 趨勢均線</div></div><div class="cl">
-<div class="ci">${ih(a.wk_p)}<div class="cb"><div class="cn">① 週線20MA — 多空主判斷</div><div class="cd">現價 ${f(a.cur,2)}｜週線MA20 ${f(a.ma20w,2)}<br>${a.wk_p?'✓ 站上週線20MA，趨勢偏多':'✕ 跌破週線20MA，趨勢偏空'}</div></div></div>
-<div class="ci">${ih(a.dy_p)}<div class="cb"><div class="cn">② 日線20MA — 短期輔助</div><div class="cd">現價 ${f(a.cur,2)}｜日線MA20 ${f(a.ma20d,2)}<br>${a.dy_p?'✓ 站上日線20MA，短期偏多':'✕ 跌破日線20MA，短期偏空'}</div></div></div>
-<div class="ci">${ih(a.t_100w)}<div class="cb"><div class="cn">⑤ 100週MA — 長期多頭確認</div><div class="cd">現價 ${f(a.cur,2)}｜100週MA ${a.ma100w?f(a.ma100w,2):'資料不足（需500日）'}<br>${a.t_100w===true?'✓ 站上100週MA，長期多頭':a.t_100w===false?'✕ 跌破100週MA，長期偏空':'△ 資料不足，無法判斷'}</div></div></div>
+<div class="card"><div class="card-head"><div class="card-title">均線系統 — 週線趨勢判斷</div></div><div class="cl">
+<div class="ci">${ih(a.wk_p)}<div class="cb"><div class="cn">① 週20MA — 中期趨勢</div><div class="cd">現價 ${f(a.cur,2)}｜週20MA ${f(a.ma20w,2)}<br>${a.wk_p?'✓ 站上週20MA，趨勢偏多':'✕ 跌破週20MA，趨勢偏空'}</div></div></div>
+<div class="ci">${ih(a.t_100w)}<div class="cb"><div class="cn">② 週100MA — 長期趨勢</div><div class="cd">現價 ${f(a.cur,2)}｜週100MA ${a.ma100w?f(a.ma100w,2):'資料不足'}<br>${a.t_100w===true?'✓ 站上週100MA，長期多頭':a.t_100w===false?'✕ 跌破週100MA，長期偏空':'△ 資料不足'}</div></div></div>
 ${(()=>{
-  // 日20MA：檢查最近7天內有沒有從下方站上
+  let html='';
+  // 週20MA黃金交叉週100MA（14天內）
+  if(a.wkGoldenCross||a.wkGoldenCrossPrev){
+    html+=`<div class="gold-alert"><div class="gold-title">🌟 週20MA 黃金交叉 週100MA！</div><div class="gold-desc">週20MA ${f(a.ma20w,2)} 上穿 週100MA ${f(a.ma100w_w,2)}<br>14天內發生，長期多頭強力確認！</div></div>`;
+  }
+  // 週20MA死亡交叉週100MA（14天內）
+  if(a.wkGoldenCrossPrev===false){
+    html+=`<div style="background:var(--rbg);border:1px solid var(--rbr);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px"><div style="font-size:var(--fs-sm);font-weight:700;color:var(--red);margin-bottom:4px">⚠️ 週20MA 死亡交叉 週100MA</div><div style="font-size:var(--fs-xs);color:var(--text2)">週線轉弱，注意趨勢反轉，密切追蹤是否重新站回</div></div>`;
+  }
+  return html;
+})()}
+</div></div>
+
+<div class="card"><div class="card-head"><div class="card-title">均線系統 — 日線近期強弱</div></div><div class="cl">
+<div class="ci">${ih(a.dy_p)}<div class="cb"><div class="cn">③ 日20MA — 短期動能</div><div class="cd">現價 ${f(a.cur,2)}｜日20MA ${f(a.ma20d,2)}<br>${a.dy_p?'✓ 站上日20MA，短期偏多':'✕ 跌破日20MA，短期偏空'}</div></div></div>
+<div class="ci">${ih(a.dy100_p)}<div class="cb"><div class="cn">④ 日100MA — 中期支撐</div><div class="cd">現價 ${f(a.cur,2)}｜日100MA ${f(a.ma100d,2)}<br>${a.dy100_p?'✓ 站上日100MA，中期支撐穩固':'✕ 跌破日100MA，中期支撐轉弱'}</div></div></div>
+${(()=>{
+  let html='';
   const cl7=a.closes||[];
   const ma20dArr=a.ma20dArr||[];
-  let daysCrossed=0;
-  for(let i=Math.max(0,cl7.length-7);i<cl7.length-1;i++){
-    if(cl7[i]<ma20dArr[i]&&cl7[i+1]>=ma20dArr[i+1]) daysCrossed=cl7.length-1-i;
+  // 站上日20MA（21天內）→ 金色
+  let daysCrossed20=0;
+  for(let i=cl7.length-2;i>=Math.max(0,cl7.length-21);i--){
+    if(cl7[i]<ma20dArr[i]&&cl7[i+1]>=ma20dArr[i+1]){daysCrossed20=cl7.length-1-i;break;}
   }
-  const justCrossed=daysCrossed>0&&daysCrossed<=7;
-
-  // 週20MA黃金交叉週100MA：檢查最近2根週K（7天內）
-  const gc=a.wkGoldenCross||a.wkGoldenCrossPrev;
-
-  let html='';
-  if(justCrossed){
-    html+=`<div class="gold-alert"><div class="gold-title">✨ ${daysCrossed===1?'今日':'近'+daysCrossed+'天前'}站上日線20MA！</div><div class="gold-desc">現價 ${f(a.cur,2)} ≥ MA20 ${f(a.ma20d,2)}<br>7天內站上，短期多頭訊號！</div></div>`;
+  if(daysCrossed20>0&&daysCrossed20<=21){
+    html+=`<div class="gold-alert"><div class="gold-title">✨ ${daysCrossed20===1?'今日':'近'+daysCrossed20+'天前'}站上日20MA！</div><div class="gold-desc">現價 ${f(a.cur,2)} ≥ 日20MA ${f(a.ma20d,2)}，短期動能轉強</div></div>`;
   }
-  if(gc){
-    html+=`<div class="gold-alert"><div class="gold-title">🌟 週20MA 黃金交叉 週100MA！</div><div class="gold-desc">週20MA ${f(a.ma20w,2)} 上穿 週100MA ${f(a.ma100w_w,2)}<br>7天內發生，長期多頭強力確認！</div></div>`;
+  // 跌破日20MA（21天內）→ 紅色
+  if(a.daysDropped20>0&&a.daysDropped20<=21){
+    html+=`<div style="background:var(--rbg);border:1px solid var(--rbr);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px"><div style="font-size:var(--fs-sm);font-weight:700;color:var(--red);margin-bottom:4px">⚠️ ${a.daysDropped20===1?'今日':'近'+a.daysDropped20+'天前'}跌破日20MA</div><div style="font-size:var(--fs-xs);color:var(--text2)">短期轉弱，密切注意是否重新站回</div></div>`;
+  }
+  // 站上日100MA（21天內）→ 金色
+  if(a.daysCrossed100>0&&a.daysCrossed100<=21){
+    html+=`<div class="gold-alert"><div class="gold-title">✨ ${a.daysCrossed100===1?'今日':'近'+a.daysCrossed100+'天前'}站上日100MA！</div><div class="gold-desc">現價 ${f(a.cur,2)} ≥ 日100MA ${f(a.ma100d,2)}，中期支撐確立</div></div>`;
+  }
+  // 跌破日100MA（21天內）→ 紅色
+  if(a.daysDropped100>0&&a.daysDropped100<=21){
+    html+=`<div style="background:var(--rbg);border:1px solid var(--rbr);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px"><div style="font-size:var(--fs-sm);font-weight:700;color:var(--red);margin-bottom:4px">⚠️ ${a.daysDropped100===1?'今日':'近'+a.daysDropped100+'天前'}跌破日100MA</div><div style="font-size:var(--fs-xs);color:var(--text2)">中期支撐轉弱，密切注意是否重新站回</div></div>`;
+  }
+  // 日20MA黃金交叉日100MA（14天內）→ 金色
+  if(a.dayGoldenCross){
+    html+=`<div class="gold-alert"><div class="gold-title">🌟 日20MA 黃金交叉 日100MA！</div><div class="gold-desc">日20MA ${f(a.ma20d,2)} 上穿 日100MA ${f(a.ma100d,2)}，近期強勢確認！</div></div>`;
+  }
+  // 日20MA死亡交叉日100MA（14天內）→ 紅色
+  if(a.dayDeathCross){
+    html+=`<div style="background:var(--rbg);border:1px solid var(--rbr);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px"><div style="font-size:var(--fs-sm);font-weight:700;color:var(--red);margin-bottom:4px">⚠️ 日20MA 死亡交叉 日100MA</div><div style="font-size:var(--fs-xs);color:var(--text2)">近期轉弱，注意後續走勢，密切追蹤是否重新站回</div></div>`;
   }
   return html;
 })()}
@@ -1342,7 +1370,7 @@ async function renderExtraData(stockCode) {
       else { instScore=2; instText=`⚠️ 下跌${Math.abs(taiexChg).toFixed(1)}%，謹慎`; instColor='var(--green)'; }
     }
 
-    // 明日進場建議
+    // 明日參考數值
     const totalScore = devScore + fxScore + instScore;
     let suggestion='', sugColor='', sugBg='';
     if(totalScore === 0) {
@@ -1364,7 +1392,7 @@ async function renderExtraData(stockCode) {
 
     mktHtml = `
       <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
-        <div style="font-size:var(--fs-xs);color:var(--text3);letter-spacing:.1em;margin-bottom:12px">// 明日進場說明（依今日收盤資料）</div>
+        <div style="font-size:var(--fs-xs);color:var(--text3);letter-spacing:.1em;margin-bottom:12px">// 明日參考數值（依今日收盤資料）</div>
 
         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border)">
           <span style="font-size:var(--fs-sm);color:var(--text2)">① 大盤季線乖離率</span>
