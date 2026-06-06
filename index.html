@@ -778,28 +778,24 @@ function analyze(raw){
   const dy_p=ma20d!=null?cur>ma20d:null;
   const dy100_p=ma100d!=null?cur>ma100d:null;
 
-  // 日20MA vs 日100MA 黃金/死亡交叉（14天內）
+  // 日20MA黃金/死亡交叉日100MA：用ma20dArr對比100MA陣列（14天內）
+  const ma100dArr=cl.map((_,i)=>i>=99?cl.slice(i-99,i+1).reduce((a,b)=>a+b,0)/100:null);
   let dayGoldenCross=false,dayDeathCross=false;
-  if(n>=101){
-    for(let i=Math.max(1,n-14);i<n;i++){
-      const prev20=maOf(cl.slice(0,i),20);
-      const prev100=maOf(cl.slice(0,i),100);
-      const cur20=maOf(cl.slice(0,i+1),20);
-      const cur100=maOf(cl.slice(0,i+1),100);
-      if(prev20&&prev100&&cur20&&cur100){
-        if(prev20<=prev100&&cur20>cur100) dayGoldenCross=true;
-        if(prev20>=prev100&&cur20<cur100) dayDeathCross=true;
-      }
+  for(let i=Math.max(1,n-14);i<n;i++){
+    const p20=ma20dArr[i-1],p100=ma100dArr[i-1],c20=ma20dArr[i],c100=ma100dArr[i];
+    if(p20&&p100&&c20&&c100){
+      if(p20<=p100&&c20>c100) dayGoldenCross=true;
+      if(p20>=p100&&c20<c100) dayDeathCross=true;
     }
   }
 
   // 站上/跌破日100MA（21天內）
   let daysCrossed100=0,daysDropped100=0;
   for(let i=n-2;i>=Math.max(0,n-21);i--){
-    if(cl[i]<ma100d&&cl[i+1]>=ma100d){daysCrossed100=n-1-i;break;}
+    if(ma100dArr[i]!=null&&cl[i]<ma100dArr[i]&&cl[i+1]>=ma100dArr[i+1]){daysCrossed100=n-1-i;break;}
   }
   for(let i=n-2;i>=Math.max(0,n-21);i--){
-    if(cl[i]>=ma100d&&cl[i+1]<ma100d){daysDropped100=n-1-i;break;}
+    if(ma100dArr[i]!=null&&cl[i]>=ma100dArr[i]&&cl[i+1]<ma100dArr[i+1]){daysDropped100=n-1-i;break;}
   }
 
   // 跌破日20MA（21天內）
