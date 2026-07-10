@@ -484,8 +484,7 @@ function setFont(size){
   });
 }
 (()=>{const s=localStorage.getItem('screener_font');if(s&&s!=='normal')setFont(s);})();
-// 啟動時載入全市場股票清單
-loadStockList();
+// 股票清單改為使用時才載入（避免載入慢）
 
 // ── RS排行榜 ──
 async function rRS(){
@@ -1338,6 +1337,8 @@ async function doSearch(){
   if(_sv){let _h=JSON.parse(localStorage.getItem('search_history')||'[]');_h=_h.filter(x=>x!==_sv);_h.unshift(_sv);localStorage.setItem('search_history',JSON.stringify(_h.slice(0,10)));}
   const raw=document.getElementById('ti').value.trim();
   if(!raw)return;
+  // 確保股票清單已載入
+  if(Object.keys(STOCK_MAP).length===0) await loadStockList();
   let code=raw.replace(/\D/g,'');
   if(!code){
     // 先用 findStockByName（含全市場清單）
