@@ -636,20 +636,8 @@ async function scanWatchAlert(){
   `).join('');
 }
 
-const tiEl=document.getElementById('ti');
-const acEl=document.getElementById('ac');
-tiEl.addEventListener('input',()=>{
-  const q=tiEl.value.trim();
-  if(!q){acEl.style.display='none';return;}
-  const isNum=/^\d+$/.test(q);
-  const matches=Object.entries(STOCK_MAP).filter(([c,n])=>isNum?c.startsWith(q):n.includes(q)).slice(0,6).map(([c,n])=>[c,n]);
-  if(!matches.length){acEl.style.display='none';return;}
-  acEl.innerHTML=matches.map(([c,n])=>`<div class="ac-item" onclick="acSel('${c}')"><span class="ac-code">${c}</span><span class="ac-name">${n}</span></div>`).join('');
-  acEl.style.display='block';
-});
-tiEl.addEventListener('keydown',e=>{if(e.key==='Enter'){acEl.style.display='none';doSearch();}if(e.key==='Escape')acEl.style.display='none';});
-document.addEventListener('click',e=>{if(!e.target.closest('.sr'))acEl.style.display='none';});
-function acSel(c){tiEl.value=c;acEl.style.display='none';doSearch();}
+// tiEl/acEl 改由新APP的showAC處理
+function acSel(c){const ti=document.getElementById('ti');if(ti)ti.value=c;const ac=document.getElementById('ac');if(ac)ac.style.display='none';doSearch();}
 function go(p){
   // legacy: redirect to new showPage
   const pageMap={'search':'stock','watch':'watch','settings':'settings','rs':'stock','history':'stock'};
@@ -1835,7 +1823,7 @@ function rW(){
   }).join('');
 }
 function rmW(sym){LS.set('watch',LS.get('watch').filter(w=>w.sym!==sym));rW();}
-function gs(sym){document.getElementById('ti').value=sym;go('search');doSearch();}
+function gs(sym){const ti=document.getElementById('ti');if(ti)ti.value=sym;showPage('stock',null,'nav-stock');doSearch();}
 function clrW(){if(confirm('確定清除自選清單？')){LS.set('watch',[]);rW();}}
 function sH(raw,a){let h=LS.get('hist');h.unshift({sym:raw.code,name:raw.name,score:a.overall,verdict:a.verdict,price:a.cur,time:new Date().toISOString()});if(h.length>50)h=h.slice(0,50);LS.set('hist',h);}
 function rH(){const h=LS.get('hist'),area=document.getElementById('ha');if(!h.length){area.innerHTML=`<div class="empty"><div class="eico">🕐</div>尚無查詢紀錄<br>搜尋股票後自動記錄</div>`;return;}area.innerHTML=h.map(item=>{const c=sc(item.score),dt=new Date(item.time);const ts=`${dt.getMonth()+1}/${dt.getDate()} ${dt.getHours()}:${String(dt.getMinutes()).padStart(2,'0')}`;return`<div class="li" onclick="gs('${item.sym}')"><div class="ll"><div class="lsy">${item.sym}</div><div class="lna">${item.name}</div><div class="lti">${ts}｜${item.verdict}｜收${item.price?.toFixed(1)||'—'}</div></div><div class="lr"><div class="spill" class="${item.score>=70?'spill gold-score':'spill'}" style="${item.score<70?'background:'+c+'18;color:'+c:''}">${item.score}</div></div></div>`;}).join('');}
@@ -2602,7 +2590,7 @@ function showPage(id, tabEl, navId){
   const tabMap={home:0,money:1,stock:2,watch:3,settings:4};
   if(tabMap[id]!==undefined) document.querySelectorAll('.tab-item')[tabMap[id]]?.classList.add('active');
   if(id==='money') initMoney();
-  if(id==='watch') renderPositions();
+  if(id==='watch'){if(typeof rW==='function')rW();}
   if(id==='stock') renderSearchHistory();
 }
 
