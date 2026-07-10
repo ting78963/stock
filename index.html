@@ -1933,29 +1933,45 @@ async function renderExtraData(stockCode, a) {
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${rocketItems.length ? rocketItems.map((r,ri)=>`
-            <div style="background:var(--bg3);border-radius:var(--rs);border:0.5px solid var(--border);padding:11px 12px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-                <div style="font-size:11px;color:var(--text3)">${r.label}</div>
-                <div style="display:flex;align-items:center;gap:4px">
-                  <span style="padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600;${r.ok?'background:var(--rbg);color:var(--red)':'background:var(--abg);color:var(--amber)'}">${r.score||0}/${r.maxScore||10}</span>
-                  <span onclick="toggleRocketInfo('ri-${ri}')" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);font-weight:600">ⓘ</span>
-                </div>
-              </div>
-              <div id="ri-${ri}" class="rocket-info-box" style="display:none;font-size:11px;color:var(--text2);background:var(--bg2);border-radius:6px;padding:8px;margin-bottom:6px;line-height:1.6">${_RI[r.label]||''}</div>
-              <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-                <span style="font-size:1rem;font-weight:600;color:${r.ok?'var(--red)':'var(--green)'}">${r.curVal}</span>
-                <span style="font-size:11px;color:${r.trendUp?'var(--red)':'var(--green)'}">${r.trendUp?'▲':'▼'}</span>
-              </div>
-              ${r.prevVal?`<div style="font-size:11px;color:var(--text3);margin-bottom:2px">${r.prevVal}</div>`:''}
-              ${r.extra?`<div style="font-size:11px;color:var(--text3);margin-bottom:2px">${r.extra}</div>`:''}
-              ${r.sub?`<div style="font-size:11px;color:${r.ok?'var(--green)':'var(--amber)'}">${r.sub}</div>`:''}
-            </div>`).join('') :
-            `<div style="grid-column:span 2;color:var(--text3);font-size:var(--fs-sm);text-align:center;padding:12px 0">財報資料載入中</div>`
-          }
-        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="rocketGrid"></div>
       </div>`;
+
+    // 動態建立火箭指標格子（用addEventListener綁定ⓘ）
+    setTimeout(()=>{
+      const grid=document.getElementById('rocketGrid');
+      if(!grid) return;
+      if(!rocketItems.length){
+        grid.innerHTML=`<div style="grid-column:span 2;color:var(--text3);font-size:var(--fs-sm);text-align:center;padding:12px 0">財報資料載入中</div>`;
+        return;
+      }
+      rocketItems.forEach((r,i)=>{
+        const card=document.createElement('div');
+        card.style.cssText='background:var(--bg3);border-radius:var(--rs);border:0.5px solid var(--border);padding:11px 12px';
+        card.innerHTML=`
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+            <div style="font-size:11px;color:var(--text3)">${r.label}</div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600;${r.ok?'background:var(--rbg);color:var(--red)':'background:var(--abg);color:var(--amber)'}">${r.score||0}/${r.maxScore||10}</span>
+              <span class="ri-btn" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);font-weight:600">ⓘ</span>
+            </div>
+          </div>
+          <div class="ri-box" style="display:none;font-size:11px;color:var(--text2);background:var(--bg2);border-radius:6px;padding:8px;margin-bottom:6px;line-height:1.6">${_RI[r.label]||''}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <span style="font-size:1rem;font-weight:600;color:${r.ok?'var(--red)':'var(--green)'}">${r.curVal}</span>
+            <span style="font-size:11px;color:${r.trendUp?'var(--red)':'var(--green)'}">${r.trendUp?'▲':'▼'}</span>
+          </div>
+          ${r.prevVal?`<div style="font-size:11px;color:var(--text3);margin-bottom:2px">${r.prevVal}</div>`:''}
+          ${r.extra?`<div style="font-size:11px;color:var(--text3);margin-bottom:2px">${r.extra}</div>`:''}
+          ${r.sub?`<div style="font-size:11px;color:${r.ok?'var(--green)':'var(--amber)'}">${r.sub}</div>`:''}
+        `;
+        const btn=card.querySelector('.ri-btn');
+        const box=card.querySelector('.ri-box');
+        btn.addEventListener('click',()=>{
+          box.style.display=box.style.display==='block'?'none':'block';
+        });
+        grid.appendChild(card);
+      });
+    },100);
 
     // ── 4. 資金流向（五根柱量圖）──
     // 解析法人資料
@@ -2227,6 +2243,8 @@ function renderInstChart(days,fStreak,tStreak){
   const NEG={f:'#166534',g:'#16a34a',t:'#14532d',dealer:'#22c55e',r:'#86efac'};
   const maxVal=Math.max(...days.flatMap(d=>KEYS.map(k=>Math.abs(d[k]||0))),1);
   window._instDays=days;
+  window._fStreak=fStreak;
+  window._tStreak=tStreak;
   const barsHtml=days.map((d,idx)=>`
     <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:50px;cursor:pointer;padding:2px;border-radius:6px" onclick="showInstDetail(${idx})" id="inst-col-${idx}">
       <div style="display:flex;gap:2px;align-items:flex-end;height:85px">
@@ -2248,8 +2266,8 @@ function renderInstChart(days,fStreak,tStreak){
   return`
   <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
     <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">資金流向　10日</div>
-    <div style="overflow-x:auto;scrollbar-width:none"><div style="display:flex;gap:5px;align-items:flex-end;min-width:max-content;padding:4px 0">${barsHtml}</div></div>
-    <div style="font-size:10px;color:var(--text3);text-align:center;margin:6px 0 4px">買超=紅　賣超=綠　↑ 點任一天看詳細</div>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:5px;align-items:flex-end;min-width:max-content;padding:4px 0">${barsHtml}</div></div>
+    <div style="font-size:10px;color:var(--text3);text-align:center;margin:6px 0 4px">買超=紅　賣超=綠　← 左右滑動 → 點任一天看詳細</div>
     <div id="instDetailPanel" style="display:none;background:var(--bg3);border-radius:var(--rs);padding:12px;margin:8px 0"></div>
     <div style="height:0.5px;background:var(--border2);margin:10px 0"></div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px">
@@ -2261,27 +2279,63 @@ function renderInstChart(days,fStreak,tStreak){
 }
 
 function showInstDetail(idx){
-  const days=window._instDays||[]; const d=days[idx]; if(!d) return;
+  const days=window._instDays||[];
+  const d=days[idx]; if(!d) return;
+  const panel=document.getElementById('instDetailPanel'); if(!panel) return;
   const KEYS=['f','g','t','dealer','r'];
   const NAMES={f:'外資',g:'官股',t:'投信',dealer:'自營商',r:'散戶'};
   const POS={f:'#b91c1c',g:'#dc2626',t:'#7f1d1d',dealer:'#ef4444',r:'#fca5a5'};
   const NEG={f:'#166534',g:'#16a34a',t:'#14532d',dealer:'#22c55e',r:'#86efac'};
   const maxAbs=Math.max(...KEYS.map(k=>Math.abs(d[k]||0)),1);
   const total=(d.f||0)+(d.g||0)+(d.t||0);
-  const panel=document.getElementById('instDetailPanel'); if(!panel) return;
+
+  // 清空並用createElement建立內容
   panel.style.display='block';
-  panel.innerHTML=`
-    <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-      <div style="font-size:14px;font-weight:600;color:var(--text)">${d.date} 詳細</div>
-      <div onclick="document.getElementById('instDetailPanel').style.display='none'" style="cursor:pointer;color:var(--text3)">✕</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:flex-end;height:140px;margin-bottom:10px">
-      ${KEYS.map(k=>{const v=d[k]||0;const h=Math.max(Math.round(Math.abs(v)/maxAbs*120),4);const color=v>=0?POS[k]:NEG[k];const sign=v>=0?'+':'';return`<div style="display:flex;flex-direction:column;align-items:center;flex:1"><div style="display:flex;align-items:flex-end;justify-content:center;width:100%;height:125px"><div style="width:30px;height:${h}px;background:${color};border-radius:4px 4px 0 0"></div></div><div style="font-size:11px;color:var(--text2);margin-top:4px">${NAMES[k]}</div><div style="font-size:11px;font-weight:700;color:${color}">${sign}${Math.round(Math.abs(v)).toLocaleString()}</div><div style="font-size:10px;color:var(--text3)">張</div></div>`;}).join('')}
-    </div>
-    <div style="background:var(--bg);border-radius:var(--rs);padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
-      <div><div style="font-size:12px;color:var(--text3)">主力合計（外資＋官股＋投信）</div></div>
-      <div style="font-size:16px;font-weight:700;color:${total>=0?'var(--red)':'var(--green)'}">${total>=0?'+':''}${Math.round(total).toLocaleString()} 張</div>
-    </div>`;
+  panel.innerHTML='';
+
+  // 標題列+X按鈕
+  const header=document.createElement('div');
+  header.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px';
+  const title=document.createElement('div');
+  title.style.cssText='font-size:14px;font-weight:600;color:var(--text)';
+  title.textContent=d.date+' 詳細';
+  const closeBtn=document.createElement('button');
+  closeBtn.style.cssText='width:24px;height:24px;border-radius:50%;border:0.5px solid var(--border);background:var(--bg2);cursor:pointer;font-size:14px;color:var(--text3);display:flex;align-items:center;justify-content:center';
+  closeBtn.textContent='✕';
+  closeBtn.addEventListener('click',()=>{panel.style.display='none';});
+  header.appendChild(title);
+  header.appendChild(closeBtn);
+  panel.appendChild(header);
+
+  // 柱量圖
+  const barsDiv=document.createElement('div');
+  barsDiv.style.cssText='display:flex;gap:8px;align-items:flex-end;height:140px;margin-bottom:10px';
+  KEYS.forEach(k=>{
+    const v=d[k]||0;
+    const h=Math.max(Math.round(Math.abs(v)/maxAbs*120),4);
+    const color=v>=0?POS[k]:NEG[k];
+    const sign=v>=0?'+':'';
+    const col=document.createElement('div');
+    col.style.cssText='display:flex;flex-direction:column;align-items:center;flex:1';
+    col.innerHTML=`<div style="display:flex;align-items:flex-end;justify-content:center;width:100%;height:125px"><div style="width:30px;height:${h}px;background:${color};border-radius:4px 4px 0 0"></div></div><div style="font-size:11px;color:var(--text2);margin-top:4px">${NAMES[k]}</div><div style="font-size:11px;font-weight:700;color:${color}">${sign}${Math.round(Math.abs(v)).toLocaleString()}</div><div style="font-size:10px;color:var(--text3)">張</div>`;
+    barsDiv.appendChild(col);
+  });
+  panel.appendChild(barsDiv);
+
+  // 主力合計
+  const totalDiv=document.createElement('div');
+  totalDiv.style.cssText='background:var(--bg);border-radius:var(--rs);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px';
+  totalDiv.innerHTML=`<div style="font-size:12px;color:var(--text3)">主力合計（外資＋官股＋投信）</div><div style="font-size:16px;font-weight:700;color:${total>=0?'var(--red)':'var(--green)'}">${total>=0?'+':''}${Math.round(total).toLocaleString()} 張</div>`;
+  panel.appendChild(totalDiv);
+
+  // 籌碼追蹤
+  const streakDiv=document.createElement('div');
+  streakDiv.style.cssText='display:flex;gap:10px;flex-wrap:wrap';
+  const fs=window._fStreak;
+  const ts=window._tStreak;
+  if(fs&&fs.streak>0) streakDiv.innerHTML+=`<span style="font-size:12px;color:var(--text2)">外資連續 <strong style="color:${fs.dir>0?'var(--red)':'var(--green)'}">${fs.streak}天${fs.dir>0?'買超':'賣超'}</strong></span>`;
+  if(ts&&ts.streak>0) streakDiv.innerHTML+=`<span style="font-size:12px;color:var(--text2)">投信連續 <strong style="color:${ts.dir>0?'var(--red)':'var(--green)'}">${ts.streak}天${ts.dir>0?'買超':'賣超'}</strong></span>`;
+  panel.appendChild(streakDiv);
 }
 
 // 新版風險計算
