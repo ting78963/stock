@@ -1355,10 +1355,10 @@ ${[{p:a.t1,n:'T1 現價在150/200日均線之上',d:`MA150 ${f(a.ma150,1)}｜MA2
 </div></div>
 ${entryConfirmHtml(a)}
 <div class="ec2"><div class="card-head"><div class="card-title">買賣價位</div></div><div class="eg">
-<div class="ei"><div class="el">PIVOT 突破價位</div><div class="ev" style="color:var(--green)">${f(a.pe,1)}</div><div class="es2">突破確認價<br>+0.5% 進場</div></div>
+<div class="ei"><div class="el">PIVOT 突破價位</div><div class="ev" style="color:var(--green)">${f(a.pe,1)}</div><div class="es2">VCP 收縮頂點<br>突破後觀察量能</div></div>
 <div class="ei"><div class="el">週20MA 大趨勢支撐</div><div class="ev" style="color:var(--text2)">${f(a.ma20w,1)}</div><div class="es2">最終防線參考</div></div>
-<div class="ei"><div class="el">目標一</div><div class="ev">${f(a.tgt1,1)}</div><div class="es2">+10% 獲利</div></div>
-<div class="ei"><div class="el">目標二</div><div class="ev">${f(a.tgt2,1)}</div><div class="es2">+20% 獲利</div></div>
+<div class="ei"><div class="el">+10% 參考位</div><div class="ev">${f(a.tgt1,1)}</div><div class="es2">技術面參考</div></div>
+<div class="ei"><div class="el">+20% 參考位</div><div class="ev">${f(a.tgt2,1)}</div><div class="es2">技術面參考</div></div>
 </div></div>
 <!-- 大盤乖離、籌碼追蹤、火箭指標 由 renderExtraData 非同步填入 -->
 <div id="extra-data-section"></div>
@@ -1394,7 +1394,7 @@ async function doSearch(){
   const btn=document.getElementById('sbtn'),area=document.getElementById('ra');
   btn.disabled=true;
   area.innerHTML=`<div class="lbox"><div class="sp"></div><div class="lt">分析 ${code} 中...</div><div class="ls">從台灣證交所抓取資料</div></div>`;
-  try{const raw2=await fetchStock(code);const a=analyze(raw2);area.innerHTML=rResult(raw2,a);sH(raw2,a);renderExtraData(code);}
+  try{const raw2=await fetchStock(code);const a=analyze(raw2);window._lastA=a;area.innerHTML=rResult(raw2,a);sH(raw2,a);renderExtraData(code,a);}
   catch(e){area.innerHTML=`<div class="eb">⚠️ ${e.message}</div>`;}
   finally{btn.disabled=false;}
 }
@@ -1402,7 +1402,8 @@ async function doSearch(){
 function tW(sym,name,score){let wl=LS.get('watch');const i=wl.findIndex(w=>w.sym===sym);const btn=document.getElementById('wbtn');if(i>=0){wl.splice(i,1);if(btn){btn.textContent='☆ 加入自選清單';btn.classList.remove('saved');}}else{wl.unshift({sym,name,score,added:new Date().toISOString()});if(btn){btn.textContent='★ 已加入自選清單';btn.classList.add('saved');}}LS.set('watch',wl);}
 
 // ── 新增：大盤乖離 + 籌碼追蹤 + 火箭指標 ──
-async function renderExtraData(stockCode) {
+async function renderExtraData(stockCode, a) {
+  if(!a) a=window._lastA||{};
   const el = document.getElementById('extra-data-section');
   if(!el) return;
   el.innerHTML = `<div style="text-align:center;padding:16px;color:var(--text3);font-size:var(--fs-sm)">載入籌碼與基本面資料中...</div>`;
@@ -1420,8 +1421,6 @@ async function renderExtraData(stockCode) {
       fmFetchExtra('TaiwanStockMonthRevenue', stockCode, startDate90),
       fmFetchExtra('TaiwanStockFinancialStatements', stockCode, startDate90),
       fmFetchExtra('TaiwanExchangeRate', 'USD', startDate),
-      fmFetchExtra('TaiwanStockBalanceSheet', stockCode, startDate90),
-      fmFetchExtra('TaiwanStockCashFlowsStatement', stockCode, startDate90),
     ]);
 
     const taiexData   = taiexRes.status==='fulfilled'   ? taiexRes.value   : [];
@@ -1668,161 +1667,222 @@ async function renderExtraData(stockCode) {
         ${holdHtml}
       </div>`;
 
-    // ── 3. 火箭指標（新版100分制）──
+    // ── 3. 火箭指標（波段版100分制）──
     let rocketItems = [];
 
-    // ① 月營收 YoY（10分）
+    // ① 月營收 YoY + 年營收 YoY（20分）
     if(revData.length >= 2) {
       const sorted = [...revData].sort((a,b)=>a.date.localeCompare(b.date));
       const last = sorted[sorted.length-1];
       const curMonth = parseInt(last.revenue_month||0);
       const curYear = parseInt(last.revenue_year||0);
       const curRev = parseFloat(last.revenue||0);
-      const lastYear = sorted.find(r=>parseInt(r.revenue_month||0)===curMonth && parseInt(r.revenue_year||0)===curYear-1);
-      const prevRev = lastYear ? parseFloat(lastYear.revenue||0) : 0;
-      const yoy = prevRev>0 ? (curRev-prevRev)/prevRev*100 : null;
+      // 月YoY：跟去年同月比
+      const lastYearSameMonth = sorted.find(r=>parseInt(r.revenue_month||0)===curMonth && parseInt(r.revenue_year||0)===curYear-1);
+      const prevRev = lastYearSameMonth ? parseFloat(lastYearSameMonth.revenue||0) : 0;
+      const monthYoy = prevRev>0 ? (curRev-prevRev)/prevRev*100 : null;
+      // 前月YoY
       const prev1 = sorted[sorted.length-2];
-      const prev1Rev = prev1 ? parseFloat(prev1.revenue||0) : 0;
       const prev1Month = prev1 ? parseInt(prev1.revenue_month||0) : 0;
       const prev1Year = prev1 ? parseInt(prev1.revenue_year||0) : 0;
       const prev1LastYear = sorted.find(r=>parseInt(r.revenue_month||0)===prev1Month && parseInt(r.revenue_year||0)===prev1Year-1);
-      const prev1Yoy = (prev1LastYear&&prev1Rev>0) ? (prev1Rev-parseFloat(prev1LastYear.revenue||0))/parseFloat(prev1LastYear.revenue||1)*100 : null;
+      const prev1Yoy = (prev1LastYear&&prev1) ? (parseFloat(prev1.revenue||0)-parseFloat(prev1LastYear.revenue||0))/parseFloat(prev1LastYear.revenue||1)*100 : null;
+      // 年YoY：累加今年vs去年同期
+      const thisYearRows = sorted.filter(r=>parseInt(r.revenue_year||0)===curYear);
+      const lastYearRows = sorted.filter(r=>parseInt(r.revenue_year||0)===curYear-1);
+      const thisYearTotal = thisYearRows.reduce((s,r)=>s+parseFloat(r.revenue||0),0);
+      const lastYearSamePeriod = lastYearRows.filter(r=>parseInt(r.revenue_month||0)<=curMonth).reduce((s,r)=>s+parseFloat(r.revenue||0),0);
+      const annualYoy = lastYearSamePeriod>0 ? (thisYearTotal-lastYearSamePeriod)/lastYearSamePeriod*100 : null;
+      // 連續成長
       let growStreak=0;
       for(let i=sorted.length-1;i>=1;i--){
-        if(parseFloat(sorted[i].revenue||0)>parseFloat(sorted[i-1].revenue||0)) growStreak++;
+        const curR=sorted[i], prevR=sorted[i-1];
+        const curY=parseInt(curR.revenue_year||0), curM=parseInt(curR.revenue_month||0);
+        const sameMonthLastYear=sorted.find(r=>parseInt(r.revenue_month||0)===curM&&parseInt(r.revenue_year||0)===curY-1);
+        const prevY=parseInt(prevR.revenue_year||0), prevM=parseInt(prevR.revenue_month||0);
+        const prevMonthLastYear=sorted.find(r=>parseInt(r.revenue_month||0)===prevM&&parseInt(r.revenue_year||0)===prevY-1);
+        if(!sameMonthLastYear||!prevMonthLastYear) break;
+        const yoyC=(parseFloat(curR.revenue||0)-parseFloat(sameMonthLastYear.revenue||0))/parseFloat(sameMonthLastYear.revenue||1)*100;
+        const yoyP=(parseFloat(prevR.revenue||0)-parseFloat(prevMonthLastYear.revenue||0))/parseFloat(prevMonthLastYear.revenue||1)*100;
+        if(yoyC>0) growStreak++;
         else break;
       }
+      const score = monthYoy===null?0:monthYoy>=30?20:monthYoy>=15?16:monthYoy>=5?12:monthYoy>=0?7:2;
       const curLabel = curYear&&curMonth ? `${curYear}-${String(curMonth).padStart(2,'0')}` : last.date;
-      const prevLabel = prev1&&prev1Year&&prev1Month ? `${prev1Year}-${String(prev1Month).padStart(2,'0')}` : '';
-      const score = yoy===null?0:yoy>=20?10:yoy>=10?7:yoy>=0?4:0;
       rocketItems.push({
-        label:'月營收 YoY', maxScore:10,
-        curLabel, curVal: yoy!==null ? `${yoy>=0?'+':''}${yoy.toFixed(1)}%` : `${(curRev/1e8).toFixed(1)}億`,
-        prevLabel, prevVal: prev1Yoy!==null ? `前期：${prev1Yoy>=0?'+':''}${prev1Yoy.toFixed(1)}%` : '',
-        trendUp: yoy!==null&&prev1Yoy!==null ? yoy>=prev1Yoy : yoy!==null ? yoy>0 : curRev>0,
+        label:'月營收 YoY', maxScore:20,
+        curLabel, curVal: monthYoy!==null ? `${monthYoy>=0?'+':''}${monthYoy.toFixed(1)}%` : `${(curRev/1e8).toFixed(1)}億`,
+        prevVal: prev1Yoy!==null ? `前月：${prev1Yoy>=0?'+':''}${prev1Yoy.toFixed(1)}%` : '',
+        extra: annualYoy!==null ? `年增：${annualYoy>=0?'+':''}${annualYoy.toFixed(1)}%` : '',
+        trendUp: monthYoy!==null&&prev1Yoy!==null ? monthYoy>=prev1Yoy : monthYoy!==null ? monthYoy>0 : curRev>0,
         sub: growStreak>=2 ? `連續成長 ${growStreak} 個月` : '',
-        ok: yoy!==null ? yoy>0 : curRev>0, score
+        ok: monthYoy!==null ? monthYoy>0 : curRev>0, score
       });
     }
 
-    // ② 毛利率（13分）
+    // ② 稅後淨利 YoY（18分）
     if(finData.length) {
-      const gpItems = finData.filter(r=>r.type==='GrossProfit');
-      const revItems = finData.filter(r=>r.type==='Revenue');
-      if(gpItems.length>=2 && revItems.length>=2) {
-        const gpSorted = [...gpItems].sort((a,b)=>a.date.localeCompare(b.date));
-        const revSorted = [...revItems].sort((a,b)=>a.date.localeCompare(b.date));
-        const curDate = gpSorted[gpSorted.length-1].date;
-        const prevDate = gpSorted[gpSorted.length-2].date;
-        const gpCurVal = parseFloat(gpSorted[gpSorted.length-1].value||0);
-        const gpPrevVal = parseFloat(gpSorted[gpSorted.length-2].value||0);
-        const revCurItem = revSorted.find(r=>r.date===curDate);
-        const revPrevItem = revSorted.find(r=>r.date===prevDate);
-        const revCur = revCurItem ? parseFloat(revCurItem.value||0) : 0;
-        const revPrev = revPrevItem ? parseFloat(revPrevItem.value||0) : 0;
-        if(revCur>0 && revPrev>0) {
-          const gpCur = gpCurVal/revCur*100;
-          const gpPrev = gpPrevVal/revPrev*100;
-          const diff = gpCur-gpPrev;
-          const score = gpCur>=40?13:gpCur>=30?10:gpCur>=20?7:gpCur>=10?4:1;
-          rocketItems.push({
-            label:'毛利率', maxScore:13, curLabel:curDate, curVal:`${gpCur.toFixed(1)}%`,
-            prevLabel:prevDate, prevVal:`${gpPrev.toFixed(1)}%`,
-            trendUp:gpCur>=gpPrev,
-            sub:`較前季 ${diff>=0?'+':''}${diff.toFixed(1)}%　${gpCur>=gpPrev?'護城河穩固':'毛利率收縮，留意'}`,
-            ok:gpCur>=gpPrev, score
-          });
-        }
-      }
-    }
-
-    // ③ 稅後淨利 YoY（11分）
-    if(finData.length) {
-      const pat = finData.filter(r=>r.type==='IncomeAfterTaxes');
+      const pat = finData.filter(r=>r.type==='IncomeAfterTaxes').sort((a,b)=>a.date.localeCompare(b.date));
       if(pat.length >= 2) {
-        const sorted = [...pat].sort((a,b)=>a.date.localeCompare(b.date));
-        const curVal = parseFloat(sorted[sorted.length-1].value||0);
-        const prevVal = parseFloat(sorted[sorted.length-2].value||0);
-        let chgText='', chgPct=null;
-        if(prevVal<0 && curVal>0){ chgText='虧轉盈'; }
-        else if(prevVal>0 && curVal<0){ chgText='盈轉虧'; }
-        else if(prevVal!==0){ chgPct=(curVal-prevVal)/Math.abs(prevVal)*100; chgText=`較前季 ${chgPct>=0?'+':''}${chgPct.toFixed(0)}%`; }
-        const score = curVal<=0?0:chgPct===null?(curVal>0?8:0):chgPct>=50?11:chgPct>=20?8:chgPct>=0?5:2;
+        const curVal = parseFloat(pat[pat.length-1].value||0);
+        const prevVal = parseFloat(pat[pat.length-2].value||0);
+        // 找去年同季YoY
+        const sameQtrLastYear = pat.length>=5 ? parseFloat(pat[pat.length-5].value||0) : null;
+        const yoy = sameQtrLastYear!==null&&sameQtrLastYear!==0 ? (curVal-sameQtrLastYear)/Math.abs(sameQtrLastYear)*100 : null;
+        let chgText='';
+        if(prevVal<0&&curVal>0) chgText='虧轉盈 ✓';
+        else if(prevVal>0&&curVal<0) chgText='盈轉虧 ✗';
+        else if(prevVal!==0){ const chg=(curVal-prevVal)/Math.abs(prevVal)*100; chgText=`較前季 ${chg>=0?'+':''}${chg.toFixed(0)}%`; }
+        const score = curVal<=0?0:yoy===null?(curVal>0?10:0):yoy>=50?18:yoy>=25?14:yoy>=0?9:3;
         rocketItems.push({
-          label:'稅後淨利 YoY', maxScore:11,
-          curLabel:sorted[sorted.length-1].date, curVal:`${(curVal/1e8).toFixed(1)}億`,
-          prevLabel:sorted[sorted.length-2].date, prevVal:`${(prevVal/1e8).toFixed(1)}億`,
+          label:'稅後淨利 YoY', maxScore:18,
+          curLabel:pat[pat.length-1].date, curVal:`${(curVal/1e8).toFixed(1)}億`,
+          prevVal:`前季：${(prevVal/1e8).toFixed(1)}億`,
+          extra: yoy!==null?`年增：${yoy>=0?'+':''}${yoy.toFixed(0)}%`:'',
           trendUp:curVal>=prevVal, sub:chgText, ok:curVal>0, score
         });
       }
     }
 
-    // ④ 毛利率 YoY（用 finData GrossProfit 跟去年同期比，含在③後面）
-    // 已包含在②中
+    // ③ 毛利率趨勢（15分）
+    if(finData.length) {
+      const gpItems = finData.filter(r=>r.type==='GrossProfit').sort((a,b)=>a.date.localeCompare(b.date));
+      const revItems = finData.filter(r=>r.type==='Revenue').sort((a,b)=>a.date.localeCompare(b.date));
+      if(gpItems.length>=2 && revItems.length>=2) {
+        const curDate = gpItems[gpItems.length-1].date;
+        const prevDate = gpItems[gpItems.length-2].date;
+        const gpCur = parseFloat(gpItems[gpItems.length-1].value||0);
+        const gpPrev = parseFloat(gpItems[gpItems.length-2].value||0);
+        const revCur = parseFloat((revItems.find(r=>r.date===curDate)||{}).value||0);
+        const revPrev = parseFloat((revItems.find(r=>r.date===prevDate)||{}).value||0);
+        if(revCur>0 && revPrev>0) {
+          const gpCurPct = gpCur/revCur*100;
+          const gpPrevPct = gpPrev/revPrev*100;
+          const diff = gpCurPct-gpPrevPct;
+          const score = gpCurPct>=50?15:gpCurPct>=35?12:gpCurPct>=20?8:gpCurPct>=10?5:2;
+          rocketItems.push({
+            label:'毛利率', maxScore:15,
+            curLabel:curDate, curVal:`${gpCurPct.toFixed(1)}%`,
+            prevVal:`前季：${gpPrevPct.toFixed(1)}%`,
+            extra:'',
+            trendUp:gpCurPct>=gpPrevPct,
+            sub:`較前季 ${diff>=0?'+':''}${diff.toFixed(1)}%　${diff>=0?'護城河穩固':'毛利率收縮，留意'}`,
+            ok:gpCurPct>=gpPrevPct, score
+          });
+        }
+      }
+    }
 
-    // ⑤ ROE（22分）- 用稅後淨利 / 股東權益估算
+    // ④ EBITDA（13分）= 營業利益 + 折舊 + 攤銷
+    if(finData.length && cashData.length) {
+      const oiItems = finData.filter(r=>r.type==='OperatingIncome').sort((a,b)=>a.date.localeCompare(b.date));
+      const depItems = cashData.filter(r=>r.type==='Depreciation').sort((a,b)=>a.date.localeCompare(b.date));
+      const amorItems = cashData.filter(r=>r.type==='AmortizationExpense').sort((a,b)=>a.date.localeCompare(b.date));
+      if(oiItems.length>=2) {
+        const curOi = parseFloat(oiItems[oiItems.length-1].value||0);
+        const prevOi = parseFloat(oiItems[oiItems.length-2].value||0);
+        const curDep = depItems.length ? parseFloat(depItems[depItems.length-1].value||0) : 0;
+        const prevDep = depItems.length>=2 ? parseFloat(depItems[depItems.length-2].value||0) : 0;
+        const curAmor = amorItems.length ? parseFloat(amorItems[amorItems.length-1].value||0) : 0;
+        const prevAmor = amorItems.length>=2 ? parseFloat(amorItems[amorItems.length-2].value||0) : 0;
+        const curEbitda = curOi + Math.abs(curDep) + Math.abs(curAmor);
+        const prevEbitda = prevOi + Math.abs(prevDep) + Math.abs(prevAmor);
+        const chgPct = prevEbitda!==0 ? (curEbitda-prevEbitda)/Math.abs(prevEbitda)*100 : null;
+        const score = curEbitda<=0?0:chgPct===null?7:chgPct>=30?13:chgPct>=10?10:chgPct>=0?7:3;
+        rocketItems.push({
+          label:'EBITDA', maxScore:13,
+          curLabel:oiItems[oiItems.length-1].date,
+          curVal:`${(curEbitda/1e8).toFixed(1)}億`,
+          prevVal:`前季：${(prevEbitda/1e8).toFixed(1)}億`,
+          extra:'',
+          trendUp:curEbitda>=prevEbitda,
+          sub:chgPct!==null?`較前季 ${chgPct>=0?'+':''}${chgPct.toFixed(0)}%`:'',
+          ok:curEbitda>0&&curEbitda>=prevEbitda, score
+        });
+      }
+    }
+
+    // ⑤ 自由現金流（12分）
+    if(cashData.length) {
+      const ocfItems = cashData.filter(r=>r.type==='NetCashInflowFromOperatingActivities').sort((a,b)=>a.date.localeCompare(b.date));
+      const capexItems = cashData.filter(r=>r.type==='PropertyAndPlantAndEquipment').sort((a,b)=>a.date.localeCompare(b.date));
+      if(ocfItems.length>=1) {
+        const curOcf = parseFloat(ocfItems[ocfItems.length-1].value||0);
+        const curCapex = capexItems.length ? Math.abs(parseFloat(capexItems[capexItems.length-1].value||0)) : 0;
+        const fcf = curOcf - curCapex;
+        const prevOcf = ocfItems.length>=2 ? parseFloat(ocfItems[ocfItems.length-2].value||0) : 0;
+        const prevCapex = capexItems.length>=2 ? Math.abs(parseFloat(capexItems[capexItems.length-2].value||0)) : 0;
+        const prevFcf = prevOcf - prevCapex;
+        const score = fcf<=0?0:fcf>=prevFcf?12:fcf>0?8:2;
+        rocketItems.splice(4,0,{
+          label:'自由現金流', maxScore:12,
+          curLabel:ocfItems[ocfItems.length-1].date,
+          curVal:`${fcf>=0?'+':''}${(fcf/1e8).toFixed(1)}億`,
+          prevVal:`前季：${prevFcf>=0?'+':''}${(prevFcf/1e8).toFixed(1)}億`,
+          extra:'',
+          trendUp:fcf>=prevFcf,
+          sub:fcf>0?'現金流為正，財務健康':'現金流為負，留意資本支出',
+          ok:fcf>0, score
+        });
+      }
+    }
+
+    // ⑥ ROE（10分）- 年化
     if(finData.length && balData.length) {
       const niItems = finData.filter(r=>r.type==='IncomeAfterTaxes').sort((a,b)=>a.date.localeCompare(b.date));
-      const eqItems = balData.filter(r=>
-        r.type==='EquityAttributableToOwnersOfParent'||
-        r.type==='Equity'||
-        r.type==='TotalEquity'
-      ).sort((a,b)=>a.date.localeCompare(b.date));
+      const eqItems = balData.filter(r=>r.type==='EquityAttributableToOwnersOfParent').sort((a,b)=>a.date.localeCompare(b.date));
       if(niItems.length>=2 && eqItems.length>=1) {
         const calcROE = (ni, date) => {
           const eq = eqItems.find(e=>e.date===date) || eqItems[eqItems.length-1];
           const equity = eq ? parseFloat(eq.value||0) : 0;
-          return equity>0 ? (parseFloat(ni)*4/equity*100) : null; // 年化（季報×4）
+          return equity>0 ? (parseFloat(ni)*4/equity*100) : null;
         };
         const roe3 = niItems.slice(-3).map(r=>({roe:calcROE(r.value,r.date),date:r.date})).filter(r=>r.roe!==null);
         if(roe3.length>=1) {
           const cur = roe3[roe3.length-1].roe;
           const prev = roe3.length>=2 ? roe3[roe3.length-2].roe : cur;
           const avg = roe3.reduce((s,r)=>s+r.roe,0)/roe3.length;
-          const score = cur>=25?22:cur>=20?18:cur>=15?13:cur>=10?8:cur>=5?4:1;
+          const score = cur>=25?10:cur>=20?8:cur>=15?6:cur>=10?4:cur>=5?2:0;
           rocketItems.unshift({
-            label:'ROE 股東權益報酬率', maxScore:22,
+            label:'ROE', maxScore:10,
             curLabel:niItems[niItems.length-1].date,
             curVal:`${cur.toFixed(1)}%`,
-            prevLabel:roe3.length>=2?roe3[roe3.length-2].date:'',
-            prevVal:roe3.length>=2?`${prev.toFixed(1)}%`:'',
+            prevVal:roe3.length>=2?`前季：${prev.toFixed(1)}%`:'',
+            extra:`3季均：${avg.toFixed(1)}%`,
             trendUp:cur>=prev,
-            sub:`3季均 ${avg.toFixed(1)}%`,
+            sub:cur>=15?'股東報酬優質':cur>=10?'股東報酬尚可':'股東報酬偏低',
             ok:cur>=15, score
           });
         }
       }
     }
 
-    // ⑥ 自由現金流（18分）
-    if(cashData.length) {
-      const ocfItems = cashData.filter(r=>
-        r.type==='OperatingActivities'||
-        r.type==='CashFlowFromOperatingActivities'||
-        r.type==='NetCashProvidedByOperatingActivities'
-      ).sort((a,b)=>a.date.localeCompare(b.date));
-      if(ocfItems.length>=1) {
-        const curOcf = parseFloat(ocfItems[ocfItems.length-1].value||0);
-        const prevOcf = ocfItems.length>=2 ? parseFloat(ocfItems[ocfItems.length-2].value||0) : 0;
-        const chgPct = prevOcf!==0 ? (curOcf-prevOcf)/Math.abs(prevOcf)*100 : null;
-        const score = curOcf<=0?0:chgPct===null?10:chgPct>=50?18:chgPct>=20?14:chgPct>=0?10:6;
-        rocketItems.splice(1,0,{
-          label:'自由現金流', maxScore:18,
-          curLabel:ocfItems[ocfItems.length-1].date,
-          curVal:`${curOcf>=0?'+':''}${(curOcf/1e8).toFixed(1)}億`,
-          prevLabel:ocfItems.length>=2?ocfItems[ocfItems.length-2].date:'',
-          prevVal:ocfItems.length>=2?`${prevOcf>=0?'+':''}${(prevOcf/1e8).toFixed(1)}億`:'',
-          trendUp:curOcf>=prevOcf,
-          sub:curOcf>0?'現金流為正，財務健康':'現金流為負，留意資本支出',
-          ok:curOcf>0, score
+    // ⑦ 合約負債 YoY（7分）
+    if(balData.length) {
+      const clItems = balData.filter(r=>r.type==='CurrentContractLiabilities').sort((a,b)=>a.date.localeCompare(b.date));
+      if(clItems.length>=2) {
+        const cur = parseFloat(clItems[clItems.length-1].value||0);
+        const prev = parseFloat(clItems[clItems.length-2].value||0);
+        const sameQtrLastYear = clItems.length>=5 ? parseFloat(clItems[clItems.length-5].value||0) : null;
+        const yoy = sameQtrLastYear!==null&&sameQtrLastYear>0 ? (cur-sameQtrLastYear)/sameQtrLastYear*100 : null;
+        const score = cur<=0?0:yoy===null?(cur>=prev?5:2):yoy>=30?7:yoy>=10?5:yoy>=0?3:1;
+        rocketItems.push({
+          label:'合約負債 YoY', maxScore:7,
+          curLabel:clItems[clItems.length-1].date,
+          curVal:`${(cur/1e8).toFixed(1)}億`,
+          prevVal:`前季：${(prev/1e8).toFixed(1)}億`,
+          extra:yoy!==null?`年增：${yoy>=0?'+':''}${yoy.toFixed(1)}%`:'',
+          trendUp:cur>=prev,
+          sub:yoy!==null?(yoy>=0?'訂單能見度提升':'訂單能見度下降'):'',
+          ok:cur>0&&cur>=prev, score
         });
       }
     }
 
-    // ⑦ 負債比（13分）
+    // ⑧ 負債比（5分）
     if(balData.length) {
-      const liabItems = balData.filter(r=>r.type==='Liabilities'||r.type==='TotalLiabilities').sort((a,b)=>a.date.localeCompare(b.date));
-      const assetItems = balData.filter(r=>r.type==='Assets'||r.type==='TotalAssets').sort((a,b)=>a.date.localeCompare(b.date));
+      const liabItems = balData.filter(r=>r.type==='Liabilities').sort((a,b)=>a.date.localeCompare(b.date));
+      const assetItems = balData.filter(r=>r.type==='TotalAssets').sort((a,b)=>a.date.localeCompare(b.date));
       if(liabItems.length>=1 && assetItems.length>=1) {
         const curLiab = parseFloat(liabItems[liabItems.length-1].value||0);
         const curAsset = parseFloat(assetItems[assetItems.length-1].value||0);
@@ -1831,13 +1891,13 @@ async function renderExtraData(stockCode) {
           const prevLiab = liabItems.length>=2 ? parseFloat(liabItems[liabItems.length-2].value||0) : curLiab;
           const prevAsset = assetItems.length>=2 ? parseFloat(assetItems[assetItems.length-2].value||0) : curAsset;
           const prevRatio = prevAsset>0 ? prevLiab/prevAsset*100 : ratio;
-          const score = ratio<30?13:ratio<40?10:ratio<50?7:ratio<60?4:1;
+          const score = ratio<30?5:ratio<45?4:ratio<60?2:1;
           rocketItems.push({
-            label:'負債比', maxScore:13,
+            label:'負債比', maxScore:5,
             curLabel:liabItems[liabItems.length-1].date,
             curVal:`${ratio.toFixed(1)}%`,
-            prevLabel:liabItems.length>=2?liabItems[liabItems.length-2].date:'',
-            prevVal:liabItems.length>=2?`${prevRatio.toFixed(1)}%`:'',
+            prevVal:`前季：${prevRatio.toFixed(1)}%`,
+            extra:'',
             trendUp:ratio<=prevRatio,
             sub:ratio<40?'財務結構健全':ratio<60?'負債比適中':'負債偏高，留意',
             ok:ratio<60, score
@@ -1846,44 +1906,46 @@ async function renderExtraData(stockCode) {
       }
     }
 
-    const rocketTotalScore = rocketItems.reduce((s,r)=>s+(r.score||0),0);
+        const rocketTotalScore = rocketItems.reduce((s,r)=>s+(r.score||0),0);
     const rocketMaxPossible = rocketItems.reduce((s,r)=>s+(r.maxScore||10),0)||100;
     const scoreNorm = rocketMaxPossible>0 ? Math.round(rocketTotalScore/rocketMaxPossible*100) : 0;
     const okCount = rocketItems.filter(r=>r.ok).length;
     const total = rocketItems.length||1;
     const rocketLabel = scoreNorm>=80?'基本面強勁，大跌可抱':scoreNorm>=60?'基本面良好':scoreNorm>=40?'基本面普通':'基本面偏弱';
 
+    // 火箭指標ⓘ說明由全域函數處理
+
     const rocketHtml = `
       <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div style="font-size:var(--fs-xs);font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">🚀 火箭指標</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:var(--rs);padding:12px;margin-bottom:14px">
-          <div style="width:54px;height:54px;border-radius:50%;background:${scoreNorm>=70?'var(--abg)':'var(--rbg)'};border:2px solid ${scoreNorm>=70?'var(--amber)':'var(--red)'};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
-            <div style="font-size:1.2rem;font-weight:700;color:${scoreNorm>=70?'var(--amber)':'var(--red)'}">${scoreNorm}</div>
-            <div style="font-size:0.65rem;color:var(--text3)">/100</div>
-          </div>
-          <div>
-            <div style="font-size:var(--fs-md);font-weight:600;color:var(--text)">${rocketLabel}</div>
-            <div style="font-size:var(--fs-xs);color:var(--text3);margin-top:3px">${okCount}/${total} 項達標</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-size:var(--fs-sm);font-weight:600;color:var(--text)">${rocketLabel}</div>
+            <div style="font-size:var(--fs-xs);color:var(--text3)">${okCount}/${total} 項達標</div>
           </div>
         </div>
-        ${rocketItems.length ? rocketItems.map((r,ri)=>`
-          <div style="padding:10px 0;border-bottom:${ri<rocketItems.length-1?'0.5px solid var(--border2)':'none'}">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-              <div style="font-size:var(--fs-sm);font-weight:500;color:var(--text)">${r.label}</div>
-              <span style="padding:2px 8px;border-radius:10px;font-size:var(--fs-xs);font-weight:600;${r.ok?'background:var(--rbg);color:var(--red);border:0.5px solid var(--rbr)':'background:var(--abg);color:var(--amber);border:0.5px solid var(--abr)'}">${r.score||0}/${r.maxScore||10}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
-              <span style="font-size:var(--fs-xs);color:var(--text3)">${r.curLabel}</span>
-              <span style="font-size:var(--fs-lg);font-weight:600;color:${r.ok?'var(--red)':'var(--green)'}">${r.curVal}</span>
-              <span style="font-size:12px;color:${r.trendUp?'var(--red)':'var(--green)'}">${r.trendUp?'▲':'▼'}</span>
-            </div>
-            ${r.prevLabel?`<div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:3px">前期 ${r.prevLabel}：${r.prevVal}</div>`:''}
-            ${r.sub?`<span style="font-size:var(--fs-xs);padding:2px 8px;border-radius:6px;display:inline-block;${r.ok?'background:var(--gbg);color:var(--green)':'background:var(--abg);color:var(--amber)'}">${r.sub}</span>`:''}`
-        ).join('') :
-          `<div style="color:var(--text3);font-size:var(--fs-sm);text-align:center;padding:12px 0">財報資料載入中</div>`
-        }
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${rocketItems.length ? rocketItems.map(r=>`
+            <div style="background:var(--bg3);border-radius:var(--rs);border:0.5px solid var(--border);padding:11px 12px;position:relative">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+                <div style="font-size:var(--fs-xs);color:var(--text3)">${r.label}</div>
+                <div style="display:flex;align-items:center;gap:4px">
+                  <span style="padding:1px 6px;border-radius:8px;font-size:0.72rem;font-weight:600;${r.ok?'background:var(--rbg);color:var(--red)':'background:var(--abg);color:var(--amber)'}">${r.score||0}/${r.maxScore||10}</span>
+                  <span onclick="showRocketInfo('${r.label}')" style="width:18px;height:18px;border-radius:50%;background:var(--bg);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);font-weight:600">ⓘ</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+                <span style="font-size:1rem;font-weight:600;color:${r.ok?'var(--red)':'var(--green)'}">${r.curVal}</span>
+                <span style="font-size:11px;color:${r.trendUp?'var(--red)':'var(--green)'}">${r.trendUp?'▲':'▼'}</span>
+              </div>
+              ${r.prevVal?`<div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:2px">${r.prevVal}</div>`:''}
+              ${r.extra?`<div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:2px">${r.extra}</div>`:''}
+              ${r.sub?`<div style="font-size:var(--fs-xs);color:${r.ok?'var(--green)':'var(--amber)'}">${r.sub}</div>`:''}
+            </div>`).join('') :
+            `<div style="grid-column:span 2;color:var(--text3);font-size:var(--fs-sm);text-align:center;padding:12px 0">財報資料載入中</div>`
+          }
+        </div>
       </div>`;
 
     // ── 4. 資金流向（五根柱量圖）──
@@ -2018,7 +2080,8 @@ async function renderExtraData(stockCode) {
     el.innerHTML = debugHtml + mktHtml + chipperHtml + rocketHtml + instHtml + marginHtml + riskHtml;
 
   } catch(e) {
-    el.innerHTML = `<div style="color:var(--text3);font-size:var(--fs-sm);padding:12px">籌碼/基本面資料暫無法載入</div>`;
+    console.error("renderExtraData error:", e);
+    el.innerHTML = `<div style="color:var(--red);font-size:var(--fs-sm);padding:12px">載入錯誤：${e.message}<br><small>${e.stack?.split("\n")[1]||""}</small></div>`;
   }
 }
 
