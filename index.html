@@ -375,7 +375,7 @@ html.font-xl{font-size:19px}
           style="flex:1;border:none;background:transparent;font-size:14px;color:var(--text);outline:none"
           oninput="showAC(this.value)"
           onkeydown="if(event.key==='Enter'){document.getElementById('ac').style.display='none';doSearch();}">
-        <button onclick="doSearch()" style="background:var(--wine);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer">分析</button>
+        <button id="sbtn" onclick="doSearch()" style="background:var(--wine);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer">分析</button>
       </div>
       <div id="ac" style="display:none;border-top:0.5px solid var(--border);margin-top:6px"></div>
       <div id="search-history" style="margin-top:10px"></div>
@@ -390,6 +390,11 @@ html.font-xl{font-size:19px}
     <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px">自選清單</div>
     <div style="font-size:13px;color:var(--text3);margin-bottom:14px">追蹤中的股票</div>
     <div id="wa"></div>
+    <!-- 舊功能需要的隱藏div -->
+    <div id="ha" style="display:none"></div>
+    <div id="rsa" style="display:none"></div>
+    <div id="watch-gold-alert" style="display:none"><div id="watch-gold-list"></div></div>
+    <div id="watch-alert" style="display:none"><div id="watch-alert-list"></div></div>
   </div>
 </div>
 
@@ -2741,5 +2746,19 @@ window.addEventListener('load', ()=>{
 });
 
 </script>
+<!-- 舊功能modal（隱藏） -->
+<div id="pos-modal" style="display:none">
+  <div id="pos-modal-sub"></div>
+  <input id="pos-entry" type="number">
+  <div id="pos-hint-stop"></div>
+</div>
+<div id="stock-search-page" style="display:none">
+  <div id="stock-search-result-title"></div>
+  <input id="stock-search-input" type="text">
+  <div id="stock-search-ac"></div>
+  <div id="stock-search-content"></div>
+</div>
+<div id="last-update" style="display:none"></div>
+<div id="detail-sub" style="display:none"></div>
 </body>
 </html>
