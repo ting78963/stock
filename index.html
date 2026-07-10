@@ -676,7 +676,7 @@ async function fetchStock(code){
   // 抓個股資料（TaiwanStockPrice 上市上櫃都有）
   const rows=await fmFetch('TaiwanStockPrice',code,startDate);
   if(rows&&rows.length>=20){
-    const found=STOCKS.find(([c])=>c===code);
+    const found=Object.entries(STOCK_MAP).find(([c])=>c===code);
     name=found?found[1]:(getStockName(code)||rows[0].stock_name||rows[0].name||code);
     // 判斷上市或上櫃
     market=rows[0].Trading_Volume!==undefined?'':'';
