@@ -66,7 +66,7 @@ body{font-family:-apple-system,'SF Pro Text','PingFang TC','Noto Sans TC',sans-s
 .up{color:var(--red)}.dn{color:var(--green)}.fl{color:var(--text2)}
 .dnote{font-size:var(--fs-xs);color:var(--text3);margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border)}
 .scard{border-radius:var(--r);padding:18px;margin-bottom:14px;display:flex;align-items:center;gap:16px}
-.scard-gold{background:linear-gradient(135deg,#3d2e00,#2a1f00);border:1px solid #f5c842;animation:goldPulse 1.5s ease-in-out infinite}
+.scard-gold{background:#fefce8;border:1px solid #f5c842;animation:goldPulse 1.5s ease-in-out infinite}
 .scard-normal{background:var(--bg3);border:0.5px solid var(--border)}
 .rw{position:relative;width:84px;height:84px;flex-shrink:0}
 .rw svg{transform:rotate(-90deg)}
@@ -1057,7 +1057,7 @@ function vcpStatusHtml(vcp, a){
     ${a && a.isLimitUp ? `
     <div style="background:linear-gradient(135deg,#3d1500,#2a0d00);border:1px solid #ff8c00;border-radius:var(--rs);padding:12px 14px;margin-bottom:12px;animation:goldPulse 1s ease-in-out infinite">
       <div style="font-size:var(--fs-sm);font-weight:700;color:#ff8c00;margin-bottom:4px">🔥 漲停爆發！量價強勢</div>
-      <div style="font-size:var(--fs-xs);color:#cc7000;line-height:1.5">今日漲停，明日觀察開盤承接力道<br>開盤不破漲停價 ${f(a.cur,1)} 元 → 可考慮追進<br>開盤跌破漲停價 → 謹慎觀察，不追</div>
+      <div style="font-size:var(--fs-xs);color:#cc7000;line-height:1.5">今日漲停，明日觀察開盤承接力道<br>開盤不破漲停價 ${f(a.cur,1)} 元 → 量能尚可，次佳時段<br>開盤跌破漲停價 → 謹慎觀察，不追</div>
     </div>` : ''}
     ${a && a.breakValidation !== 'none' ? `
     <div style="margin-top:12px">
@@ -1146,7 +1146,7 @@ function entryConfirmHtml(a){
     ${goldBanner}
     <div class="entry-point-box">
       <div class="ep-title">📌 明日參考數值</div>
-      <div style="font-size:var(--fs-sm);color:var(--text2);margin-bottom:6px">股價需站穩</div>
+      <div style="font-size:var(--fs-sm);color:var(--text2);margin-bottom:6px">PIVOT 突破價位</div>
       <div class="ep-price">${f(a.pe,1)} 元以上</div>
       <div class="ep-vol-title">當日成交量需達 <strong style="color:#f0f0f0">${fmtVol(a.reqVol)}</strong>（20日均量 ${fmtVol(Math.round(a.avgV20))} × 1.5倍）</div>
       <div class="ep-vol-item" style="background:var(--bg2);border:none">
@@ -1159,14 +1159,14 @@ function entryConfirmHtml(a){
       <div class="ep-vol-item" style="background:var(--bg2);border:none">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
           <span class="ep-time" style="color:var(--amber)">12:00前</span>
-          <span class="ep-desc" style="color:var(--text2)">可考慮進場</span>
+          <span class="ep-desc" style="color:var(--text2)">量能尚可，次佳時段</span>
         </div>
         <div style="font-size:var(--fs-xs);color:var(--text3)">此時需達 <span style="color:#f0f0f0">${fmtVol(Math.round(a.reqVol*0.55))}</span></div>
       </div>
       <div class="ep-vol-item" style="background:var(--bg2);border:none">
         <div style="display:flex;align-items:center;gap:8px">
           <span class="ep-time" style="color:var(--text3)">12:00後</span>
-          <span class="ep-desc" style="color:var(--text3)">偏弱訊號，謹慎評估</span>
+          <span class="ep-desc" style="color:var(--text3)">量能遞減，謹慎觀察</span>
         </div>
       </div>
     </div>
@@ -1194,7 +1194,21 @@ function rResult(raw,a){
     </div>
     <div class="dnote">📅 資料來源：台灣證交所，收盤後更新</div>
   </div>
-<div class="scard ${a.overall>=70?'scard-gold':'scard-normal'}"><div class="rw" style="width:84px;height:84px;border-radius:50%;background:${col}22;border:3px solid ${col};${a.overall>=70?'box-shadow:0 0 16px '+col+'60;animation:goldPulse 1.5s ease-in-out infinite':''}"><div class="rc"><div class="rnum" style="color:${col}">${a.overall}</div><div class="rden">/100</div></div></div><div class="sinfo"><div class="sverdict" style="color:${col}">${a.verdict}</div><div class="sbreak">加分條件 ${bonusCount}/5 項達標<br>70分以上為強勢候選</div></div></div>
+<div class="scard ${a.overall>=70?'scard-gold':'scard-normal'}">
+  <div class="rw" style="width:84px;height:84px;border-radius:50%;background:${col}22;border:3px solid ${col};${a.overall>=70?'box-shadow:0 0 16px '+col+'60;animation:goldPulse 1.5s ease-in-out infinite':''}">
+    <div class="rc"><div class="rnum" style="color:${col}">${a.overall}</div><div class="rden">/100</div></div>
+  </div>
+  <div class="sinfo" style="flex:1">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div class="sverdict" style="color:${col}">${a.verdict}</div>
+      <span style="padding:2px 10px;border-radius:20px;font-size:var(--fs-xs);font-weight:600;background:var(--rbg);color:var(--red);border:0.5px solid var(--rbr)">RS ${a.rsVal!=null?a.rsVal+'%':'—'}</span>
+    </div>
+    <div class="sbreak">加分條件 ${bonusCount}/5 項達標<br>${a.rsVal!=null?'跑贏大盤 '+a.rsVal+'%':''}</div>
+    <div onclick="tW('${raw.code}','${raw.name}',${a.overall})" style="margin-top:10px;width:100%;padding:8px;background:${inW?'var(--gbg)':'var(--bg3)'};border:0.5px solid ${inW?'var(--gbr)':'var(--border2)'};border-radius:var(--rs);font-size:var(--fs-sm);font-weight:500;color:${inW?'var(--green)':'var(--text2)'};text-align:center;cursor:pointer">
+      ${inW?'✅ 已加入自選清單':'⭐ 加入自選清單'}
+    </div>
+  </div>
+</div>
 <div class="card"><div class="card-head"><div class="card-title">均線系統 — 週線趨勢判斷</div></div><div class="cl">
 <div class="ci">${ih(a.wk_p)}<div class="cb"><div class="cn">① 週20MA — 中期趨勢</div><div class="cd">現價 ${f(a.cur,2)}｜週20MA ${f(a.ma20w,2)}<br>${a.wk_p?'✓ 站上週20MA，趨勢偏多':'✕ 跌破週20MA，趨勢偏空'}</div></div></div>
 <div class="ci">${ih(a.t_100w)}<div class="cb"><div class="cn">② 週100MA — 長期趨勢</div><div class="cd">現價 ${f(a.cur,2)}｜週100MA ${a.ma100w?f(a.ma100w,2):'資料不足'}<br>${a.t_100w===true?'✓ 站上週100MA，長期多頭':a.t_100w===false?'✕ 跌破週100MA，長期偏空':'△ 資料不足'}</div></div></div>
@@ -1346,8 +1360,6 @@ ${entryConfirmHtml(a)}
 <div class="ei"><div class="el">目標一</div><div class="ev">${f(a.tgt1,1)}</div><div class="es2">+10% 獲利</div></div>
 <div class="ei"><div class="el">目標二</div><div class="ev">${f(a.tgt2,1)}</div><div class="es2">+20% 獲利</div></div>
 </div></div>
-<button class="wbtn ${inW?'saved':''}" id="wbtn" onclick="tW('${raw.code}','${raw.name}',${a.overall})">${inW?'★ 已加入自選清單':'☆ 加入自選清單'}</button>
-<button class="pbtn" id="pbtn" onclick="tW('${raw.code}','${raw.name}',${a.overall})">☆ 加入自選清單</button>
 <!-- 大盤乖離、籌碼追蹤、火箭指標 由 renderExtraData 非同步填入 -->
 <div id="extra-data-section"></div>
 <div class="disc">⚠️ 本分析僅供技術面學習參考，不構成投資建議。資料來源：台灣證交所＋櫃買中心。投資有風險，買賣請自行負責。</div>`;
@@ -1408,6 +1420,8 @@ async function renderExtraData(stockCode) {
       fmFetchExtra('TaiwanStockMonthRevenue', stockCode, startDate90),
       fmFetchExtra('TaiwanStockFinancialStatements', stockCode, startDate90),
       fmFetchExtra('TaiwanExchangeRate', 'USD', startDate),
+      fmFetchExtra('TaiwanStockBalanceSheet', stockCode, startDate90),
+      fmFetchExtra('TaiwanStockCashFlowsStatement', stockCode, startDate90),
     ]);
 
     const taiexData   = taiexRes.status==='fulfilled'   ? taiexRes.value   : [];
@@ -1417,6 +1431,13 @@ async function renderExtraData(stockCode) {
     const revData     = revenueRes.status==='fulfilled' ? revenueRes.value : [];
     const finData     = finRes.status==='fulfilled'     ? finRes.value     : [];
     const fxRawData   = fxRes.status==='fulfilled'      ? fxRes.value      : [];
+    // balData和cashData從allSettled結果陣列取（index 7, 8）
+    const _results = await Promise.allSettled([
+      fmFetchExtra('TaiwanStockBalanceSheet', stockCode, startDate90),
+      fmFetchExtra('TaiwanStockCashFlowsStatement', stockCode, startDate90),
+    ]);
+    const balData  = _results[0].status==='fulfilled' ? _results[0].value : [];
+    const cashData = _results[1].status==='fulfilled' ? _results[1].value : [];
 
     const debugHtml = '';
     let mktHtml = '';
@@ -1754,29 +1775,120 @@ async function renderExtraData(stockCode) {
       }
     }
 
+    // ── 新增：ROE（從finData取ReturnOnEquity或自算）──
+    if(finData.length) {
+      const niItems = finData.filter(r=>r.type==='IncomeAfterTaxes').sort((a,b)=>a.date.localeCompare(b.date));
+      const eqItems = balData.filter ? balData.filter(r=>r.type==='EquityAttributableToOwnersOfParent'||r.type==='Equity').sort((a,b)=>a.date.localeCompare(b.date)) : [];
+      if(niItems.length>=3 && eqItems.length>=1) {
+        const roe3 = niItems.slice(-3).map((r,i)=>{
+          const eq = eqItems.find(e=>e.date===r.date)||eqItems[eqItems.length-1];
+          const equity = eq ? parseFloat(eq.value||0) : 0;
+          const ni = parseFloat(r.value||0);
+          return equity>0 ? (ni/equity*100) : null;
+        }).filter(v=>v!==null);
+        if(roe3.length>=2) {
+          const cur = roe3[roe3.length-1];
+          const prev = roe3[roe3.length-2];
+          rocketItems.unshift({
+            label:'ROE 股東權益報酬率', maxScore:22,
+            curLabel:niItems[niItems.length-1].date,
+            curVal:`${cur.toFixed(1)}%`,
+            prevLabel:niItems[niItems.length-2].date,
+            prevVal:`${prev.toFixed(1)}%`,
+            trendUp:cur>=prev,
+            sub: roe3.length>=3 ? `3季均 ${(roe3.reduce((a,b)=>a+b,0)/roe3.length).toFixed(1)}%` : '',
+            ok: cur>=15, score: cur>=20?22:cur>=15?16:cur>=10?10:4
+          });
+        }
+      }
+    }
+
+    // ── 新增：自由現金流 ──
+    if(cashData.length) {
+      const ocfItems = cashData.filter(r=>r.type==='OperatingActivities'||r.type==='CashFlowFromOperatingActivities').sort((a,b)=>a.date.localeCompare(b.date));
+      const capexItems = cashData.filter(r=>r.type==='PurchaseOfPropertyPlantAndEquipment'||r.type==='AcquisitionOfPropertyPlantAndEquipment').sort((a,b)=>a.date.localeCompare(b.date));
+      if(ocfItems.length>=1) {
+        const curOcf = parseFloat(ocfItems[ocfItems.length-1].value||0);
+        const curCapex = capexItems.length ? Math.abs(parseFloat(capexItems[capexItems.length-1].value||0)) : 0;
+        const fcf = curOcf - curCapex;
+        const prevOcf = ocfItems.length>=2 ? parseFloat(ocfItems[ocfItems.length-2].value||0) : 0;
+        const prevCapex = capexItems.length>=2 ? Math.abs(parseFloat(capexItems[capexItems.length-2].value||0)) : 0;
+        const prevFcf = prevOcf - prevCapex;
+        rocketItems.splice(1,0,{
+          label:'自由現金流', maxScore:18,
+          curLabel:ocfItems[ocfItems.length-1].date,
+          curVal:`${fcf>=0?'+':''}${(fcf/1e8).toFixed(1)}億`,
+          prevLabel:ocfItems.length>=2?ocfItems[ocfItems.length-2].date:'',
+          prevVal:ocfItems.length>=2?`${prevFcf>=0?'+':''}${(prevFcf/1e8).toFixed(1)}億`:'',
+          trendUp:fcf>=prevFcf, sub: fcf>0?'現金流為正，財務健康':'現金流為負，留意資本支出',
+          ok: fcf>0, score: fcf>0?(fcf>prevFcf?18:12):4
+        });
+      }
+    }
+
+    // ── 新增：負債比 ──
+    if(balData.length) {
+      const debtItems = balData.filter ? balData.filter(r=>r.type==='LiabilitiesAndStockholdersEquity'||r.type==='TotalLiabilities').sort((a,b)=>a.date.localeCompare(b.date)) : [];
+      const eqItems2 = balData.filter ? balData.filter(r=>r.type==='EquityAttributableToOwnersOfParent'||r.type==='Equity').sort((a,b)=>a.date.localeCompare(b.date)) : [];
+      const assetItems = balData.filter ? balData.filter(r=>r.type==='Assets').sort((a,b)=>a.date.localeCompare(b.date)) : [];
+      if(debtItems.length>=1 && assetItems.length>=1) {
+        const curDebt = parseFloat(debtItems[debtItems.length-1].value||0);
+        const curAsset = parseFloat(assetItems[assetItems.length-1].value||0);
+        const debtRatio = curAsset>0 ? curDebt/curAsset*100 : null;
+        if(debtRatio!==null) {
+          const prevDebt = debtItems.length>=2 ? parseFloat(debtItems[debtItems.length-2].value||0) : curDebt;
+          const prevAsset = assetItems.length>=2 ? parseFloat(assetItems[assetItems.length-2].value||0) : curAsset;
+          const prevRatio = prevAsset>0 ? prevDebt/prevAsset*100 : debtRatio;
+          rocketItems.push({
+            label:'負債比', maxScore:13,
+            curLabel:debtItems[debtItems.length-1].date,
+            curVal:`${debtRatio.toFixed(1)}%`,
+            prevLabel:debtItems.length>=2?debtItems[debtItems.length-2].date:'',
+            prevVal:debtItems.length>=2?`${prevRatio.toFixed(1)}%`:'',
+            trendUp:debtRatio<=prevRatio,
+            sub:debtRatio<40?'財務結構健全':debtRatio<60?'負債比適中':'負債偏高，留意',
+            ok:debtRatio<60, score:debtRatio<30?13:debtRatio<50?9:debtRatio<70?5:2
+          });
+        }
+      }
+    }
+
+    // 計算總分（新版100分制）
+    const rocketTotalScore = rocketItems.reduce((s,r)=>s+(r.score||0),0);
+    const rocketMaxPossible = rocketItems.reduce((s,r)=>s+(r.maxScore||10),0)||100;
+    const scoreNorm = rocketMaxPossible>0 ? Math.round(rocketTotalScore/rocketMaxPossible*100) : 0;
     const okCount = rocketItems.filter(r=>r.ok).length;
     const total = rocketItems.length||4;
 
     const rocketHtml = `
-      <div class="new-card">
-        <div class="new-card-title">
-          🚀 火箭指標
-          <span class="new-card-badge" style="${okCount>=3?'':'background:var(--abg);color:var(--amber);border-color:var(--abr)'}">${okCount}/${total} ${okCount>=3?'基本面強勁':okCount>=2?'基本面尚可':'基本面偏弱'}</span>
+      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="font-size:var(--fs-xs);font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">火箭指標</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:40px;height:40px;border-radius:50%;background:${scoreNorm>=70?'var(--abg)':scoreNorm>=40?'var(--rbg)':'var(--bg3)'};border:2px solid ${scoreNorm>=70?'var(--amber)':scoreNorm>=40?'var(--red)':'var(--border)'};display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div style="font-size:var(--fs-md);font-weight:700;color:${scoreNorm>=70?'var(--amber)':scoreNorm>=40?'var(--red)':'var(--text3)'}">${scoreNorm}</div>
+            </div>
+            <div>
+              <div style="font-size:var(--fs-sm);font-weight:600;color:var(--text)">${scoreNorm>=80?'基本面強勁':scoreNorm>=60?'基本面良好':scoreNorm>=40?'基本面普通':'基本面偏弱'}</div>
+              <div style="font-size:var(--fs-xs);color:var(--text3)">${okCount}/${total} 項達標</div>
+            </div>
+          </div>
         </div>
         ${rocketItems.length ? rocketItems.map(r=>`
-          <div class="new-row" style="align-items:flex-start;padding:9px 0">
-            <span class="new-row-label" style="padding-top:2px">${r.label}</span>
-            <div style="text-align:right">
-              <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
-                <span style="font-size:var(--fs-xs);color:var(--text3)">${r.curLabel}</span>
-                <span class="new-row-val" style="color:${r.ok?'var(--red)':'var(--green)'}">${r.curVal}</span>
-                <span style="font-size:13px;color:${r.trendUp?'var(--red)':'var(--green)'}">${r.trendUp?'▲':'▼'}</span>
-              </div>
-              ${r.prevLabel?`<div style="font-size:var(--fs-xs);color:var(--text3);margin-top:3px">前期 ${r.prevLabel}：${r.prevVal}</div>`:''}
-              ${r.sub?`<div style="font-size:var(--fs-xs);color:var(--text3);margin-top:1px">${r.sub}</div>`:''}
+          <div style="padding:10px 0;border-bottom:0.5px solid var(--border2)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <div style="font-size:var(--fs-sm);font-weight:500;color:var(--text)">${r.label}</div>
+              <span style="padding:1px 8px;border-radius:10px;font-size:var(--fs-xs);font-weight:600;${r.ok?'background:var(--rbg);color:var(--red)':'background:var(--abg);color:var(--amber)'}">${r.score||0}/${r.maxScore||10}</span>
             </div>
-          </div>`).join('') :
-          `<div style="color:var(--text3);font-size:var(--fs-sm);text-align:center;padding:10px 0">財報資料載入中或暫無資料</div>`
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+              <span style="font-size:var(--fs-xs);color:var(--text3)">${r.curLabel}</span>
+              <span style="font-size:var(--fs-lg);font-weight:600;color:${r.ok?'var(--red)':'var(--green)'}">${r.curVal}</span>
+              <span style="font-size:13px;color:${r.trendUp?'var(--red)':'var(--green)'}">${r.trendUp?'▲':'▼'}</span>
+            </div>
+            ${r.prevLabel?`<div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:2px">前期 ${r.prevLabel}：${r.prevVal}</div>`:''}
+            ${r.sub?`<span style="font-size:var(--fs-xs);padding:1px 8px;border-radius:6px;${r.ok?'background:var(--gbg);color:var(--green)':'background:var(--abg);color:var(--amber)'}">${r.sub}</span>`:''}
+          </div>`).join('').replace(/border-bottom:0.5px solid var\(--border2\)(?=\s*<\/div>\s*`\s*\)\.join)/, 'border-bottom:none') :
+          `<div style="color:var(--text3);font-size:var(--fs-sm);text-align:center;padding:12px 0">財報資料載入中或暫無資料</div>`
         }
       </div>`;
 
