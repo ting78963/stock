@@ -90,14 +90,14 @@ body{font-family:-apple-system,'SF Pro Text','PingFang TC','Noto Sans TC',sans-s
 .cn{font-size:var(--fs-md);font-weight:500;margin-bottom:3px}
 .cd{font-size:var(--fs-sm);color:var(--text2);line-height:1.6}
 .vcp-status{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--rs);margin-bottom:14px;font-size:var(--fs-md);font-weight:600}
-.gold-alert{background:linear-gradient(135deg,#3d2e00,#2a1f00);border:1px solid #f5c842;border-radius:var(--rs);padding:12px 14px;margin-bottom:10px;animation:goldPulse 1.5s ease-in-out infinite}
+.gold-alert{background:#fefce8;border:1px solid #f5c842;border-radius:var(--rs);padding:12px 14px;margin-bottom:10px;animation:goldPulse 1.5s ease-in-out infinite}
 .gold-score{background:linear-gradient(135deg,#3d2e00,#2a1f00)!important;color:#f5c842!important;border:1.5px solid #f5c842!important;animation:goldPulse 1.5s ease-in-out infinite}
 @keyframes scorePulse{0%,100%{text-shadow:0 0 6px #f5c84280}50%{text-shadow:0 0 18px #f5c842cc}}
 @keyframes flameDance{0%,100%{transform:scaleY(1) rotate(-1deg)}25%{transform:scaleY(1.08) rotate(1deg)}50%{transform:scaleY(.95) rotate(-2deg)}75%{transform:scaleY(1.05) rotate(2deg)}}
 @keyframes flameGlow{0%,100%{opacity:1}50%{opacity:.7}}
 @keyframes goldPulse{0%,100%{box-shadow:0 0 6px #f5c84280;border-color:#f5c842}50%{box-shadow:0 0 18px #f5c842cc;border-color:#ffe066}}
-.gold-title{font-size:var(--fs-sm);font-weight:700;color:#f5c842;margin-bottom:4px}
-.gold-desc{font-size:var(--fs-xs);color:#c9a227;line-height:1.6}
+.gold-title{font-size:var(--fs-sm);font-weight:700;color:#92400e;margin-bottom:4px}
+.gold-desc{font-size:var(--fs-xs);color:#b45309;line-height:1.6}
 .vcp-stages{display:flex;align-items:center;gap:6px;margin-bottom:10px}
 .vcp-stage{flex:1;text-align:center}
 .vcp-stage-label{font-size:var(--fs-xs);color:var(--text3);margin-bottom:4px}
@@ -985,7 +985,7 @@ function vcpStatusHtml(vcp, a){
     'just_broke':{
       badge:'🔴 VCP 突破爆發！可追進',
       badgeBg:'var(--red)',badgeColor:'#fff',borderColor:'var(--red)',
-      vol:'🔴 爆量（進場訊號）',volColor:'var(--red)',
+      vol:'🔴 爆量突破',volColor:'var(--red)',
       atr:'🔴 爆發擴張',atrColor:'var(--red)',
       note:`突破後第 ${vcp.breakDays} 個交易日，仍可追進`
     },
@@ -1056,7 +1056,7 @@ function vcpStatusHtml(vcp, a){
     </div>
     ${a && a.isLimitUp ? `
     <div style="background:linear-gradient(135deg,#3d1500,#2a0d00);border:1px solid #ff8c00;border-radius:var(--rs);padding:12px 14px;margin-bottom:12px;animation:goldPulse 1s ease-in-out infinite">
-      <div style="font-size:var(--fs-sm);font-weight:700;color:#ff8c00;margin-bottom:4px">🔥 漲停爆發！最強進場訊號</div>
+      <div style="font-size:var(--fs-sm);font-weight:700;color:#ff8c00;margin-bottom:4px">🔥 漲停爆發！量價強勢</div>
       <div style="font-size:var(--fs-xs);color:#cc7000;line-height:1.5">今日漲停，明日觀察開盤承接力道<br>開盤不破漲停價 ${f(a.cur,1)} 元 → 可考慮追進<br>開盤跌破漲停價 → 謹慎觀察，不追</div>
     </div>` : ''}
     ${a && a.breakValidation !== 'none' ? `
@@ -1091,7 +1091,7 @@ function entryConfirmHtml(a){
   const vcpP = a.vcp.pivot || a.pivot20;
   const vcpPe = vcpP * 1.005;
   let ec2text,ec2icon;
-  if(a.ec2vcpStatus==='broke'){ec2text=`✓ 收盤 ${f(a.cur,1)} 突破 VCP pivot ${f(vcpP,1)}，進場訊號觸發`;ec2icon=true;}
+  if(a.ec2vcpStatus==='broke'){ec2text=`✓ 收盤 ${f(a.cur,1)} 突破 VCP pivot ${f(vcpP,1)}，PIVOT 突破確認`;ec2icon=true;}
   else if(a.ec2vcpStatus==='at_high'){ec2text=`收盤 ${f(a.cur,1)} 貼近 VCP pivot ${f(vcpP,1)}（差 ${f(vcpP-a.cur,1)} 元），等待站穩 ${f(vcpPe,1)} 以上`;ec2icon='warn';}
   else{ec2text=`✕ 現價 ${f(a.cur,1)} 距 VCP pivot ${f(vcpP,1)} 差 ${f(vcpP-a.cur,1)} 元，尚未到達進場點`;ec2icon=false;}
 
@@ -1104,7 +1104,7 @@ function entryConfirmHtml(a){
   const hasWarn=items.some(i=>i.ok==='warn');
   const allPass=ec3Count===3;
   const cls=allPass?'ec-ready':ec3Count>=1||hasWarn?'ec-partial':'ec-not';
-  const title=allPass?'✅ 進場條件全部達標':ec3Count>=1||hasWarn?`⏳ 進場條件達標 ${ec3Count}/3`:'⛔ 進場條件尚未達標';
+  const title=allPass?'✅ 三項條件全部達標':ec3Count>=1||hasWarn?`⏳ 條件達標 ${ec3Count}/3`:'⛔ 條件尚未達標';
   const verdict=allPass?'三項條件全部達標':ec3Count>=1?'部分條件達標':'條件未達標';
 
   // 有效突破金色橫幅
@@ -1152,7 +1152,7 @@ function entryConfirmHtml(a){
       <div class="ep-vol-item" style="background:var(--bg2);border:none">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
           <span class="ep-time" style="color:var(--red)">10:00前</span>
-          <span class="ep-desc" style="color:var(--text2)">最強訊號，可積極進場</span>
+          <span class="ep-desc" style="color:var(--text2)">量價齊揚，最強訊號</span>
         </div>
         <div style="font-size:var(--fs-xs);color:var(--text3)">此時需達 <span style="color:#f0f0f0">${fmtVol(Math.round(a.reqVol*0.18))}</span></div>
       </div>
@@ -1276,7 +1276,7 @@ ${(()=>{
         oninput="calcRisk(${f(a.ma20w,2)})">
     </div>
   </div>
-  <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:8px">20週均線：<strong style="color:var(--text)">${f(a.ma20w,2)} 元</strong>（停損基準）</div>
+  <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:8px">20週均線：<strong style="color:var(--text)">${f(a.ma20w,2)} 元</strong>（支撐參考）</div>
   <div id="riskResult" style="display:none;background:var(--bg2);border-radius:var(--rs);padding:12px 14px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div>
@@ -1341,8 +1341,8 @@ ${[{p:a.t1,n:'T1 現價在150/200日均線之上',d:`MA150 ${f(a.ma150,1)}｜MA2
 </div></div>
 ${entryConfirmHtml(a)}
 <div class="ec2"><div class="card-head"><div class="card-title">買賣價位</div></div><div class="eg">
-<div class="ei"><div class="el">建議買入價</div><div class="ev" style="color:var(--green)">${f(a.pe,1)}</div><div class="es2">樞紐點 ${f(a.pivot20,1)}<br>突破+0.5%確認</div></div>
-<div class="ei"><div class="el">止損價位</div><div class="ev" style="color:var(--red)">${f(a.stop,1)}</div><div class="es2">進場後下跌7%<br>嚴格執行</div></div>
+<div class="ei"><div class="el">PIVOT 突破價位</div><div class="ev" style="color:var(--green)">${f(a.pe,1)}</div><div class="es2">突破確認價<br>+0.5% 進場</div></div>
+<div class="ei"><div class="el">週20MA 大趨勢支撐</div><div class="ev" style="color:var(--text2)">${f(a.ma20w,1)}</div><div class="es2">最終防線參考</div></div>
 <div class="ei"><div class="el">目標一</div><div class="ev">${f(a.tgt1,1)}</div><div class="es2">+10% 獲利</div></div>
 <div class="ei"><div class="el">目標二</div><div class="ev">${f(a.tgt2,1)}</div><div class="es2">+20% 獲利</div></div>
 </div></div>
@@ -1438,7 +1438,7 @@ async function renderExtraData(stockCode) {
       const cur = closes[closes.length-1];
       const ma60 = closes.slice(-60).reduce((a,b)=>a+b,0)/60;
       const dev = ((cur-ma60)/ma60*100);
-      if(dev >= 14) { devScore=2; devText=`+${dev.toFixed(1)}% ⚠️ 謹慎進場`; devColor='var(--amber)'; }
+      if(dev >= 14) { devScore=2; devText=`+${dev.toFixed(1)}% ⚠️ 乖離偏大，留意`; devColor='var(--amber)'; }
       else { devScore=0; devText=`${dev>=0?'+':''}${dev.toFixed(1)}% ✅ 正常`; devColor='var(--text)'; }
     }
 
@@ -1449,7 +1449,7 @@ async function renderExtraData(stockCode) {
       fxRate = last5[last5.length-1].rate;
       const fxPrev = last5[0].rate;
       fxChg = (fxRate - fxPrev) / fxPrev * 100; // 正=台幣貶值 負=台幣升值
-      if(fxChg > 2) { fxScore=2; fxText=`${fxRate.toFixed(2)} ⚠️ 台幣急貶${fxChg.toFixed(1)}%，暫緩進場`; fxColor='var(--green)'; }
+      if(fxChg > 2) { fxScore=2; fxText=`${fxRate.toFixed(2)} ⚠️ 台幣急貶${fxChg.toFixed(1)}%，留意外資動向`; fxColor='var(--green)'; }
       else if(fxChg > 0.5) { fxScore=1; fxText=`${fxRate.toFixed(2)} ⚠️ 台幣貶值${fxChg.toFixed(1)}%，謹慎`; fxColor='var(--amber)'; }
       else if(fxChg < -0.5) { fxScore=0; fxText=`${fxRate.toFixed(2)} ✅ 台幣升值${Math.abs(fxChg).toFixed(1)}%，有利`; fxColor='var(--text)'; }
       else { fxScore=0; fxText=`${fxRate.toFixed(2)} ✅ 匯率穩定`; fxColor='var(--text)'; }
@@ -1473,19 +1473,19 @@ async function renderExtraData(stockCode) {
     const totalScore = devScore + fxScore + instScore;
     let suggestion='', sugColor='', sugBg='';
     if(totalScore === 0) {
-      suggestion='三項條件全部正常，明日積極進場！符合VCP突破+籌碼面支撐個股可大膽進場';
+      suggestion='三項條件全部正常，市場環境良好';
       sugColor='var(--red)'; sugBg='var(--rbg)';
     } else if(totalScore === 1) {
-      suggestion='大致正常，明日可正常進場。優先選擇火箭指標3/4以上且外資買超個股';
+      suggestion='大致正常，優先關注火箭指標高且外資買超個股';
       sugColor='var(--red)'; sugBg='var(--rbg)';
     } else if(totalScore === 2) {
-      suggestion='部分條件偏弱，明日謹慎進場。嚴格篩選，只選最強標的，降低部位';
+      suggestion='部分條件偏弱，建議嚴格篩選最強標的';
       sugColor='var(--amber)'; sugBg='var(--abg)';
     } else if(totalScore === 3) {
-      suggestion='多項條件不佳，明日暫緩進場。等待訊號改善再行動';
+      suggestion='多項條件不佳，建議等待訊號改善';
       sugColor='var(--amber)'; sugBg='var(--abg)';
     } else {
-      suggestion='條件全面偏弱，明日不建議進場。保持觀望，等待市場穩定';
+      suggestion='條件全面偏弱，建議保持觀望';
       sugColor='var(--green)'; sugBg='var(--gbg)';
     }
 
@@ -1803,7 +1803,7 @@ function openPosModal(sym,name,entryPrice,stop,tgt1,tgt2){
   document.getElementById('pos-modal-sub').textContent=`${name}（${sym}）→ 資金流向APP`;
   const ep=document.getElementById('pos-entry');
   ep.value=entryPrice?entryPrice.toFixed(1):'';
-  document.getElementById('pos-hint-stop').textContent=entryPrice?`止損價：${(entryPrice*0.90).toFixed(1)} 元（-10%）`:'';
+  document.getElementById('pos-hint-stop').textContent=entryPrice?`停損參考：${(entryPrice*0.90).toFixed(1)} 元（-10%）`:'';
   document.getElementById('pos-modal').classList.remove('hidden');
 }
 
