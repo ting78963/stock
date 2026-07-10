@@ -651,15 +651,12 @@ tiEl.addEventListener('keydown',e=>{if(e.key==='Enter'){acEl.style.display='none
 document.addEventListener('click',e=>{if(!e.target.closest('.sr'))acEl.style.display='none';});
 function acSel(c){tiEl.value=c;acEl.style.display='none';doSearch();}
 function go(p){
-  document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
-  document.querySelectorAll('.nb').forEach(e=>e.classList.remove('active'));
-  document.getElementById('page-'+p).classList.add('active');
-  document.getElementById('nav-'+p).classList.add('active');
-  if(p==='watch'){rW();scanWatchAlert();}
-  if(p==='history')rH();
-  if(p==='rs')rRS();
+  // legacy: redirect to new showPage
+  const pageMap={'search':'stock','watch':'watch','settings':'settings','rs':'stock','history':'stock'};
+  const navMap={'search':'nav-stock','watch':'nav-watch','settings':'nav-settings','rs':'nav-stock','history':'nav-stock'};
+  showPage(pageMap[p]||p, null, navMap[p]||'nav-'+p);
 }
-function qs(s){tiEl.value=s;acEl.style.display='none';doSearch();}
+function qs(s){const ti=document.getElementById('ti');if(ti)ti.value=s;const ac=document.getElementById('ac');if(ac)ac.style.display='none';doSearch();}
 
 
 // ── FinMind API ──
@@ -1845,7 +1842,7 @@ function rH(){const h=LS.get('hist'),area=document.getElementById('ha');if(!h.le
 function clrH(){if(confirm('確定清除歷史紀錄？')){LS.set('hist',[]);rH();}}
 
 // 從資金流向APP跳轉過來時，自動載入股票代號
-window.addEventListener('load',()=>{
+window.addEventListener('load_disabled',()=>{
   const p=new URLSearchParams(window.location.search).get('stock');
   if(p){document.getElementById('ti').value=p;doSearch();}
 });
@@ -2750,7 +2747,8 @@ function loadHomePage(){
 
 window.addEventListener('load', ()=>{
   showPage('home',null,'nav-home');
-  loadHomePage();
+  // 載入自選清單
+  try{ if(typeof rW==='function') {} } catch(e){}
 });
 
 </script>
