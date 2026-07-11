@@ -235,8 +235,8 @@ html.font-xl{font-size:19px}
 .tab-item{padding:10px 14px;font-size:13px;color:var(--text3);border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer;font-weight:500;transition:color .15s}
 .tab-item.active{color:var(--wine);border-color:var(--wine)}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:0}
-.nav-btn svg{stroke:var(--text4)}
-.nav-btn span{font-size:10px;color:var(--text4)}
+.nav-btn svg{stroke:#bbb}
+.nav-btn span{font-size:10px;color:#bbb}
 .nav-btn.active svg{stroke:var(--wine)}
 .nav-btn.active span{color:var(--wine)}
 .sec-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
@@ -1137,7 +1137,7 @@ function entryConfirmHtml(a){
   const vcpStyle = vcpStatus==='just_broke'||vcpStatus==='trending_up'
     ? 'background:#f5c842;border:1px solid #e6b800;color:#92400e;animation:goldPulse 1.5s ease-in-out infinite'
     : vcpStatus==='final_contraction'
-    ? 'background:#1a2000;border:0.5px solid #8fa000;color:#b8cc00'
+    ? 'background:#f5c842;border:1px solid #e6b800;color:#fff;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.35);animation:goldPulse 1.5s ease-in-out infinite'
     : vcpActive
     ? 'background:var(--gbg);border:0.5px solid var(--gbr);color:var(--green)'
     : 'background:var(--bg2);border:0.5px solid var(--border);color:var(--text3)';
@@ -1227,7 +1227,8 @@ function rResult(raw,a){
   </div>
 <div class="scard ${a.overall>=70?'scard-gold':'scard-normal'}"><div class="rw" style="width:84px;height:84px;border-radius:50%;background:${a.overall>=70?'#f5c842':col+'22'};border:${a.overall>=70?'3px solid #fff':'3px solid '+col};${a.overall>=70?'animation:goldBreath 2s ease-in-out infinite':'animation:breathe 2s ease-in-out infinite'}"><div class="rc"><div class="rnum" style="color:${a.overall>=70?'#fff':col};${a.overall>=70?'text-shadow:0 1px 4px rgba(0,0,0,0.3)':''}">${a.overall}</div><div class="rden" style="color:${a.overall>=70?'rgba(255,255,255,0.85)':''}">/100</div></div></div><div class="sinfo"><div class="sverdict" style="color:${a.overall>=70?'#fff':col};${a.overall>=70?'text-shadow:0 2px 6px rgba(0,0,0,0.35)':''}">${a.verdict}</div><div class="sbreak" style="${a.overall>=70?'color:rgba(255,255,255,0.9);text-shadow:0 1px 4px rgba(0,0,0,0.3)':''}">加分條件 ${bonusCount}/5 項達標<br>70分以上為強勢候選</div>
 </div></div>
-<div class="card"><div class="card-head"><div class="card-title">均線系統 — 週線趨勢判斷</div></div><div class="cl">
+<div class="card"><div class="card-head"><div class="card-title">均線系統 — 週線趨勢判斷</div><div class="ri-btn" data-info="weekly" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div>
+<div class="ri-box" data-for="weekly" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">週線均線系統判斷中長期趨勢方向。週20MA 為中期趨勢基準，站上代表多頭走勢；週100MA 為長期趨勢，站上代表牛市格局。兩條均線出現黃金交叉是強力多頭訊號。</div><div class="cl">
 <div class="ci">${ih(a.wk_p)}<div class="cb"><div class="cn">① 週20MA — 中期趨勢</div><div class="cd">現價 ${f(a.cur,2)}｜週20MA ${f(a.ma20w,2)}<br>${a.wk_p?'✓ 站上週20MA，趨勢偏多':'✕ 跌破週20MA，趨勢偏空'}</div></div></div>
 <div class="ci">${ih(a.t_100w)}<div class="cb"><div class="cn">② 週100MA — 長期趨勢</div><div class="cd">現價 ${f(a.cur,2)}｜週100MA ${a.ma100w?f(a.ma100w,2):'資料不足'}<br>${a.t_100w===true?'✓ 站上週100MA，長期多頭':a.t_100w===false?'✕ 跌破週100MA，長期偏空':'△ 資料不足'}</div></div></div>
 ${(()=>{
@@ -1244,7 +1245,8 @@ ${(()=>{
 })()}
 </div></div>
 
-<div class="card"><div class="card-head"><div class="card-title">均線系統 — 日線近期強弱</div></div><div class="cl">
+<div class="card"><div class="card-head"><div class="card-title">均線系統 — 日線近期強弱</div><div class="ri-btn" data-info="daily" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div>
+<div class="ri-box" data-for="daily" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">日線均線系統判斷近期強弱。日20MA 為短期趨勢，日100MA 為中期支撐。兩條均線出現黃金交叉代表短中期動能轉強。</div><div class="cl">
 <div class="ci">${ih(a.dy_p)}<div class="cb"><div class="cn">③ 日20MA — 短期動能</div><div class="cd">現價 ${f(a.cur,2)}｜日20MA ${f(a.ma20d,2)}<br>${a.dy_p?'✓ 站上日20MA，短期偏多':'✕ 跌破日20MA，短期偏空'}</div></div></div>
 <div class="ci">${ih(a.dy100_p)}<div class="cb"><div class="cn">④ 日100MA — 中期支撐</div><div class="cd">現價 ${f(a.cur,2)}｜日100MA ${f(a.ma100d,2)}<br>${a.dy100_p?'✓ 站上日100MA，中期支撐穩固':'✕ 跌破日100MA，中期支撐轉弱'}</div></div></div>
 ${(()=>{
@@ -1285,13 +1287,15 @@ ${(()=>{
   return html;
 })()}
 </div></div>
-<div class="card"><div class="card-head"><div class="card-title">四大法寶 — 型態與量能</div></div><div class="cl">
+<div class="card"><div class="card-head"><div class="card-title">四大法寶 — 型態與量能</div><div class="ri-btn" data-info="volume" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div>
+<div class="ri-box" data-for="volume" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">成交量是主力動向的指標。量比 ≥1.5x 為明顯爆量，代表主力積極介入；1.1-1.5x 為放量觀察；<1.1x 代表量能低迷。VCP突破時需要有效放量才算成立。</div><div class="cl">
 <div class="ci">${ih(a.pt_p)}<div class="cb"><div class="cn">③ 型態判斷</div><div class="cd">偵測型態：${a.pat}<br>${a.pat==='W底'?'✓ W底型態，偏多':a.pat==='M頭'?'✕ M頭型態，偏空避開':'△ 盤整中，等待突破方向'}</div></div></div>
 <div class="ci">${ih(a.vl_p)}<div class="cb"><div class="cn">④ 成交量 — 有無大人</div><div class="cd">量比 ${f(a.volR,2)}x（今日 <span style="color:var(--red)">${fmtVol(a.curVol)}</span> vs 5日均量 ${fmtVol(a.avgV5)}）<br>${a.vl_p===true?'✓ 明顯爆量（≥1.5x），主力進駐':a.vl_p==='warn'?'△ 量能放大（1.1~1.5x），持續觀察':'✕ 量能低迷，主力未介入'}</div></div></div>
 </div></div>
 
 
-<div class="card"><div class="card-head"><div class="card-title">VCP波動收縮系統</div></div>${vcpStatusHtml(a.vcp, a)}<div class="cl" style="margin-top:12px">
+<div class="card"><div class="card-head"><div class="card-title">VCP波動收縮系統</div><div class="ri-btn" data-info="vcp" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div>
+<div class="ri-box" data-for="vcp" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">VCP（Volatility Contraction Pattern）是 Mark Minervini 的核心型態。股價在上漲後進行一系列幅度越來越小的整理，成交量遞減，最終在低量中突破創新高。這是機構悄悄吸籌的訊號。</div>${vcpStatusHtml(a.vcp, a)}<div class="cl" style="margin-top:12px">
 <div class="ci">${(()=>{
   const vs=a.vcp.status;
   if(vs==='just_broke'||vs==='trending_up'){
@@ -1329,12 +1333,14 @@ ${(()=>{
 })()}</div>
 <div class="ci">${ih(a.cur>(a.ma20d||0)&&a.cur>(a.ma60||0))}<div class="cb"><div class="cn">均線支撐確認</div><div class="cd">日線20MA ${f(a.ma20d,1)}｜60MA ${f(a.ma60,1)}<br>${a.cur>(a.ma20d||0)&&a.cur>(a.ma60||0)?'✓ 均線支撐良好':'✕ 均線支撐待確認'}</div></div></div>
 </div></div>
-<div class="card"><div class="card-head"><div class="card-title">SEPA動能系統（加分）</div><div class="card-badge" style="background:${sc(bonusCount>=3?70:40)}18;color:${sc(bonusCount>=3?70:40)}">${bonusCount}/5</div></div><div class="cl">
+<div class="card"><div class="card-head"><div class="card-title">SEPA動能系統（加分）</div><div style="display:flex;align-items:center;gap:8px"><div class="card-badge" style="background:${sc(bonusCount>=3?70:40)}18;color:${sc(bonusCount>=3?70:40)}">${bonusCount}/5</div><div class="ri-btn" data-info="ec" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div></div>
+<div class="ri-box" data-for="ec" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">SEPA 為 Minervini 趨勢樣板加分條件，共5項。T1-T3 確認長期均線多頭排列，T6 確認脫離底部區（距52週低點+25%），T7 確認相對大盤強勢。達標越多，趨勢品質越高。</div><div class="cl">
 ${[{p:a.t1,n:'T1 現價在150/200日均線之上',d:`MA150 ${f(a.ma150,1)}｜MA200 ${f(a.ma200,1)}`},{p:a.t2,n:'T2 150日均線 > 200日均線',d:`MA150 ${f(a.ma150,1)} vs MA200 ${f(a.ma200,1)}`},{p:a.t3,n:'T3 200日均線持續上揚',d:`MA200現 ${f(a.ma200,1)} vs 4週前 ${f(a.ma200_4w,1)}`},{p:a.t6,n:'T6 距52週低點漲幅超過25%',d:`距低點 ${p(a.fromLo)}`},{p:a.t7,n:'T7 相對強度RS（對比加權指數）',d:a.rsVal!=null?`超額報酬 ${a.rsVal>=0?'+':''}${a.rsVal}%（≥+15%為強勢）`:'資料計算中'}].map(c=>`<div class="ci">${ih(c.p)}<div class="cb"><div class="cn">${c.n}</div><div class="cd">${c.d}</div></div></div>`).join('')}
 </div></div>
 ${entryConfirmHtml(a)}
 ${['contracting','final_contraction','just_broke'].includes(a.vcp.status)?`
-<div class="ec2"><div class="card-head"><div class="card-title">VCP 價位參考</div></div><div class="eg">
+<div class="ec2"><div class="card-head"><div class="card-title">VCP 價位參考</div><div class="ri-btn" data-info="ep" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div>
+<div class="ri-box" data-for="ep" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">PIVOT 突破價位為 VCP 整理型態的突破點。突破後需觀察是否有效放量確認。週20MA 為大趨勢支撐，是最終防線參考。技術參考位僅供參考，非投資建議。</div><div class="eg">
 <div class="ei"><div class="el">PIVOT 突破點</div><div class="ev" style="color:var(--red);font-weight:700">${f(a.pe,1)}</div><div class="es2">突破後觀察量能</div></div>
 <div class="ei"><div class="el">週20MA 大趨勢支撐</div><div class="ev" style="color:var(--text2)">${f(a.ma20w,1)}</div><div class="es2">最終防線參考</div></div>
 <div class="ei"><div class="el">+10% 技術參考位</div><div class="ev" style="color:var(--text)">${f(a.tgt1,1)}</div><div class="es2">技術面參考</div></div>
@@ -1909,16 +1915,18 @@ async function renderExtraData(stockCode, a) {
       <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div style="display:flex;align-items:center;gap:6px">
-        <span style="display:inline-block;animation:rocketUp 1.8s ease-in-out infinite">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C12 2 8 6 8 13h8c0-7-4-11-4-11z"/><path d="M8 13v3l4 3 4-3v-3"/><path d="M9 17l-2 3M15 17l2 3"/></svg>
-        </span>
-        <span style="font-size:var(--fs-xs);font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">火箭指標</span>
-      </div>
+            <span style="display:inline-block;animation:rocketUp 1.8s ease-in-out infinite">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C12 2 8 6 8 13h8c0-7-4-11-4-11z"/><path d="M8 13v3l4 3 4-3v-3"/><path d="M9 17l-2 3M15 17l2 3"/></svg>
+            </span>
+            <span style="font-size:var(--fs-xs);font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">火箭指標</span>
+          </div>
           <div style="display:flex;align-items:center;gap:8px">
             <div style="font-size:var(--fs-sm);font-weight:600;color:var(--text)">${rocketLabel}</div>
             <div style="font-size:var(--fs-xs);color:var(--text3)">${okCount}/${total} 項達標</div>
+            <div class="ri-btn" data-info="rocket" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div>
           </div>
         </div>
+        <div class="ri-box" data-for="rocket" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">火箭指標評估公司基本面強度，共8項指標100分制。80分以上基本面強勁，大跌可抱；60-79分良好；60分以下偏弱。波段交易者以月營收YoY、稅後淨利YoY為重點觀察項目。<div style="height:0.5px;background:var(--border2);margin:8px 0"></div>${Object.entries(_RI).map(([k,v])=>`<div style="margin-bottom:6px"><b style="color:var(--text)">${k}</b>｜${v}</div>`).join('')}</div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="rocketGrid"></div>
       </div>`;
@@ -1937,12 +1945,8 @@ async function renderExtraData(stockCode, a) {
         card.innerHTML=`
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
             <div style="font-size:11px;color:var(--text3)">${r.label}</div>
-            <div style="display:flex;align-items:center;gap:4px">
-              <span style="padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600;${r.ok?'background:var(--rbg);color:var(--red)':'background:var(--abg);color:var(--amber)'}">${r.score||0}/${r.maxScore||10}</span>
-              <span class="ri-btn" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3)">ⓘ</span>
-            </div>
+            <span style="padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600;${r.ok?'background:var(--rbg);color:var(--red)':'background:var(--abg);color:var(--amber)'}">${r.score||0}/${r.maxScore||10}</span>
           </div>
-          <div class="ri-box" style="display:none;font-size:11px;color:var(--text2);background:var(--bg2);border-radius:6px;padding:8px;margin-bottom:6px;line-height:1.6">${_RI[r.label]||''}</div>
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
             <span style="font-size:1rem;font-weight:600;color:${r.ok?'var(--red)':'var(--green)'}">${r.curVal}</span>
             <span style="font-size:11px;color:${r.trendUp?'var(--red)':'var(--green)'}">${r.trendUp?'▲':'▼'}</span>
@@ -1951,11 +1955,6 @@ async function renderExtraData(stockCode, a) {
           ${r.extra?`<div style="font-size:11px;color:var(--text3);margin-bottom:2px">${r.extra}</div>`:''}
           ${r.sub?`<div style="font-size:11px;color:${r.ok?'var(--green)':'var(--amber)'}">${r.sub}</div>`:''}
         `;
-        const btn=card.querySelector('.ri-btn');
-        const box=card.querySelector('.ri-box');
-        btn.addEventListener('click',()=>{
-          box.style.display=box.style.display==='block'?'none':'block';
-        });
         grid.appendChild(card);
       });
     },200);
@@ -2044,7 +2043,11 @@ async function renderExtraData(stockCode, a) {
     const ma10dV = a.ma20dArr&&a.ma20dArr.length>=10 ? a.ma20dArr.slice(-10).reduce((s,v)=>s+v,0)/10 : 0;
     const riskHtml = `
       <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
-        <div style="font-size:var(--fs-xs);font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">風險計算工具</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:var(--fs-xs);font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">風險計算工具</span>
+        <div class="ri-btn" data-info="risk" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3)">ⓘ</div>
+      </div>
+      <div class="ri-box" data-for="risk" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">風險計算工具幫助評估停損位置。日20MA 和日10MA 為短期停損參考；週20MA 為大趨勢支撐，是最終防線。輸入買進價格和股數後自動計算各停損位的潛在虧損值。</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
           <div style="background:var(--bg3);border-radius:var(--rs);padding:10px 12px">
             <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:4px">買進價格（元）</div>
@@ -2258,12 +2261,16 @@ function renderInstChart(days,fStreak,tStreak){
 
   return`
   <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">
-        <span style="display:inline-block;animation:flowMove 2s ease-in-out infinite">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="20" x2="2" y2="14"/><line x1="7" y1="20" x2="7" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="17" y1="20" x2="17" y2="8"/><line x1="22" y1="20" x2="22" y2="12"/></svg>
-        </span>
-        <span style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">資金流向　10日</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="display:inline-block;animation:flowMove 2s ease-in-out infinite">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="20" x2="2" y2="14"/><line x1="7" y1="20" x2="7" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="17" y1="20" x2="17" y2="8"/><line x1="22" y1="20" x2="22" y2="12"/></svg>
+          </span>
+          <span style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">資金流向　10日</span>
+        </div>
+        <div class="ri-btn" data-info="inst" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3)">ⓘ</div>
       </div>
+      <div class="ri-box" data-for="inst" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">資金流向追蹤外資、官股（八大行庫）、投信、自營商、散戶近10日的買超賣超情況。主力合計（外資+官股+投信）持續買超為強勢訊號。點任一天可看詳細數據。</div>
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:5px;align-items:flex-end;min-width:max-content;padding:4px 0">${barsHtml}</div></div>
     <div style="font-size:10px;color:var(--text3);text-align:center;margin:6px 0 4px">買超=紅　賣超=綠　← 左右滑動 → 點任一天看詳細</div>
     <div id="instDetailPanel" style="display:none;background:var(--bg3);border-radius:var(--rs);padding:12px;margin:8px 0"></div>
@@ -2398,6 +2405,21 @@ function renderSettings(){
 window.addEventListener('load', ()=>{
   showPage('home',null,'nav-home');
   const savedFont=localStorage.getItem('font_size');if(savedFont) setFont(savedFont);
+  // 所有ⓘ按鈕事件（委託）
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('.ri-btn');
+    if(btn){
+      const key = btn.getAttribute('data-info');
+      const box = document.querySelector('.ri-box[data-for="'+key+'"]');
+      if(box){
+        const isOpen = box.style.display === 'block';
+        document.querySelectorAll('.ri-box').forEach(b=>b.style.display='none');
+        box.style.display = isOpen ? 'none' : 'block';
+      }
+      return;
+    }
+  });
+
   // 柱量圖詳細視窗X關閉
   const instPanel=document.getElementById('instDetailPanel');
   if(instPanel){
