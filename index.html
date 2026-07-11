@@ -66,7 +66,7 @@ body{font-family:-apple-system,'SF Pro Text','PingFang TC','Noto Sans TC',sans-s
 .up{color:var(--red)}.dn{color:var(--green)}.fl{color:var(--text2)}
 .dnote{font-size:var(--fs-xs);color:var(--text3);margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border)}
 .scard{border-radius:var(--r);padding:18px;margin-bottom:14px;display:flex;align-items:center;gap:16px}
-.scard-gold{background:#fefce8;border:1px solid #f5c842;animation:goldPulse 1.5s ease-in-out infinite}
+.scard-gold{background:#fef9c3;border:1px solid #f5c842;animation:goldPulse 1.5s ease-in-out infinite}
 .scard-normal{background:var(--bg3);border:0.5px solid var(--border)}
 .rw{position:relative;width:84px;height:84px;flex-shrink:0}
 .rw svg{transform:rotate(-90deg)}
@@ -90,7 +90,7 @@ body{font-family:-apple-system,'SF Pro Text','PingFang TC','Noto Sans TC',sans-s
 .cn{font-size:var(--fs-md);font-weight:500;margin-bottom:3px}
 .cd{font-size:var(--fs-sm);color:var(--text2);line-height:1.6}
 .vcp-status{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--rs);margin-bottom:14px;font-size:var(--fs-md);font-weight:600}
-.gold-alert{background:#fefce8;border:1px solid #f5c842;border-radius:var(--rs);padding:12px 14px;margin-bottom:10px;animation:goldPulse 1.5s ease-in-out infinite}
+.gold-alert{background:#fef9c3;border:1px solid #f5c842;border-radius:var(--rs);padding:12px 14px;margin-bottom:10px;animation:goldPulse 1.5s ease-in-out infinite}
 .gold-score{background:linear-gradient(135deg,#3d2e00,#2a1f00)!important;color:#f5c842!important;border:1.5px solid #f5c842!important;animation:goldPulse 1.5s ease-in-out infinite}
 @keyframes scorePulse{0%,100%{text-shadow:0 0 6px #f5c84280}50%{text-shadow:0 0 18px #f5c842cc}}
 @keyframes flameDance{0%,100%{transform:scaleY(1) rotate(-1deg)}25%{transform:scaleY(1.08) rotate(1deg)}50%{transform:scaleY(.95) rotate(-2deg)}75%{transform:scaleY(1.05) rotate(2deg)}}
@@ -105,7 +105,7 @@ body{font-family:-apple-system,'SF Pro Text','PingFang TC','Noto Sans TC',sans-s
 .vcp-arrow{font-size:var(--fs-lg);color:var(--text3)}
 .vcp-warn{background:var(--abg);border:1px solid var(--abr);border-radius:var(--rs);padding:12px 14px;font-size:var(--fs-sm);color:var(--amber);margin-bottom:10px}
 .entry-confirm{border-radius:var(--r);padding:18px;margin-bottom:14px;border:1.5px solid}
-.ec-ready{background:linear-gradient(135deg,#1a2200,#0f1800);border-color:#f5c842;animation:goldPulse 1.5s ease-in-out infinite}
+.ec-ready{background:#fef9c3;border-color:#f5c842;animation:goldPulse 1.5s ease-in-out infinite}
 .ec-not{background:var(--bg3);border-color:var(--border)}
 .ec-partial{background:var(--bg3);border-color:var(--abr)}
 .ec-title{font-size:var(--fs-lg);font-weight:700;margin-bottom:14px}
@@ -121,7 +121,7 @@ body{font-family:-apple-system,'SF Pro Text','PingFang TC','Noto Sans TC',sans-s
 .ec-partial .ec-verdict{background:none}
 .entry-point-box{background:var(--bg2);border-radius:var(--rs);border:0.5px solid var(--border2);padding:16px;margin-top:4px}
 .ep-title{font-size:var(--fs-sm);font-weight:600;color:var(--text2);margin-bottom:10px}
-.ep-price{font-size:var(--fs-xl);font-weight:700;color:#f0f0f0;margin-bottom:10px}
+.ep-price{font-size:var(--fs-xl);font-weight:700;color:var(--red);margin-bottom:10px}
 .ep-vol-title{font-size:var(--fs-sm);color:var(--text2);margin-bottom:8px}
 .ep-vol-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:var(--rs);margin-bottom:6px}
 .ep-vol-item:last-child{margin-bottom:0}
@@ -1070,7 +1070,7 @@ function vcpStatusHtml(vcp, a){
           <div style="font-size:var(--fs-xs);color:var(--text2);line-height:1.5">${a.breakReason}</div>
         </div>`:
       a.breakValidation==='true'?`
-        <div style="background:linear-gradient(135deg,#3d2e00,#2a1f00);border:1px solid #f5c842;border-radius:var(--rs);padding:10px 12px;animation:goldPulse 1.5s ease-in-out infinite">
+        <div style="background:#fef9c3;border:1px solid #f5c842;border-radius:var(--rs);padding:10px 12px;animation:goldPulse 1.5s ease-in-out infinite">
           <div style="font-size:var(--fs-sm);font-weight:700;color:#f5c842;margin-bottom:4px">✦ 三項條件達標且突破Pivot</div>
           <div style="font-size:var(--fs-xs);color:#c9a227;line-height:1.5">${a.breakReason}</div>
         </div>`:
@@ -1112,7 +1112,7 @@ function entryConfirmHtml(a){
   // 有效突破金色橫幅
   const isValidBreak = a.breakValidation==='true';
   const goldBanner = isValidBreak ? `
-    <div style="background:linear-gradient(135deg,#3d2e00,#2a1f00);border:1px solid #f5c842;border-radius:var(--rs);padding:12px 14px;margin-bottom:12px;animation:goldPulse 1.5s ease-in-out infinite">
+    <div style="background:#fef9c3;border:1px solid #f5c842;border-radius:var(--rs);padding:12px 14px;margin-bottom:12px;animation:goldPulse 1.5s ease-in-out infinite">
       <div style="font-size:var(--fs-sm);font-weight:700;color:#f5c842;margin-bottom:3px">✦ 有效突破確認</div>
       <div style="font-size:var(--fs-xs);color:#c9a227;line-height:1.5">${a.breakReason}</div>
     </div>` : '';
@@ -1126,7 +1126,7 @@ function entryConfirmHtml(a){
     vcpStatus==='contracting'?'◎ VCP 收縮整理中，等待突破':
     '○ VCP 尚未形成';
   const vcpStyle = vcpStatus==='just_broke'||vcpStatus==='trending_up'
-    ? 'background:linear-gradient(135deg,#3d2e00,#2a1f00);border:1px solid #f5c842;color:#f5c842;animation:goldPulse 1.5s ease-in-out infinite'
+    ? 'background:#fef9c3;border:1px solid #f5c842;color:#92400e;animation:goldPulse 1.5s ease-in-out infinite'
     : vcpStatus==='final_contraction'
     ? 'background:#1a2000;border:0.5px solid #8fa000;color:#b8cc00'
     : vcpActive
@@ -1144,12 +1144,12 @@ function entryConfirmHtml(a){
       </div>`;
     }).join('')}</div>
     ${vcpBadge}
-    <div class="ec-verdict" style="${allPass?'background:linear-gradient(135deg,#3d2e00,#2a1f00);border:1px solid #f5c842;color:#f5c842;animation:goldPulse 1.5s ease-in-out infinite':ec3Count>=1||hasWarn?'background:var(--abg);border:0.5px solid var(--abr);color:var(--amber)':'background:var(--bg2);border:0.5px solid var(--border);color:var(--text3)'}">${verdict}</div>
+    <div class="ec-verdict" style="${allPass?'background:#fef9c3;border:1px solid #f5c842;color:#92400e;animation:goldPulse 1.5s ease-in-out infinite':ec3Count>=1||hasWarn?'background:var(--abg);border:0.5px solid var(--abr);color:var(--amber)':'background:var(--bg2);border:0.5px solid var(--border);color:var(--text3)'}">${verdict}</div>
     ${goldBanner}
     <div class="entry-point-box">
       <div class="ep-title">📌 明日參考數值</div>
       <div style="font-size:var(--fs-sm);color:var(--text2);margin-bottom:6px">PIVOT 突破價位</div>
-      <div class="ep-price">${f(a.pe,1)} 元以上</div>
+      <div class="ep-price" style="color:var(--red)">${f(a.pe,1)} 元以上</div>
       <div class="ep-vol-title">當日成交量需達 <strong style="color:var(--red)">${fmtVol(a.reqVol)}</strong>（20日均量 ${fmtVol(Math.round(a.avgV20))} × 1.5倍）</div>
       <div class="ep-vol-item" style="background:var(--bg2);border:none">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
@@ -1229,12 +1229,15 @@ ${(()=>{
   for(let i=cl7.length-2;i>=Math.max(0,cl7.length-21);i--){
     if(cl7[i]<ma20dArr[i]&&cl7[i+1]>=ma20dArr[i+1]){daysCrossed20=cl7.length-1-i;break;}
   }
-  if(daysCrossed20>0&&daysCrossed20<=21){
-    html+=`<div class="gold-alert"><div class="gold-title">✨ ${daysCrossed20===1?'今日':'近'+daysCrossed20+'天前'}站上日20MA！</div><div class="gold-desc">現價 ${f(a.cur,2)} ≥ 日20MA ${f(a.ma20d,2)}，短期動能轉強</div></div>`;
-  }
-  // 跌破日20MA（21天內）→ 紅色
-  if(a.daysDropped20>0&&a.daysDropped20<=21){
-    html+=`<div style="background:var(--rbg);border:1px solid var(--rbr);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px"><div style="font-size:var(--fs-sm);font-weight:700;color:var(--red);margin-bottom:4px">⚠️ ${a.daysDropped20===1?'今日':'近'+a.daysDropped20+'天前'}跌破日20MA</div><div style="font-size:var(--fs-xs);color:var(--text2)">短期轉弱，密切注意是否重新站回</div></div>`;
+  // 根據現價位置顯示：站上或跌破
+  if(a.cur>=a.ma20d){
+    if(daysCrossed20>0&&daysCrossed20<=21){
+      html+=`<div class="gold-alert"><div class="gold-title">✨ ${daysCrossed20===1?'今日':'近'+daysCrossed20+'天前'}站上日20MA！</div><div class="gold-desc">現價 ${f(a.cur,2)} ≥ 日20MA ${f(a.ma20d,2)}，短期動能轉強</div></div>`;
+    }
+  } else {
+    if(a.daysDropped20>0&&a.daysDropped20<=21){
+      html+=`<div style="background:var(--rbg);border:1px solid var(--rbr);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px"><div style="font-size:var(--fs-sm);font-weight:700;color:var(--red);margin-bottom:4px">⚠️ ${a.daysDropped20===1?'今日':'近'+a.daysDropped20+'天前'}跌破日20MA</div><div style="font-size:var(--fs-xs);color:var(--text2)">短期轉弱，密切注意是否重新站回</div></div>`;
+    }
   }
   // 站上日100MA（21天內）→ 金色
   if(a.daysCrossed100>0&&a.daysCrossed100<=21){
@@ -1305,7 +1308,7 @@ ${[{p:a.t1,n:'T1 現價在150/200日均線之上',d:`MA150 ${f(a.ma150,1)}｜MA2
 ${entryConfirmHtml(a)}
 ${['contracting','final_contraction','just_broke'].includes(a.vcp.status)?`
 <div class="ec2"><div class="card-head"><div class="card-title">VCP 價位參考</div></div><div class="eg">
-<div class="ei"><div class="el">PIVOT 突破點</div><div class="ev" style="color:var(--red)">${f(a.pe,1)}</div><div class="es2">突破後觀察量能</div></div>
+<div class="ei"><div class="el">PIVOT 突破點</div><div class="ev" style="color:var(--red);font-weight:700">${f(a.pe,1)}</div><div class="es2">突破後觀察量能</div></div>
 <div class="ei"><div class="el">週20MA 大趨勢支撐</div><div class="ev" style="color:var(--text2)">${f(a.ma20w,1)}</div><div class="es2">最終防線參考</div></div>
 <div class="ei"><div class="el">+10% 技術參考位</div><div class="ev" style="color:var(--text)">${f(a.tgt1,1)}</div><div class="es2">技術面參考</div></div>
 <div class="ei"><div class="el">+20% 技術參考位</div><div class="ev" style="color:var(--text)">${f(a.tgt2,1)}</div><div class="es2">技術面參考</div></div>
