@@ -66,7 +66,7 @@ body{font-family:-apple-system,'SF Pro Text','PingFang TC','Noto Sans TC',sans-s
 .up{color:var(--red)}.dn{color:var(--green)}.fl{color:var(--text2)}
 .dnote{font-size:var(--fs-xs);color:var(--text3);margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border)}
 .scard{border-radius:var(--r);padding:18px;margin-bottom:14px;display:flex;align-items:center;gap:16px}
-.scard-gold{background:#fef9c3;border:1px solid #f5c842;animation:goldPulse 1.5s ease-in-out infinite}
+.scard-gold{background:#e6a817;border:1px solid #c48a00;animation:goldPulse 1.5s ease-in-out infinite}
 .scard-normal{background:var(--bg3);border:0.5px solid var(--border)}
 .rw{position:relative;width:84px;height:84px;flex-shrink:0}
 .rw svg{transform:rotate(-90deg)}
@@ -90,14 +90,14 @@ body{font-family:-apple-system,'SF Pro Text','PingFang TC','Noto Sans TC',sans-s
 .cn{font-size:var(--fs-md);font-weight:500;margin-bottom:3px}
 .cd{font-size:var(--fs-sm);color:var(--text2);line-height:1.6}
 .vcp-status{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--rs);margin-bottom:14px;font-size:var(--fs-md);font-weight:600}
-.gold-alert{background:#fef9c3;border:1px solid #f5c842;border-radius:var(--rs);padding:12px 14px;margin-bottom:10px;animation:goldPulse 1.5s ease-in-out infinite}
+.gold-alert{background:#e6a817;border:1px solid #c48a00;border-radius:var(--rs);padding:12px 14px;margin-bottom:10px;animation:goldPulse 1.5s ease-in-out infinite}
 .gold-score{background:linear-gradient(135deg,#3d2e00,#2a1f00)!important;color:#f5c842!important;border:1.5px solid #f5c842!important;animation:goldPulse 1.5s ease-in-out infinite}
 @keyframes scorePulse{0%,100%{text-shadow:0 0 6px #f5c84280}50%{text-shadow:0 0 18px #f5c842cc}}
 @keyframes flameDance{0%,100%{transform:scaleY(1) rotate(-1deg)}25%{transform:scaleY(1.08) rotate(1deg)}50%{transform:scaleY(.95) rotate(-2deg)}75%{transform:scaleY(1.05) rotate(2deg)}}
 @keyframes flameGlow{0%,100%{opacity:1}50%{opacity:.7}}
 @keyframes goldPulse{0%,100%{box-shadow:0 0 6px #f5c84280;border-color:#f5c842}50%{box-shadow:0 0 18px #f5c842cc;border-color:#ffe066}}
-.gold-title{font-size:var(--fs-sm);font-weight:700;color:#92400e;margin-bottom:4px}
-.gold-desc{font-size:var(--fs-xs);color:#b45309;line-height:1.6}
+.gold-title{font-size:var(--fs-sm);font-weight:700;color:#fff;margin-bottom:4px}
+.gold-desc{font-size:var(--fs-xs);color:rgba(255,255,255,0.9);line-height:1.6}
 .vcp-stages{display:flex;align-items:center;gap:6px;margin-bottom:10px}
 .vcp-stage{flex:1;text-align:center}
 .vcp-stage-label{font-size:var(--fs-xs);color:var(--text3);margin-bottom:4px}
@@ -105,7 +105,7 @@ body{font-family:-apple-system,'SF Pro Text','PingFang TC','Noto Sans TC',sans-s
 .vcp-arrow{font-size:var(--fs-lg);color:var(--text3)}
 .vcp-warn{background:var(--abg);border:1px solid var(--abr);border-radius:var(--rs);padding:12px 14px;font-size:var(--fs-sm);color:var(--amber);margin-bottom:10px}
 .entry-confirm{border-radius:var(--r);padding:18px;margin-bottom:14px;border:1.5px solid}
-.ec-ready{background:#fef9c3;border-color:#f5c842;animation:goldPulse 1.5s ease-in-out infinite}
+.ec-ready{background:#e6a817;border-color:#c48a00;animation:goldPulse 1.5s ease-in-out infinite}
 .ec-not{background:var(--bg3);border-color:var(--border)}
 .ec-partial{background:var(--bg3);border-color:var(--abr)}
 .ec-title{font-size:var(--fs-lg);font-weight:700;margin-bottom:14px}
@@ -262,6 +262,10 @@ html.font-xl{font-size:19px}
 @keyframes goldPulse{0%,100%{box-shadow:0 0 0 0 rgba(245,200,66,.4)}50%{box-shadow:0 0 0 8px rgba(245,200,66,0)}}
 @keyframes flameDance{0%,100%{transform:scaleY(1) rotate(-1deg)}50%{transform:scaleY(1.08) rotate(1deg)}}
 
+
+@keyframes starSpin{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(1.2)}100%{transform:rotate(360deg) scale(1)}}
+@keyframes rocketFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes breathe{0%,100%{box-shadow:0 0 8px currentColor}50%{box-shadow:0 0 20px currentColor}}
 </style>
 </head>
 <body>
@@ -1070,7 +1074,7 @@ function vcpStatusHtml(vcp, a){
           <div style="font-size:var(--fs-xs);color:var(--text2);line-height:1.5">${a.breakReason}</div>
         </div>`:
       a.breakValidation==='true'?`
-        <div style="background:#fef9c3;border:1px solid #f5c842;border-radius:var(--rs);padding:10px 12px;animation:goldPulse 1.5s ease-in-out infinite">
+        <div style="background:#e6a817;border:1px solid #c48a00;border-radius:var(--rs);padding:10px 12px;animation:goldPulse 1.5s ease-in-out infinite">
           <div style="font-size:var(--fs-sm);font-weight:700;color:#f5c842;margin-bottom:4px">✦ 三項條件達標且突破Pivot</div>
           <div style="font-size:var(--fs-xs);color:#c9a227;line-height:1.5">${a.breakReason}</div>
         </div>`:
@@ -1112,7 +1116,7 @@ function entryConfirmHtml(a){
   // 有效突破金色橫幅
   const isValidBreak = a.breakValidation==='true';
   const goldBanner = isValidBreak ? `
-    <div style="background:#fef9c3;border:1px solid #f5c842;border-radius:var(--rs);padding:12px 14px;margin-bottom:12px;animation:goldPulse 1.5s ease-in-out infinite">
+    <div style="background:#e6a817;border:1px solid #c48a00;border-radius:var(--rs);padding:12px 14px;margin-bottom:12px;animation:goldPulse 1.5s ease-in-out infinite">
       <div style="font-size:var(--fs-sm);font-weight:700;color:#f5c842;margin-bottom:3px">✦ 有效突破確認</div>
       <div style="font-size:var(--fs-xs);color:#c9a227;line-height:1.5">${a.breakReason}</div>
     </div>` : '';
@@ -1126,7 +1130,7 @@ function entryConfirmHtml(a){
     vcpStatus==='contracting'?'◎ VCP 收縮整理中，等待突破':
     '○ VCP 尚未形成';
   const vcpStyle = vcpStatus==='just_broke'||vcpStatus==='trending_up'
-    ? 'background:#fef9c3;border:1px solid #f5c842;color:#92400e;animation:goldPulse 1.5s ease-in-out infinite'
+    ? 'background:#e6a817;border:1px solid #c48a00;color:#92400e;animation:goldPulse 1.5s ease-in-out infinite'
     : vcpStatus==='final_contraction'
     ? 'background:#1a2000;border:0.5px solid #8fa000;color:#b8cc00'
     : vcpActive
@@ -1144,7 +1148,7 @@ function entryConfirmHtml(a){
       </div>`;
     }).join('')}</div>
     ${vcpBadge}
-    <div class="ec-verdict" style="${allPass?'background:#fef9c3;border:1px solid #f5c842;color:#92400e;animation:goldPulse 1.5s ease-in-out infinite':ec3Count>=1||hasWarn?'background:var(--abg);border:0.5px solid var(--abr);color:var(--amber)':'background:var(--bg2);border:0.5px solid var(--border);color:var(--text3)'}">${verdict}</div>
+    <div class="ec-verdict" style="${allPass?'background:#e6a817;border:1px solid #c48a00;color:#92400e;animation:goldPulse 1.5s ease-in-out infinite':ec3Count>=1||hasWarn?'background:var(--abg);border:0.5px solid var(--abr);color:var(--amber)':'background:var(--bg2);border:0.5px solid var(--border);color:var(--text3)'}">${verdict}</div>
     ${goldBanner}
     <div class="entry-point-box">
       <div class="ep-title">📌 明日參考數值</div>
@@ -1187,7 +1191,12 @@ function rResult(raw,a){
         <div class="sname">${raw.name}</div>
         <div class="scode">${raw.code}　${raw.market}</div>
       </div>
-      ${a.isLimitUp?'<div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:4px"><div style="font-size:32px;animation:flameDance .8s ease-in-out infinite,flameGlow .8s ease-in-out infinite;transform-origin:bottom center;line-height:1">🔥</div><div style="font-size:10px;font-weight:700;color:#ff8c00;letter-spacing:.05em">漲停</div></div>':''}
+      <div style="display:flex;align-items:center;gap:8px">
+        ${a.isLimitUp?'<div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="font-size:32px;animation:flameDance .8s ease-in-out infinite,flameGlow .8s ease-in-out infinite;transform-origin:bottom center;line-height:1">🔥</div><div style="font-size:10px;font-weight:700;color:#ff8c00;letter-spacing:.05em">漲停</div></div>':''}
+        <div id="watchBtnTop" onclick="tW('${raw.code}','${raw.name}',${a.overall})" style="padding:6px 12px;background:${inW?'var(--gbg)':'var(--bg2)'};border:1px solid ${inW?'var(--green)':'var(--wine)'};border-radius:20px;font-size:12px;font-weight:600;color:${inW?'var(--green)':'var(--wine)'};cursor:pointer;white-space:nowrap">
+          <span style="display:inline-block;animation:starSpin 2s linear infinite">${inW?'✅':'⭐'}</span> ${inW?'已自選':'自選'}
+        </div>
+      </div>
     </div>
     <div style="font-size:var(--fs-3xl);font-weight:700;letter-spacing:-1px;color:${a.dayChg>=0?'var(--red)':'var(--green)'};margin-bottom:6px">${f(a.cur,2)}</div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
@@ -1206,15 +1215,13 @@ function rResult(raw,a){
       </div>
       <div style="background:var(--bg3);border-radius:var(--rs);padding:8px 10px;text-align:center">
         <div style="font-size:10px;color:var(--text3);margin-bottom:3px">成交量</div>
-        <div style="font-size:var(--fs-md);font-weight:600;color:var(--text)">${fmtVol(a.curVol)}張</div>
+        <div style="font-size:var(--fs-md);font-weight:600;color:var(--text)">${fmtVol(a.curVol)}</div>
       </div>
     </div>
     <div class="dnote" style="margin-top:8px">📅 資料來源：台灣證交所，收盤後更新</div>
   </div>
-<div class="scard ${a.overall>=70?'scard-gold':'scard-normal'}"><div class="rw" style="width:84px;height:84px;border-radius:50%;background:${col}22;border:3px solid ${col};${a.overall>=70?'box-shadow:0 0 16px '+col+'60;animation:goldPulse 1.5s ease-in-out infinite':''}"><div class="rc"><div class="rnum" style="color:${col}">${a.overall}</div><div class="rden">/100</div></div></div><div class="sinfo"><div class="sverdict" style="color:${col}">${a.verdict}</div><div class="sbreak">加分條件 ${bonusCount}/5 項達標<br>70分以上為強勢候選</div>
-<div onclick="tW('${raw.code}','${raw.name}',${a.overall})" style="margin-top:10px;width:100%;padding:8px;background:${inW?'var(--gbg)':'var(--bg2)'};border:1px solid ${inW?'var(--green)':'var(--wine)'};border-radius:var(--rs);font-size:var(--fs-sm);font-weight:600;color:${inW?'var(--green)':'var(--wine)'};text-align:center;cursor:pointer">
-${inW?'✅ 已加入自選':'⭐ 加入自選清單'}
-</div></div></div>
+<div class="scard ${a.overall>=70?'scard-gold':'scard-normal'}"><div class="rw" style="width:84px;height:84px;border-radius:50%;background:${col}22;border:3px solid ${col};${a.overall>=70?'box-shadow:0 0 16px '+col+'60;animation:goldPulse 1.5s ease-in-out infinite':'animation:breathe 2s ease-in-out infinite;color:'+col}"><div class="rc"><div class="rnum" style="color:${col}">${a.overall}</div><div class="rden">/100</div></div></div><div class="sinfo"><div class="sverdict" style="color:${col}">${a.verdict}</div><div class="sbreak">加分條件 ${bonusCount}/5 項達標<br>70分以上為強勢候選</div>
+</div></div>
 <div class="card"><div class="card-head"><div class="card-title">均線系統 — 週線趨勢判斷</div></div><div class="cl">
 <div class="ci">${ih(a.wk_p)}<div class="cb"><div class="cn">① 週20MA — 中期趨勢</div><div class="cd">現價 ${f(a.cur,2)}｜週20MA ${f(a.ma20w,2)}<br>${a.wk_p?'✓ 站上週20MA，趨勢偏多':'✕ 跌破週20MA，趨勢偏空'}</div></div></div>
 <div class="ci">${ih(a.t_100w)}<div class="cb"><div class="cn">② 週100MA — 長期趨勢</div><div class="cd">現價 ${f(a.cur,2)}｜週100MA ${a.ma100w?f(a.ma100w,2):'資料不足'}<br>${a.t_100w===true?'✓ 站上週100MA，長期多頭':a.t_100w===false?'✕ 跌破週100MA，長期偏空':'△ 資料不足'}</div></div></div>
@@ -1222,7 +1229,7 @@ ${(()=>{
   let html='';
   // 週20MA黃金交叉週100MA（14天內）
   if(a.wkGoldenCross||a.wkGoldenCrossPrev){
-    html+=`<div class="gold-alert"><div class="gold-title">🌟 週20MA 黃金交叉 週100MA！</div><div class="gold-desc">週20MA ${f(a.ma20w,2)} 上穿 週100MA ${f(a.ma100w_w,2)}<br>14天內發生，長期多頭強力確認！</div></div>`;
+    html+=`<div class="gold-alert"><div class="gold-title"><span style="display:inline-block;animation:starSpin 3s linear infinite">🌟</span> 週20MA 黃金交叉 週100MA！</div><div class="gold-desc">週20MA ${f(a.ma20w,2)} 上穿 週100MA ${f(a.ma100w_w,2)}<br>14天內發生，長期多頭強力確認！</div></div>`;
   }
   // 週20MA死亡交叉週100MA（14天內）
   if(a.wkDeathCross||a.wkDeathCrossPrev){
