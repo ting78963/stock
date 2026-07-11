@@ -266,6 +266,11 @@ html.font-xl{font-size:19px}
 @keyframes starSpin{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(1.2)}100%{transform:rotate(360deg) scale(1)}}
 @keyframes rocketFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 @keyframes breathe{0%,100%{box-shadow:0 0 8px currentColor}50%{box-shadow:0 0 20px currentColor}}
+
+@keyframes rocketUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes flowMove{0%,100%{transform:translateX(0)}50%{transform:translateX(2px)}}
+@keyframes goldBreath{0%,100%{box-shadow:0 0 8px rgba(245,200,66,0.5);transform:scale(1)}50%{box-shadow:0 0 22px rgba(245,200,66,0.9);transform:scale(1.04)}}
+@keyframes starSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -1194,7 +1199,7 @@ function rResult(raw,a){
       <div style="display:flex;align-items:center;gap:8px">
         ${a.isLimitUp?'<div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="font-size:32px;animation:flameDance .8s ease-in-out infinite,flameGlow .8s ease-in-out infinite;transform-origin:bottom center;line-height:1">🔥</div><div style="font-size:10px;font-weight:700;color:#ff8c00;letter-spacing:.05em">漲停</div></div>':''}
         <div id="watchBtnTop" onclick="tW('${raw.code}','${raw.name}',${a.overall})" style="padding:6px 12px;background:${inW?'var(--gbg)':'var(--bg2)'};border:1px solid ${inW?'var(--green)':'var(--wine)'};border-radius:20px;font-size:12px;font-weight:600;color:${inW?'var(--green)':'var(--wine)'};cursor:pointer;white-space:nowrap">
-          <span style="display:inline-block;animation:starSpin 2s linear infinite">${inW?'✅':'⭐'}</span> ${inW?'已自選':'自選'}
+          <span style="display:inline-block;animation:${inW?'none':'starSpin 2s linear infinite'}">${inW?'✅':'⭐'}</span> ${inW?'已自選':'自選'}
         </div>
       </div>
     </div>
@@ -1220,7 +1225,7 @@ function rResult(raw,a){
     </div>
     <div class="dnote" style="margin-top:8px">📅 資料來源：台灣證交所，收盤後更新</div>
   </div>
-<div class="scard ${a.overall>=70?'scard-gold':'scard-normal'}"><div class="rw" style="width:84px;height:84px;border-radius:50%;background:${a.overall>=70?'#f5c842':col+'22'};border:${a.overall>=70?'3px solid #fff':'3px solid '+col};box-shadow:${a.overall>=70?'0 2px 8px rgba(0,0,0,0.15)':''};${a.overall>=70?'animation:goldPulse 1.5s ease-in-out infinite':'animation:breathe 2s ease-in-out infinite'}"><div class="rc"><div class="rnum" style="color:${a.overall>=70?'#fff':col};${a.overall>=70?'text-shadow:0 1px 4px rgba(0,0,0,0.3)':''}">${a.overall}</div><div class="rden" style="color:${a.overall>=70?'rgba(255,255,255,0.85)':''}">/100</div></div></div><div class="sinfo"><div class="sverdict" style="color:${a.overall>=70?'#fff':col};${a.overall>=70?'text-shadow:0 2px 6px rgba(0,0,0,0.35)':''}">${a.verdict}</div><div class="sbreak" style="${a.overall>=70?'color:rgba(255,255,255,0.9);text-shadow:0 1px 4px rgba(0,0,0,0.3)':''}">加分條件 ${bonusCount}/5 項達標<br>70分以上為強勢候選</div>
+<div class="scard ${a.overall>=70?'scard-gold':'scard-normal'}"><div class="rw" style="width:84px;height:84px;border-radius:50%;background:${a.overall>=70?'#f5c842':col+'22'};border:${a.overall>=70?'3px solid #fff':'3px solid '+col};${a.overall>=70?'animation:goldBreath 2s ease-in-out infinite':'animation:breathe 2s ease-in-out infinite'}"><div class="rc"><div class="rnum" style="color:${a.overall>=70?'#fff':col};${a.overall>=70?'text-shadow:0 1px 4px rgba(0,0,0,0.3)':''}">${a.overall}</div><div class="rden" style="color:${a.overall>=70?'rgba(255,255,255,0.85)':''}">/100</div></div></div><div class="sinfo"><div class="sverdict" style="color:${a.overall>=70?'#fff':col};${a.overall>=70?'text-shadow:0 2px 6px rgba(0,0,0,0.35)':''}">${a.verdict}</div><div class="sbreak" style="${a.overall>=70?'color:rgba(255,255,255,0.9);text-shadow:0 1px 4px rgba(0,0,0,0.3)':''}">加分條件 ${bonusCount}/5 項達標<br>70分以上為強勢候選</div>
 </div></div>
 <div class="card"><div class="card-head"><div class="card-title">均線系統 — 週線趨勢判斷</div></div><div class="cl">
 <div class="ci">${ih(a.wk_p)}<div class="cb"><div class="cn">① 週20MA — 中期趨勢</div><div class="cd">現價 ${f(a.cur,2)}｜週20MA ${f(a.ma20w,2)}<br>${a.wk_p?'✓ 站上週20MA，趨勢偏多':'✕ 跌破週20MA，趨勢偏空'}</div></div></div>
@@ -1903,7 +1908,12 @@ async function renderExtraData(stockCode, a) {
     const rocketHtml = `
       <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div style="font-size:var(--fs-xs);font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">🚀 火箭指標</div>
+          <div style="display:flex;align-items:center;gap:6px">
+        <span style="display:inline-block;animation:rocketUp 1.8s ease-in-out infinite">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C12 2 8 6 8 13h8c0-7-4-11-4-11z"/><path d="M8 13v3l4 3 4-3v-3"/><path d="M9 17l-2 3M15 17l2 3"/></svg>
+        </span>
+        <span style="font-size:var(--fs-xs);font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">火箭指標</span>
+      </div>
           <div style="display:flex;align-items:center;gap:8px">
             <div style="font-size:var(--fs-sm);font-weight:600;color:var(--text)">${rocketLabel}</div>
             <div style="font-size:var(--fs-xs);color:var(--text3)">${okCount}/${total} 項達標</div>
@@ -1929,7 +1939,7 @@ async function renderExtraData(stockCode, a) {
             <div style="font-size:11px;color:var(--text3)">${r.label}</div>
             <div style="display:flex;align-items:center;gap:4px">
               <span style="padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600;${r.ok?'background:var(--rbg);color:var(--red)':'background:var(--abg);color:var(--amber)'}">${r.score||0}/${r.maxScore||10}</span>
-              <span class="ri-btn" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);font-weight:600">ⓘ</span>
+              <span class="ri-btn" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3)">ⓘ</span>
             </div>
           </div>
           <div class="ri-box" style="display:none;font-size:11px;color:var(--text2);background:var(--bg2);border-radius:6px;padding:8px;margin-bottom:6px;line-height:1.6">${_RI[r.label]||''}</div>
@@ -2247,7 +2257,12 @@ function renderInstChart(days,fStreak,tStreak){
 
   return`
   <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
-    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">資金流向　10日</div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">
+        <span style="display:inline-block;animation:flowMove 2s ease-in-out infinite">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="20" x2="2" y2="14"/><line x1="7" y1="20" x2="7" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="17" y1="20" x2="17" y2="8"/><line x1="22" y1="20" x2="22" y2="12"/></svg>
+        </span>
+        <span style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">資金流向　10日</span>
+      </div>
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:5px;align-items:flex-end;min-width:max-content;padding:4px 0">${barsHtml}</div></div>
     <div style="font-size:10px;color:var(--text3);text-align:center;margin:6px 0 4px">買超=紅　賣超=綠　← 左右滑動 → 點任一天看詳細</div>
     <div id="instDetailPanel" style="display:none;background:var(--bg3);border-radius:var(--rs);padding:12px;margin:8px 0"></div>
@@ -2328,8 +2343,60 @@ function loadHomePage(){
 // 族群資金renderMain輸出目標改為money-main
 // (在money_funcs裡的getElementById('money-main')需要改)
 
+function setFont(size){
+  const root=document.documentElement;
+  if(size==='xl'){
+    root.style.setProperty('--fs-xs','0.933rem');
+    root.style.setProperty('--fs-sm','1rem');
+    root.style.setProperty('--fs-md','1.067rem');
+    root.style.setProperty('--fs-lg','1.2rem');
+    root.style.setProperty('--fs-xl','1.333rem');
+    root.style.setProperty('--fs-2xl','1.6rem');
+    root.style.setProperty('--fs-3xl','2rem');
+  } else if(size==='lg'){
+    root.style.setProperty('--fs-xs','0.867rem');
+    root.style.setProperty('--fs-sm','0.933rem');
+    root.style.setProperty('--fs-md','1rem');
+    root.style.setProperty('--fs-lg','1.133rem');
+    root.style.setProperty('--fs-xl','1.267rem');
+    root.style.setProperty('--fs-2xl','1.467rem');
+    root.style.setProperty('--fs-3xl','1.8rem');
+  } else {
+    root.style.setProperty('--fs-xs','0.8rem');
+    root.style.setProperty('--fs-sm','0.867rem');
+    root.style.setProperty('--fs-md','0.933rem');
+    root.style.setProperty('--fs-lg','1rem');
+    root.style.setProperty('--fs-xl','1.133rem');
+    root.style.setProperty('--fs-2xl','1.4rem');
+    root.style.setProperty('--fs-3xl','1.8rem');
+  }
+  localStorage.setItem('font_size', size);
+  renderSettings();
+}
+
+function renderSettings(){
+  const el=document.getElementById('settings-content');
+  if(!el) return;
+  const currentFont=localStorage.getItem('font_size')||'normal';
+  el.innerHTML=`
+    <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--border);padding:14px;margin-bottom:12px">
+      <div style="font-size:var(--fs-sm);font-weight:600;color:var(--text);margin-bottom:12px">字體大小</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="setFont('normal')" style="flex:1;padding:10px;border-radius:8px;border:1.5px solid ${currentFont==='normal'?'var(--wine)':'var(--border)'};background:${currentFont==='normal'?'var(--wine)':'var(--card)'};color:${currentFont==='normal'?'#fff':'var(--text2)'};font-size:14px;font-weight:600;cursor:pointer">A</button>
+        <button onclick="setFont('lg')" style="flex:1;padding:10px;border-radius:8px;border:1.5px solid ${currentFont==='lg'?'var(--wine)':'var(--border)'};background:${currentFont==='lg'?'var(--wine)':'var(--card)'};color:${currentFont==='lg'?'#fff':'var(--text2)'};font-size:16px;font-weight:600;cursor:pointer">A+</button>
+        <button onclick="setFont('xl')" style="flex:1;padding:10px;border-radius:8px;border:1.5px solid ${currentFont==='xl'?'var(--wine)':'var(--border)'};background:${currentFont==='xl'?'var(--wine)':'var(--card)'};color:${currentFont==='xl'?'#fff':'var(--text2)'};font-size:18px;font-weight:600;cursor:pointer">A++</button>
+      </div>
+      <div style="font-size:var(--fs-xs);color:var(--text3);margin-top:8px">目前：${currentFont==='xl'?'最大（A++）':currentFont==='lg'?'較大（A+）':'預設（A）'}</div>
+    </div>
+    <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--border);padding:14px;margin-bottom:12px">
+      <div style="font-size:var(--fs-sm);font-weight:600;color:var(--text);margin-bottom:4px">關於</div>
+      <div style="font-size:var(--fs-xs);color:var(--text3);line-height:1.7">強勢選股 PWA<br>資料來源：FinMind、台灣證交所<br>⚠️ 本分析僅供技術面學習參考，不構成投資建議</div>
+    </div>`;
+}
+
 window.addEventListener('load', ()=>{
   showPage('home',null,'nav-home');
+  const savedFont=localStorage.getItem('font_size');if(savedFont) setFont(savedFont);
   // 柱量圖詳細視窗X關閉
   const instPanel=document.getElementById('instDetailPanel');
   if(instPanel){
