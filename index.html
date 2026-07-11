@@ -1194,21 +1194,7 @@ function rResult(raw,a){
     </div>
     <div class="dnote">📅 資料來源：台灣證交所，收盤後更新</div>
   </div>
-<div class="scard ${a.overall>=70?'scard-gold':'scard-normal'}">
-  <div class="rw" style="width:84px;height:84px;border-radius:50%;background:${col}22;border:3px solid ${col};${a.overall>=70?'box-shadow:0 0 16px '+col+'60;animation:goldPulse 1.5s ease-in-out infinite':''}">
-    <div class="rc"><div class="rnum" style="color:${col}">${a.overall}</div><div class="rden">/100</div></div>
-  </div>
-  <div class="sinfo" style="flex:1">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-      <div class="sverdict" style="color:${col}">${a.verdict}</div>
-      <span style="padding:2px 10px;border-radius:20px;font-size:var(--fs-xs);font-weight:600;background:var(--rbg);color:var(--red);border:0.5px solid var(--rbr)">RS ${a.rsVal!=null?a.rsVal+'%':'—'}</span>
-    </div>
-    <div class="sbreak">加分條件 ${bonusCount}/5 項達標<br>${a.rsVal!=null?'跑贏大盤 '+a.rsVal+'%':''}</div>
-    <div onclick="tW('${raw.code}','${raw.name}',${a.overall})" style="margin-top:10px;width:100%;padding:8px;background:${inW?'var(--gbg)':'var(--bg3)'};border:0.5px solid ${inW?'var(--gbr)':'var(--border2)'};border-radius:var(--rs);font-size:var(--fs-sm);font-weight:500;color:${inW?'var(--green)':'var(--text2)'};text-align:center;cursor:pointer">
-      ${inW?'✅ 已加入自選清單':'⭐ 加入自選清單'}
-    </div>
-  </div>
-</div>
+<div class="scard ${a.overall>=70?'scard-gold':'scard-normal'}"><div class="rw" style="width:84px;height:84px;border-radius:50%;background:${col}22;border:3px solid ${col};${a.overall>=70?'box-shadow:0 0 16px '+col+'60;animation:goldPulse 1.5s ease-in-out infinite':''}"><div class="rc"><div class="rnum" style="color:${col}">${a.overall}</div><div class="rden">/100</div></div></div><div class="sinfo"><div class="sverdict" style="color:${col}">${a.verdict}</div><div class="sbreak">加分條件 ${bonusCount}/5 項達標<br>70分以上為強勢候選</div></div></div>
 <div class="card"><div class="card-head"><div class="card-title">均線系統 — 週線趨勢判斷</div></div><div class="cl">
 <div class="ci">${ih(a.wk_p)}<div class="cb"><div class="cn">① 週20MA — 中期趨勢</div><div class="cd">現價 ${f(a.cur,2)}｜週20MA ${f(a.ma20w,2)}<br>${a.wk_p?'✓ 站上週20MA，趨勢偏多':'✕ 跌破週20MA，趨勢偏空'}</div></div></div>
 <div class="ci">${ih(a.t_100w)}<div class="cb"><div class="cn">② 週100MA — 長期趨勢</div><div class="cd">現價 ${f(a.cur,2)}｜週100MA ${a.ma100w?f(a.ma100w,2):'資料不足'}<br>${a.t_100w===true?'✓ 站上週100MA，長期多頭':a.t_100w===false?'✕ 跌破週100MA，長期偏空':'△ 資料不足'}</div></div></div>
@@ -1290,7 +1276,7 @@ ${(()=>{
         oninput="calcRisk(${f(a.ma20w,2)})">
     </div>
   </div>
-  <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:8px">20週均線：<strong style="color:var(--text)">${f(a.ma20w,2)} 元</strong>（支撐參考）</div>
+  <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:8px">20週均線：<strong style="color:var(--text)">${f(a.ma20w,2)} 元</strong>（停損基準）</div>
   <div id="riskResult" style="display:none;background:var(--bg2);border-radius:var(--rs);padding:12px 14px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div>
@@ -1355,9 +1341,13 @@ ${[{p:a.t1,n:'T1 現價在150/200日均線之上',d:`MA150 ${f(a.ma150,1)}｜MA2
 </div></div>
 ${entryConfirmHtml(a)}
 <div class="ec2"><div class="card-head"><div class="card-title">買賣價位</div></div><div class="eg">
-<div class="ei"><div class="el">PIVOT 突破價位</div><div class="ev" style="color:var(--green)">${f(a.pe,1)}</div><div class="es2">VCP 收縮頂點<br>突破後觀察量能</div></div>
-<div class="ei"><div class="el">週20MA 大趨勢支撐</div><div class="ev" style="color:var(--text2)">${f(a.ma20w,1)}</div><div class="es2">最終防線參考</div></div>
+<div class="ei"><div class="el">建議買入價</div><div class="ev" style="color:var(--green)">${f(a.pe,1)}</div><div class="es2">樞紐點 ${f(a.pivot20,1)}<br>突破+0.5%確認</div></div>
+<div class="ei"><div class="el">止損價位</div><div class="ev" style="color:var(--red)">${f(a.stop,1)}</div><div class="es2">進場後下跌7%<br>嚴格執行</div></div>
+<div class="ei"><div class="el">目標一</div><div class="ev">${f(a.tgt1,1)}</div><div class="es2">+10% 獲利</div></div>
+<div class="ei"><div class="el">目標二</div><div class="ev">${f(a.tgt2,1)}</div><div class="es2">+20% 獲利</div></div>
 </div></div>
+<button class="wbtn ${inW?'saved':''}" id="wbtn" onclick="tW('${raw.code}','${raw.name}',${a.overall})">${inW?'★ 已加入自選清單':'☆ 加入自選清單'}</button>
+<button class="pbtn" id="pbtn" onclick="tW('${raw.code}','${raw.name}',${a.overall})">☆ 加入自選清單</button>
 <!-- 大盤乖離、籌碼追蹤、火箭指標 由 renderExtraData 非同步填入 -->
 <div id="extra-data-section"></div>
 <div class="disc">⚠️ 本分析僅供技術面學習參考，不構成投資建議。資料來源：台灣證交所＋櫃買中心。投資有風險，買賣請自行負責。</div>`;
