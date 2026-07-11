@@ -690,10 +690,12 @@ async function fetchStock(code){
 
   let data=[],name=code,market='',twiiData=[];
 
+  // 確保STOCK_MAP已載入
+  if(Object.keys(STOCK_MAP).length===0) await loadStockList();
   // 抓個股資料（TaiwanStockPrice 上市上櫃都有）
   const rows=await fmFetch('TaiwanStockPrice',code,startDate);
   if(rows&&rows.length>=20){
-    const found=STOCKS.find(([c])=>c===code);
+    const found=Object.entries(STOCK_MAP).find(([c])=>c===code);
     name=found?found[1]:(getStockName(code)||rows[0].stock_name||rows[0].name||code);
     // 判斷上市或上櫃
     market=rows[0].Trading_Volume!==undefined?'':'';
@@ -1346,8 +1348,6 @@ ${entryConfirmHtml(a)}
 <div class="ei"><div class="el">目標一</div><div class="ev">${f(a.tgt1,1)}</div><div class="es2">+10% 獲利</div></div>
 <div class="ei"><div class="el">目標二</div><div class="ev">${f(a.tgt2,1)}</div><div class="es2">+20% 獲利</div></div>
 </div></div>
-<button class="wbtn ${inW?'saved':''}" id="wbtn" onclick="tW('${raw.code}','${raw.name}',${a.overall})">${inW?'★ 已加入自選清單':'☆ 加入自選清單'}</button>
-<button class="pbtn" id="pbtn" onclick="tW('${raw.code}','${raw.name}',${a.overall})">☆ 加入自選清單</button>
 <!-- 大盤乖離、籌碼追蹤、火箭指標 由 renderExtraData 非同步填入 -->
 <div id="extra-data-section"></div>
 <div class="disc">⚠️ 本分析僅供技術面學習參考，不構成投資建議。資料來源：台灣證交所＋櫃買中心。投資有風險，買賣請自行負責。</div>`;
@@ -1961,7 +1961,7 @@ async function renderExtraData(stockCode, a) {
         });
         grid.appendChild(card);
       });
-    },100);
+    },200);
 
     // ── 4. 資金流向（五根柱量圖）──
     // 解析法人資料
@@ -2092,7 +2092,7 @@ async function renderExtraData(stockCode, a) {
         </div>
       </div>`;
 
-    el.innerHTML = debugHtml + mktHtml + chipperHtml + rocketHtml + instHtml + marginHtml + riskHtml;
+    el.innerHTML = debugHtml + mktHtml + rocketHtml + instHtml + marginHtml + riskHtml;
 
   } catch(e) {
     console.error("renderExtraData error:", e);
