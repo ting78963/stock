@@ -1150,20 +1150,20 @@ function entryConfirmHtml(a){
       <div class="ep-title">📌 明日參考數值</div>
       <div style="font-size:var(--fs-sm);color:var(--text2);margin-bottom:6px">PIVOT 突破價位</div>
       <div class="ep-price">${f(a.pe,1)} 元以上</div>
-      <div class="ep-vol-title">當日成交量需達 <strong style="color:#f0f0f0">${fmtVol(a.reqVol)}</strong>（20日均量 ${fmtVol(Math.round(a.avgV20))} × 1.5倍）</div>
+      <div class="ep-vol-title">當日成交量需達 <strong style="color:var(--red)">${fmtVol(a.reqVol)}</strong>（20日均量 ${fmtVol(Math.round(a.avgV20))} × 1.5倍）</div>
       <div class="ep-vol-item" style="background:var(--bg2);border:none">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
           <span class="ep-time" style="color:var(--red)">10:00前</span>
           <span class="ep-desc" style="color:var(--text2)">量價齊揚，最強訊號</span>
         </div>
-        <div style="font-size:var(--fs-xs);color:var(--text3)">此時需達 <span style="color:#f0f0f0">${fmtVol(Math.round(a.reqVol*0.18))}</span></div>
+        <div style="font-size:var(--fs-xs);color:var(--text3)">此時需達 <span style="color:var(--red)">${fmtVol(Math.round(a.reqVol*0.18))}</span></div>
       </div>
       <div class="ep-vol-item" style="background:var(--bg2);border:none">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
           <span class="ep-time" style="color:var(--amber)">12:00前</span>
           <span class="ep-desc" style="color:var(--text2)">量能尚可，次佳時段</span>
         </div>
-        <div style="font-size:var(--fs-xs);color:var(--text3)">此時需達 <span style="color:#f0f0f0">${fmtVol(Math.round(a.reqVol*0.55))}</span></div>
+        <div style="font-size:var(--fs-xs);color:var(--text3)">此時需達 <span style="color:var(--red)">${fmtVol(Math.round(a.reqVol*0.55))}</span></div>
       </div>
       <div class="ep-vol-item" style="background:var(--bg2);border:none">
         <div style="display:flex;align-items:center;gap:8px">
@@ -1197,7 +1197,7 @@ function rResult(raw,a){
     <div class="dnote">📅 資料來源：台灣證交所，收盤後更新</div>
   </div>
 <div class="scard ${a.overall>=70?'scard-gold':'scard-normal'}"><div class="rw" style="width:84px;height:84px;border-radius:50%;background:${col}22;border:3px solid ${col};${a.overall>=70?'box-shadow:0 0 16px '+col+'60;animation:goldPulse 1.5s ease-in-out infinite':''}"><div class="rc"><div class="rnum" style="color:${col}">${a.overall}</div><div class="rden">/100</div></div></div><div class="sinfo"><div class="sverdict" style="color:${col}">${a.verdict}</div><div class="sbreak">加分條件 ${bonusCount}/5 項達標<br>70分以上為強勢候選</div>
-<div onclick="tW('${raw.code}','${raw.name}',${a.overall})" style="margin-top:10px;width:100%;padding:8px;background:${inW?'var(--gbg)':'var(--bg3)'};border:0.5px solid ${inW?'var(--gbr)':'var(--border2)'};border-radius:var(--rs);font-size:var(--fs-sm);font-weight:500;color:${inW?'var(--green)':'var(--text2)'};text-align:center;cursor:pointer">
+<div onclick="tW('${raw.code}','${raw.name}',${a.overall})" style="margin-top:10px;width:100%;padding:8px;background:${inW?'var(--gbg)':'var(--bg2)'};border:1px solid ${inW?'var(--green)':'var(--wine)'};border-radius:var(--rs);font-size:var(--fs-sm);font-weight:600;color:${inW?'var(--green)':'var(--wine)'};text-align:center;cursor:pointer">
 ${inW?'✅ 已加入自選':'⭐ 加入自選清單'}
 </div></div></div>
 <div class="card"><div class="card-head"><div class="card-title">均線系統 — 週線趨勢判斷</div></div><div class="cl">
@@ -1257,7 +1257,7 @@ ${(()=>{
 </div></div>
 <div class="card"><div class="card-head"><div class="card-title">四大法寶 — 型態與量能</div></div><div class="cl">
 <div class="ci">${ih(a.pt_p)}<div class="cb"><div class="cn">③ 型態判斷</div><div class="cd">偵測型態：${a.pat}<br>${a.pat==='W底'?'✓ W底型態，偏多':a.pat==='M頭'?'✕ M頭型態，偏空避開':'△ 盤整中，等待突破方向'}</div></div></div>
-<div class="ci">${ih(a.vl_p)}<div class="cb"><div class="cn">④ 成交量 — 有無大人</div><div class="cd">量比 ${f(a.volR,2)}x（今日 ${fmtVol(a.curVol)} vs 5日均量 ${fmtVol(a.avgV5)}）<br>${a.vl_p===true?'✓ 明顯爆量（≥1.5x），主力進駐':a.vl_p==='warn'?'△ 量能放大（1.1~1.5x），持續觀察':'✕ 量能低迷，主力未介入'}</div></div></div>
+<div class="ci">${ih(a.vl_p)}<div class="cb"><div class="cn">④ 成交量 — 有無大人</div><div class="cd">量比 ${f(a.volR,2)}x（今日 <span style="color:var(--red)">${fmtVol(a.curVol)}</span> vs 5日均量 ${fmtVol(a.avgV5)}）<br>${a.vl_p===true?'✓ 明顯爆量（≥1.5x），主力進駐':a.vl_p==='warn'?'△ 量能放大（1.1~1.5x），持續觀察':'✕ 量能低迷，主力未介入'}</div></div></div>
 </div></div>
 
 
@@ -1303,12 +1303,13 @@ ${(()=>{
 ${[{p:a.t1,n:'T1 現價在150/200日均線之上',d:`MA150 ${f(a.ma150,1)}｜MA200 ${f(a.ma200,1)}`},{p:a.t2,n:'T2 150日均線 > 200日均線',d:`MA150 ${f(a.ma150,1)} vs MA200 ${f(a.ma200,1)}`},{p:a.t3,n:'T3 200日均線持續上揚',d:`MA200現 ${f(a.ma200,1)} vs 4週前 ${f(a.ma200_4w,1)}`},{p:a.t6,n:'T6 距52週低點漲幅超過25%',d:`距低點 ${p(a.fromLo)}`},{p:a.t7,n:'T7 相對強度RS（對比加權指數）',d:a.rsVal!=null?`超額報酬 ${a.rsVal>=0?'+':''}${a.rsVal}%（≥+15%為強勢）`:'資料計算中'}].map(c=>`<div class="ci">${ih(c.p)}<div class="cb"><div class="cn">${c.n}</div><div class="cd">${c.d}</div></div></div>`).join('')}
 </div></div>
 ${entryConfirmHtml(a)}
-<div class="ec2"><div class="card-head"><div class="card-title">買賣價位</div></div><div class="eg">
-<div class="ei"><div class="el">建議買入價</div><div class="ev" style="color:var(--green)">${f(a.pe,1)}</div><div class="es2">樞紐點 ${f(a.pivot20,1)}<br>突破+0.5%確認</div></div>
+${['contracting','final_contraction','just_broke'].includes(a.vcp.status)?`
+<div class="ec2"><div class="card-head"><div class="card-title">VCP 價位參考</div></div><div class="eg">
+<div class="ei"><div class="el">PIVOT 突破點</div><div class="ev" style="color:var(--red)">${f(a.pe,1)}</div><div class="es2">突破後觀察量能</div></div>
 <div class="ei"><div class="el">週20MA 大趨勢支撐</div><div class="ev" style="color:var(--text2)">${f(a.ma20w,1)}</div><div class="es2">最終防線參考</div></div>
-<div class="ei"><div class="el">+10% 技術參考位</div><div class="ev">${f(a.tgt1,1)}</div><div class="es2">技術面參考</div></div>
-<div class="ei"><div class="el">+20% 技術參考位</div><div class="ev">${f(a.tgt2,1)}</div><div class="es2">技術面參考</div></div>
-</div></div>
+<div class="ei"><div class="el">+10% 技術參考位</div><div class="ev" style="color:var(--text)">${f(a.tgt1,1)}</div><div class="es2">技術面參考</div></div>
+<div class="ei"><div class="el">+20% 技術參考位</div><div class="ev" style="color:var(--text)">${f(a.tgt2,1)}</div><div class="es2">技術面參考</div></div>
+</div></div>`:''}
 <!-- 大盤乖離、籌碼追蹤、火箭指標 由 renderExtraData 非同步填入 -->
 <div id="extra-data-section"></div>
 <div class="disc">⚠️ 本分析僅供技術面學習參考，不構成投資建議。資料來源：台灣證交所＋櫃買中心。投資有風險，買賣請自行負責。</div>`;
@@ -2005,6 +2006,7 @@ async function renderExtraData(stockCode, a) {
     // ── 6. 新版風險計算工具 ──
     const ma20dV = a.ma20d||0;
     const ma20wV = a.ma20w||0;
+    const ma10dV = a.ma20dArr&&a.ma20dArr.length>=10 ? a.ma20dArr.slice(-10).reduce((s,v)=>s+v,0)/10 : 0;
     const riskHtml = `
       <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
         <div style="font-size:var(--fs-xs);font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">風險計算工具</div>
@@ -2013,13 +2015,13 @@ async function renderExtraData(stockCode, a) {
             <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:4px">買進價格（元）</div>
             <input id="riskPrice" type="number" inputmode="decimal" placeholder="${(a.cur||0).toFixed(1)}"
               style="width:100%;background:transparent;border:none;outline:none;font-size:var(--fs-lg);font-weight:500;color:var(--text)"
-              oninput="calcNewRisk(${ma20dV},${ma20wV})">
+              oninput="calcNewRisk(${ma20dV},${ma10dV},${ma20wV})">
           </div>
           <div style="background:var(--bg3);border-radius:var(--rs);padding:10px 12px">
             <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:4px">買進股數（股）</div>
             <input id="riskShares" type="number" inputmode="numeric" placeholder="1000"
               style="width:100%;background:transparent;border:none;outline:none;font-size:var(--fs-lg);font-weight:500;color:var(--text)"
-              oninput="calcNewRisk(${ma20dV},${ma20wV})">
+              oninput="calcNewRisk(${ma20dV},${ma10dV},${ma20wV})">
           </div>
         </div>
         <div id="riskResult" style="display:none">
@@ -2029,13 +2031,17 @@ async function renderExtraData(stockCode, a) {
               <span style="font-size:var(--fs-sm);color:var(--text2)">日20MA 停損虧損值 <span style="font-size:var(--fs-xs);color:var(--text3)">(${ma20dV.toFixed(1)}元)</span></span>
               <span id="loss20d" style="font-size:var(--fs-md);font-weight:600;color:var(--green)">—</span>
             </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg3);border-radius:var(--rs)">
+              <span style="font-size:var(--fs-sm);color:var(--text2)">日10MA 停損虧損值 <span style="font-size:var(--fs-xs);color:var(--text3)">(${ma10dV.toFixed(1)}元)</span></span>
+              <span id="loss10d" style="font-size:var(--fs-md);font-weight:600;color:var(--green)">—</span>
+            </div>
           </div>
           <div style="font-size:var(--fs-xs);color:var(--text3);margin-bottom:6px;letter-spacing:.05em">自訂停損</div>
           <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:var(--rs);margin-bottom:10px">
             <span style="font-size:var(--fs-sm);color:var(--text2)">停損</span>
             <input id="riskCustomPct" type="number" placeholder="5" inputmode="decimal"
               style="width:36px;background:transparent;border:none;outline:none;font-size:var(--fs-md);font-weight:500;color:var(--text);text-align:center"
-              oninput="calcNewRisk(${ma20dV},${ma20wV})">
+              oninput="calcNewRisk(${ma20dV},${ma10dV},${ma20wV})">
             <span style="font-size:var(--fs-sm);color:var(--text2)">%</span>
             <span id="lossCustom" style="font-size:var(--fs-md);font-weight:600;color:var(--green);margin-left:auto">—</span>
           </div>
@@ -2262,19 +2268,28 @@ function showInstDetail(idx){
 }
 
 // 新版風險計算
-function calcNewRisk(ma20d, ma20w){
+function calcNewRisk(ma20d, ma10d, ma20w){
   const price=parseFloat(document.getElementById('riskPrice')?.value);
   const shares=parseFloat(document.getElementById('riskShares')?.value)||1000;
   const customPct=parseFloat(document.getElementById('riskCustomPct')?.value)||5;
   const result=document.getElementById('riskResult');
   if(!price||price<=0||!result) return;
   result.style.display='block';
+  // 日20MA停損
   const loss20d=Math.round((price-ma20d)*shares);
   const l20el=document.getElementById('loss20d');
-  if(l20el){l20el.textContent=(loss20d>0?'-':'')+Math.abs(loss20d).toLocaleString()+' 元';l20el.style.color='var(--green)';}
+  if(l20el){l20el.textContent='-'+Math.abs(loss20d).toLocaleString()+' 元';l20el.style.color='var(--green)';}
+  // 日10MA停損
+  if(ma10d>0){
+    const loss10d=Math.round((price-ma10d)*shares);
+    const l10el=document.getElementById('loss10d');
+    if(l10el){l10el.textContent='-'+Math.abs(loss10d).toLocaleString()+' 元';l10el.style.color='var(--green)';}
+  }
+  // 自訂停損%
   const lossC=Math.round(price*(customPct/100)*shares);
   const lcEl=document.getElementById('lossCustom');
-  if(lcEl) lcEl.textContent='-'+lossC.toLocaleString()+' 元';
+  if(lcEl){lcEl.textContent='-'+lossC.toLocaleString()+' 元';lcEl.style.color='var(--green)';}
+  // 乖離率
   const dev=ma20d?((price-ma20d)/ma20d*100):0;
   const devEl=document.getElementById('deviate20d');
   if(devEl){devEl.textContent=(dev>=0?'+':'')+dev.toFixed(2)+'%　'+(dev>10?'乖離過大':dev>5?'乖離稍大，留意':'乖離正常');devEl.style.color=dev>10?'var(--red)':dev>5?'var(--amber)':'var(--green)';}
