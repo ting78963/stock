@@ -2235,16 +2235,6 @@ function renderInstChart(days,fStreak,tStreak){
   window._instDays=days;
   window._fStreak=fStreak;
   window._tStreak=tStreak;
-  // 事件委託綁定X關閉
-  setTimeout(()=>{
-    const panel=document.getElementById('instDetailPanel');
-    if(panel&&!panel._bound){
-      panel._bound=true;
-      panel.addEventListener('click',function(e){
-        if(e.target.getAttribute('data-close')==='true') panel.style.display='none';
-      });
-    }
-  },100);
   const barsHtml=days.map((d,idx)=>`
     <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:50px;cursor:pointer;padding:2px;border-radius:6px" onclick="showInstDetail(${idx})" id="inst-col-${idx}">
       <div style="display:flex;gap:2px;align-items:flex-end;height:85px">
@@ -2307,6 +2297,7 @@ function showInstDetail(idx){
       ${fs&&fs.streak>0?`<span style="font-size:12px;color:var(--text2)">外資連續 <strong style="color:${fs.dir>0?'var(--red)':'var(--green)'}">${fs.streak}天${fs.dir>0?'買超':'賣超'}</strong></span>`:''}
       ${ts&&ts.streak>0?`<span style="font-size:12px;color:var(--text2)">投信連續 <strong style="color:${ts.dir>0?'var(--red)':'var(--green)'}">${ts.streak}天${ts.dir>0?'買超':'賣超'}</strong></span>`:''}
     </div>`;
+  panel.querySelector('[data-close="true"]')?.addEventListener('click',()=>{panel.style.display='none';});
 }
 
 // 新版風險計算
@@ -2338,6 +2329,13 @@ function loadHomePage(){
 
 window.addEventListener('load', ()=>{
   showPage('home',null,'nav-home');
+  // 柱量圖詳細視窗X關閉
+  const instPanel=document.getElementById('instDetailPanel');
+  if(instPanel){
+    instPanel.addEventListener('click',function(e){
+      if(e.target.getAttribute('data-close')==='true') instPanel.style.display='none';
+    });
+  }
   // 載入自選清單
   try{ if(typeof rW==='function') {} } catch(e){}
 });
