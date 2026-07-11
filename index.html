@@ -2229,8 +2229,8 @@ async function initMoney(){
 function renderInstChart(days,fStreak,tStreak){
   const KEYS=['f','g','t','dealer','r'];
   const NAMES={f:'外資',g:'官股',t:'投信',dealer:'自營',r:'散戶'};
-  const POS={f:'#b91c1c',g:'#dc2626',t:'#7f1d1d',dealer:'#ef4444',r:'#fca5a5'};
-  const NEG={f:'#166534',g:'#16a34a',t:'#14532d',dealer:'#22c55e',r:'#86efac'};
+  const POS={f:'#b91c1c',g:'#dc2626',t:'#7f1d1d',dealer:'#ef4444',r:'#b91c1c'};
+  const NEG={f:'#166534',g:'#16a34a',t:'#14532d',dealer:'#22c55e',r:'#166534'};
   const maxVal=Math.max(...days.flatMap(d=>KEYS.map(k=>Math.abs(d[k]||0))),1);
   window._instDays=days;
   window._fStreak=fStreak;
@@ -2274,8 +2274,8 @@ function showInstDetail(idx){
   const panel=document.getElementById('instDetailPanel'); if(!panel) return;
   const KEYS=['f','g','t','dealer','r'];
   const NAMES={f:'外資',g:'官股',t:'投信',dealer:'自營商',r:'散戶'};
-  const POS={f:'#b91c1c',g:'#dc2626',t:'#7f1d1d',dealer:'#ef4444',r:'#fca5a5'};
-  const NEG={f:'#166534',g:'#16a34a',t:'#14532d',dealer:'#22c55e',r:'#86efac'};
+  const POS={f:'#b91c1c',g:'#dc2626',t:'#7f1d1d',dealer:'#ef4444',r:'#b91c1c'};
+  const NEG={f:'#166534',g:'#16a34a',t:'#14532d',dealer:'#22c55e',r:'#166534'};
   const maxAbs=Math.max(...KEYS.map(k=>Math.abs(d[k]||0)),1);
   const total=(d.f||0)+(d.g||0)+(d.t||0);
   const fs=window._fStreak;
