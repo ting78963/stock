@@ -2616,180 +2616,9 @@ function renderMoney(allPrice,allInst,tradingDays){
   });
 }
 
-function _initRocket(){
-  function spawnDust(big){
-    const dustG=document.getElementById('rDustG'); if(!dustG) return;
-    const n=big?16:8;
-    for(let i=0;i<n;i++){
-      const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      const side=Math.random()>0.5?1:-1;
-      const dx=side*(15+Math.random()*(big?70:40));
-      const dy=big?Math.random()*20+5:Math.random()*10+2;
-      c.setAttribute('cx',110+(Math.random()-0.5)*16);
-      c.setAttribute('cy',193);
-      c.setAttribute('r',big?Math.random()*7+3:Math.random()*4+2);
-      const l=65+Math.floor(Math.random()*20);
-      c.setAttribute('fill',`hsl(35,25%,${l}%)`);
-      const dur=big?0.7+Math.random()*0.3:0.5+Math.random()*0.2;
-      c.style.cssText=`--dx:${dx}px;--dy:${dy}px;animation:rDust ${dur}s ${Math.random()*0.1}s ease-out forwards`;
-      dustG.appendChild(c);
-      setTimeout(()=>c.remove(),(dur+0.1)*1000+200);
-    }
-  }
-  function spawnSmoke(big){
-    const smokeG=document.getElementById('rSmokeG'); if(!smokeG) return;
-    const n=big?5:3;
-    for(let i=0;i<n;i++){
-      const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      const sx=(Math.random()-0.5)*28;
-      const sy=-(big?50:30)-Math.random()*20;
-      c.setAttribute('cx',110+(Math.random()-0.5)*10);
-      c.setAttribute('cy',186);
-      c.setAttribute('r',big?14+Math.random()*8:8+Math.random()*5);
-      c.setAttribute('fill','var(--text3)');
-      c.setAttribute('opacity','0');
-      const dur=big?1.0+Math.random()*0.4:0.7+Math.random()*0.3;
-      c.style.cssText=`--sx:${sx}px;--sy:${sy}px;animation:rSmoke ${dur}s ${i*0.1}s ease-out forwards`;
-      smokeG.appendChild(c);
-      setTimeout(()=>c.remove(),(dur+0.2)*1000+400);
-    }
-  }
-  const rocketEl=document.getElementById('rocketEl'); if(!rocketEl) return;
-  rocketEl.style.animation='rShake 0.25s ease-in-out infinite';
-  let wc=0;
-  window._rocketWarmIv=setInterval(()=>{
-    spawnSmoke(false);
-    if(wc%2===0) spawnDust(false);
-    wc++;
-    if(wc>=5){ clearInterval(window._rocketWarmIv); window._rocketReady=true; }
-  },500);
-}
 
-function _launchRocket(cb){
-  const rocketEl=document.getElementById('rocketEl');
-  if(!rocketEl){ cb&&cb(); return; }
-  rocketEl.style.animation='rLaunch 1s cubic-bezier(.4,0,.15,1) forwards';
-  const idle=document.getElementById('rIdleFlame');
-  const launch=document.getElementById('rLaunchFlame');
-  if(idle) idle.setAttribute('opacity','0');
-  if(launch) launch.setAttribute('opacity','1');
-  function spawnDust(big){
-    const dustG=document.getElementById('rDustG'); if(!dustG) return;
-    const n=big?16:8;
-    for(let i=0;i<n;i++){
-      const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      const side=Math.random()>0.5?1:-1;
-      const dx=side*(15+Math.random()*(big?70:40));
-      const dy=big?Math.random()*20+5:Math.random()*10+2;
-      c.setAttribute('cx',110+(Math.random()-0.5)*16);
-      c.setAttribute('cy',193);
-      c.setAttribute('r',big?Math.random()*7+3:Math.random()*4+2);
-      const l=65+Math.floor(Math.random()*20);
-      c.setAttribute('fill',`hsl(35,25%,${l}%)`);
-      const dur=0.7+Math.random()*0.3;
-      c.style.cssText=`--dx:${dx}px;--dy:${dy}px;animation:rDust ${dur}s ease-out forwards`;
-      dustG.appendChild(c);
-      setTimeout(()=>c.remove(),(dur+0.1)*1000+200);
-    }
-  }
-  function spawnSmoke(big){
-    const smokeG=document.getElementById('rSmokeG'); if(!smokeG) return;
-    for(let i=0;i<5;i++){
-      const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      const sx=(Math.random()-0.5)*28;
-      const sy=-60-Math.random()*20;
-      c.setAttribute('cx',110+(Math.random()-0.5)*10);
-      c.setAttribute('cy',186);
-      c.setAttribute('r',14+Math.random()*8);
-      c.setAttribute('fill','var(--text3)');
-      c.setAttribute('opacity','0');
-      const dur=1.0+Math.random()*0.4;
-      c.style.cssText=`--sx:${sx}px;--sy:${sy}px;animation:rSmoke ${dur}s ${i*0.1}s ease-out forwards`;
-      smokeG.appendChild(c);
-      setTimeout(()=>c.remove(),(dur+0.2)*1000+400);
-    }
-  }
-  spawnDust(true); spawnSmoke(true);
-  for(let i=0;i<4;i++) setTimeout(()=>{ spawnSmoke(true); spawnDust(false); }, i*120);
-  setTimeout(()=>{ cb&&cb(); }, 1000);
-}
-function toggleAllGrp(){
-  const el=document.getElementById('grp-all');
-  const btn=document.getElementById('grp-expand-btn');
-  if(!el||!btn) return;
-  if(el.style.display==='none'){
-    el.style.display='block';
-    btn.textContent='收起 ▴';
-  } else {
-    el.style.display='none';
-    btn.textContent=`展開全部 ${GROUPS.length} 族群 ▾`;
-  }
-}
 
-// 族群詳細頁
-function showGrpDetail(g,allPrice,allInst,tradingDays){
-  document.getElementById('money-main').style.display='none';
-  const dp=document.getElementById('detail-page');
-  document.getElementById('detail-title').textContent=`${g.icon} ${g.name}`;
-  dp.style.display='block';
 
-  const today=tradingDays[tradingDays.length-1];
-  // 個股明細（計算量比）
-  const last10days=tradingDays.slice(-11,-1);
-  const stocks=g.stocks.map(id=>{
-    const pRows=allPrice[id]||[];
-    const pRow=pRows.slice(-1)[0];
-    const inst=parseInstG(allInst[id]||[],today);
-    const name=GRP_STOCK_MAP[id]||STOCK_MAP[id]||id;
-    const close=pRow?parseFloat(pRow.close):0;
-    const spread=pRow?parseFloat(pRow.spread):0;
-    const chgPct=close?((spread/close)*100):0;
-    const vol=pRow?parseInt(pRow.Trading_Volume||0)/1000:0;
-    // 個股量比
-    const avg10vol=last10days.reduce((s,d)=>{
-      const r=pRows.find(x=>x.date===d);
-      return s+(r?parseInt(r.Trading_Volume||0)/1000:0);
-    },0)/Math.max(last10days.length,1);
-    const volRatio=avg10vol>0?vol/avg10vol:0;
-    return{id,name,close,chgPct,vol,volRatio,foreign:inst.foreignBuy,trust:inst.trustBuy};
-  }).filter(s=>s.close>0).sort((a,b)=>b.foreign-a.foreign);
-
-  document.getElementById('detail-content').innerHTML=`
-    <div style="margin-bottom:14px">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:8px 12px;flex:1;min-width:80px">
-          <div style="font-size:10px;color:var(--text3)">今日量比</div>
-          <div style="font-size:16px;font-weight:600;color:${g.volRatio>=1.5?'var(--red)':'var(--text)'}">${g.volRatio.toFixed(1)}x</div>
-        </div>
-        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:8px 12px;flex:1;min-width:80px">
-          <div style="font-size:10px;color:var(--text3)">外資</div>
-          <div style="font-size:16px;font-weight:600;color:${g.td.foreignBuy>=0?'var(--red)':'var(--green)'}">${fmtInst(g.td.foreignBuy)}</div>
-        </div>
-        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:8px 12px;flex:1;min-width:80px">
-          <div style="font-size:10px;color:var(--text3)">投信</div>
-          <div style="font-size:16px;font-weight:600;color:${g.td.trustBuy>=0?'var(--red)':'var(--green)'}">${fmtInst(g.td.trustBuy)}</div>
-        </div>
-      </div>
-      <div style="font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">成分股明細</div>
-      ${stocks.map(s=>`
-        <div style="display:flex;align-items:center;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:10px 12px;margin-bottom:6px;cursor:pointer"
-          onclick="document.getElementById('stock-input').value='${s.id}';showPage('stock',null,'nav-stock');analyze();">
-          <div style="flex:1">
-            <div style="font-size:13px;font-weight:500;color:var(--text)">${s.name} <span style="color:var(--text3);font-weight:400">${s.id}</span></div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px">外資 <span style="color:${s.foreign>=0?'var(--red)':'var(--green)'}">${fmtInst(s.foreign)}</span>　投信 <span style="color:${s.trust>=0?'var(--red)':'var(--green)'}">${fmtInst(s.trust)}</span>　量比 <span style="color:${s.volRatio>=1.5?'var(--red)':s.volRatio>=1?'var(--amber)':'var(--text3)'}">${s.volRatio.toFixed(1)}x</span></div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:14px;font-weight:600;color:${s.chgPct>0?'var(--red)':s.chgPct<0?'var(--green)':'var(--text)'}">${s.chgPct>=0?'+':''}${s.chgPct.toFixed(1)}%</div>
-            <div style="font-size:11px;color:var(--text3)">${Math.round(s.vol).toLocaleString()}張</div>
-          </div>
-        </div>`).join('')}
-    </div>`;
-}
-
-function closeDetail(){
-  document.getElementById('detail-page').style.display='none';
-  document.getElementById('money-main').style.display='block';
-}
 
 // 資料抓取（含快取）
 let _moneyLoaded=false;
@@ -2808,54 +2637,7 @@ async function fetchMoneyData(){
   const ids=[...allIds];
   const allPrice={},allInst={};
   let done=0,total=ids.length*2;
-  const rocketHTML=`<div id="money-rocket-wrap" style="display:flex;align-items:center;justify-content:center;padding:16px 0;min-height:260px">
-<div style="position:relative;width:220px;height:240px;overflow:hidden" id="rocketScene">
-<svg width="220" height="240" viewBox="0 0 220 240" style="position:absolute;top:0;left:0;pointer-events:none">
-  <rect x="0" y="196" width="220" height="44" fill="var(--bg2)"/>
-  <rect x="0" y="193" width="220" height="5" rx="1" fill="var(--border2)"/>
-  <line x1="98" y1="193" x2="84" y2="208" stroke="var(--text3)" stroke-width="3.5" stroke-linecap="round"/>
-  <line x1="122" y1="193" x2="136" y2="208" stroke="var(--text3)" stroke-width="3.5" stroke-linecap="round"/>
-  <rect x="88" y="186" width="44" height="9" rx="3" fill="var(--text2)"/>
-  <rect x="105" y="183" width="10" height="6" rx="2" fill="var(--text3)"/>
-  <g id="rDustG"/><g id="rSmokeG"/>
-</svg>
-<div id="rocketEl" style="position:absolute;bottom:192px;left:50%;transform:translateX(-50%);width:44px">
-<svg width="44" height="100" viewBox="0 0 44 100">
-  <style>
-    @keyframes rFlame{0%,100%{transform:scaleX(1) scaleY(1)}33%{transform:scaleX(0.8) scaleY(1.2)}66%{transform:scaleX(1.15) scaleY(0.85)}}
-    @keyframes rLaunch{0%{transform:translateX(-50%) translateY(0)}100%{transform:translateX(-50%) translateY(-340px)}}
-    @keyframes rShake{0%,100%{transform:translateX(-50%) translateY(0)}25%{transform:translateX(calc(-50% - 1.5px))}75%{transform:translateX(calc(-50% + 1.5px))}}
-    @keyframes rDust{0%{opacity:0.9;transform:translate(0,0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0.1)}}
-    @keyframes rSmoke{0%{opacity:0.5;transform:translate(var(--sx),0) scale(0.4)}100%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(2)}}
-  </style>
-  <path d="M22 2 Q32 16 33 52 L33 78 L11 78 L11 52 Q12 16 22 2Z" fill="#8b1a1a"/>
-  <path d="M22 2 Q26 14 27 48 L27 78 L22 78 L22 2Z" fill="#a52020" opacity="0.4"/>
-  <circle cx="22" cy="36" r="8" fill="#6b1414"/>
-  <circle cx="22" cy="36" r="6" fill="#c8d8f0" opacity="0.85"/>
-  <circle cx="20" cy="34" r="2" fill="white" opacity="0.5"/>
-  <path d="M11 60 L2 82 L11 76 Z" fill="#6b1414"/>
-  <path d="M33 60 L42 82 L33 76 Z" fill="#6b1414"/>
-  <rect x="17" y="76" width="10" height="7" rx="2" fill="#4a0e0e"/>
-  <g id="rIdleFlame" transform-origin="22 83" style="animation:rFlame 0.18s ease-in-out infinite">
-    <path d="M18 83 Q22 96 26 83 Q24 90 22 94 Q20 90 18 83Z" fill="#FF6D00" opacity="0.9"/>
-    <path d="M19 83 Q22 93 25 83 Q23.5 88 22 91 Q20.5 88 19 83Z" fill="#FFA000"/>
-    <path d="M20 83 Q22 89 24 83 Q23 87 22 89 Q21 87 20 83Z" fill="#FFD54F"/>
-  </g>
-  <g id="rLaunchFlame" opacity="0" transform-origin="22 83" style="animation:rFlame 0.12s ease-in-out infinite">
-    <path d="M14 83 Q22 128 30 83 Q27 105 22 118 Q17 105 14 83Z" fill="#FF6D00"/>
-    <path d="M16 83 Q22 120 28 83 Q25.5 102 22 112 Q18.5 102 16 83Z" fill="#FFA000"/>
-    <path d="M18 83 Q22 108 26 83 Q24 96 22 104 Q20 96 18 83Z" fill="#FFD54F"/>
-    <path d="M19 83 Q22 98 25 83 Q23.5 91 22 96 Q20.5 91 19 83Z" fill="#FFF9C4"/>
-  </g>
-</svg>
-</div>
-</div></div>`;
-
-  const setProgress=()=>{
-    const el=document.getElementById('money-main');
-    if(el&&!document.getElementById('rocketEl')) el.innerHTML=rocketHTML;
-    if(!window._rocketInit){ window._rocketInit=true; _initRocket(); }
-  };
+  const setProgress=()=>{};
   setProgress();
 
   for(const id of ids){
@@ -2875,20 +2657,15 @@ async function fetchMoneyData(){
 async function initMoney(){
   if(_moneyLoaded&&_moneyCache) return;
   _moneyLoaded=true;
-  window._rocketInit=false;
-  window._rocketReady=false;
   document.getElementById('money-main').innerHTML=`<div style="display:flex;align-items:center;justify-content:center;min-height:260px;color:var(--text3)"><div style="font-size:24px;animation:spin 1s linear infinite;display:inline-block">↺</div></div>`;
   try{
     const cache=await fetchMoneyData();
-    window._rocketInit=false;
     const tradingDays=getTradingDaysG(cache.allPrice,20);
     if(tradingDays.length<2){
       document.getElementById('money-main').innerHTML=`<div style="padding:20px;color:var(--amber)">⚠️ 資料不足，請按更新重試</div>`;
       return;
     }
-    _launchRocket(()=>{
-      renderMoney(cache.allPrice,cache.allInst,tradingDays);
-    });
+    renderMoney(cache.allPrice,cache.allInst,tradingDays);
   } catch(e){
     document.getElementById('money-main').innerHTML=`<div style="padding:20px;color:var(--red)">載入失敗：${e.message}</div>`;
     _moneyLoaded=false;
@@ -3073,15 +2850,10 @@ function setIdx(valId,chgId,data,isVix=false){
   const cEl=document.getElementById(chgId);
   if(!vEl||!cEl||!data) return;
   vEl.textContent=data.close>1000?Math.round(data.close).toLocaleString():data.close.toFixed(2);
-  const pct=data.chgPct;
+  const pct=data.chg_pct;
   const sign=pct>=0?'+':'';
   cEl.textContent=`${sign}${pct.toFixed(2)}%`;
-  // VIX反向：漲是壞事用綠色顯示
-  if(isVix){
-    cEl.style.color=pct>0?'var(--green)':'var(--red)';
-  } else {
-    cEl.style.color=pct>=0?'var(--red)':'var(--green)';
-  }
+  cEl.style.color=isVix?(pct>0?'var(--green)':'var(--red)'):(pct>=0?'var(--red)':'var(--green)');
 }
 
 async function loadHomeWatch(){
