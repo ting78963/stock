@@ -2666,6 +2666,7 @@ async function initMoney(){
       return;
     }
     renderMoney(cache.allPrice,cache.allInst,tradingDays);
+    loadHomeGroups(); // 族群資金載入完後更新今日焦點前三
   } catch(e){
     document.getElementById('money-main').innerHTML=`<div style="padding:20px;color:var(--red)">載入失敗：${e.message}</div>`;
     _moneyLoaded=false;
@@ -2951,6 +2952,27 @@ async function loadHomePage(){
     setIdx('vix-val','vix-chg',mktData.vix,true);
     setIdx('nikkei-val','nikkei-chg',mktData.nikkei);
     setIdx('kospi-val','kospi-chg',mktData.kospi);
+    // 台指期、夜盤
+    if(mktData.futures){
+      const fEl=document.getElementById('futures-val');
+      const fcEl=document.getElementById('futures-chg');
+      if(fEl) fEl.textContent=Math.round(mktData.futures.close).toLocaleString();
+      if(fcEl){
+        const p=mktData.futures.chg_pct;
+        fcEl.textContent=`${p>=0?'+':''}${p.toFixed(2)}%`;
+        fcEl.style.color=p>=0?'var(--red)':'var(--green)';
+      }
+    }
+    if(mktData.night){
+      const nEl=document.getElementById('night-val');
+      const ncEl=document.getElementById('night-chg');
+      if(nEl) nEl.textContent=Math.round(mktData.night.close).toLocaleString();
+      if(ncEl){
+        const p=mktData.night.chg_pct;
+        ncEl.textContent=`${p>=0?'+':''}${p.toFixed(2)}%`;
+        ncEl.style.color=p>=0?'var(--red)':'var(--green)';
+      }
+    }
     if(mktEl) mktEl.textContent=genRuleSummary(mktData);
   } else {
     if(mktEl) mktEl.textContent='國際指數載入失敗，請確認網路連線。';
