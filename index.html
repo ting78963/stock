@@ -3072,14 +3072,32 @@ async function fetchTWMarket(){
     const c=JSON.parse(localStorage.getItem(TW_CACHE_KEY));
     return c.data;
   }
-  const raw=await fetchYahooBatch(['^TWII','TWN=F']);
-  const data={
-    futures: raw['^TWII']||null,
-    night:   raw['TWN=F']||null,
-  };
-  const today=new Date().toISOString().slice(0,10);
-  localStorage.setItem(TW_CACHE_KEY,JSON.stringify({date:today,fetched:true,data}));
-  return data;
+  try{
+    const start=(()=>{const d=new Date();d.setDate(d.getDate()-5);return d.toISOString().slice(0,10);})();
+    const rows=await fmFetch('TaiwanFuturesDaily','TX',start)||[];
+    // 取最新日期的日盤和夜盤
+    const sorted=[...rows].sort((a,b)=>a.date.localeCompare(b.date));
+    const lastDate=sorted.length?sorted[sorted.length-1].date:'';
+    const dayRows=sorted.filter(r=>r.date===lastDate&&(r.trading_session==='day'||r.session==='day'||!r.trading_session));
+    const nightRows=sorted.filter(r=>r.date===lastDate&&(r.trading_session==='night'||r.session==='night'));
+    // 取前一天資料當作prev
+    const dates=[...new Set(sorted.map(r=>r.date))].sort();
+    const prevDate=dates.length>=2?dates[dates.length-2]:'';
+    const prevDayRows=sorted.filter(r=>r.date===prevDate&&(r.trading_session==='day'||r.session==='day'||!r.trading_session));
+    const prevNightRows=sorted.filter(r=>r.date===prevDate&&(r.trading_session==='night'||r.session==='night'));
+    function getClose(arr){ return arr.length?parseFloat(arr[arr.length-1].close||arr[arr.length-1].settlement_price||0):0; }
+    const dayClose=getClose(dayRows);
+    const prevDayClose=getClose(prevDayRows);
+    const nightClose=getClose(nightRows);
+    const prevNightClose=getClose(prevNightRows);
+    const data={
+      futures: dayClose>0?{close:Math.round(dayClose),prev:Math.round(prevDayClose),chg_pct:prevDayClose>0?Math.round((dayClose-prevDayClose)/prevDayClose*10000)/100:0}:null,
+      night:   nightClose>0?{close:Math.round(nightClose),prev:Math.round(prevNightClose),chg_pct:prevNightClose>0?Math.round((nightClose-prevNightClose)/prevNightClose*10000)/100:0}:null,
+    };
+    const today=new Date().toISOString().slice(0,10);
+    localStorage.setItem(TW_CACHE_KEY,JSON.stringify({date:today,fetched:true,data}));
+    return data;
+  }catch(e){return{futures:null,night:null};}
 }
 
 function genRuleSummary(d){
