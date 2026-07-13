@@ -2923,14 +2923,11 @@ function setIdx(valId,chgId,data,isVix=false){
   const cEl=document.getElementById(chgId);
   if(!vEl||!cEl||!data) return;
   vEl.textContent=data.close>1000?Math.round(data.close).toLocaleString():data.close.toFixed(2);
-  const pct=data.chgPct;
+  const pct=data.chg_pct!=null?data.chg_pct:data.chgPct;
   const sign=pct>=0?'+':'';
   cEl.textContent=`${sign}${pct.toFixed(2)}%`;
-  // VIX反向：漲是壞事用綠色顯示
-  if(isVix){
-    cEl.style.color=pct>0?'var(--green)':'var(--red)';
-  } else {
-    cEl.style.color=pct>=0?'var(--red)':'var(--green)';
+  cEl.style.color=isVix?(pct>0?'var(--green)':'var(--red)'):(pct>=0?'var(--red)':'var(--green)');
+  if(false){
   }
 }
 
