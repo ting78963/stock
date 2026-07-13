@@ -2729,10 +2729,10 @@ async function fetchMoneyData(){
 
   for(const id of ids){
     allPrice[id]=(await fmFetch('TaiwanStockPrice',id,startDate))||[];
-    done++;
+    done++; setProgress(); await new Promise(r=>setTimeout(r,0));
     await new Promise(r=>setTimeout(r,150));
     allInst[id]=(await fmFetch('TaiwanStockInstitutionalInvestorsBuySell',id,startDate))||[];
-    done++;
+    done++; setProgress(); await new Promise(r=>setTimeout(r,0));
     await new Promise(r=>setTimeout(r,150));
   }
   const cache={date:todayStr,allPrice,allInst};
@@ -2882,21 +2882,6 @@ function calcNewRisk(ma20d, ma10d, ma20w){
 const HOME_CACHE_KEY='home_data_v1';
 let _homeLoaded=false;
 
-async function fetchStooq(symbol){
-  try{
-    const url=`https://stooq.com/q/l/?s=${symbol}&f=sd2t2ohlcv&e=csv`;
-    const r=await fetch(url);
-    const text=await r.text();
-    const lines=text.trim().split('\n');
-    if(lines.length<2) return null;
-    const vals=lines[1].split(',');
-    // Date,Time,Open,High,Low,Close,Volume
-    const close=parseFloat(vals[6]||vals[5]);
-    const open=parseFloat(vals[2]);
-    const chgPct=open>0?((close-open)/open*100):0;
-    return{close,chgPct};
-  }catch(e){return null;}
-}
 
 function setIdx(valId,chgId,data,isVix=false){
   const vEl=document.getElementById(valId);
@@ -2987,25 +2972,55 @@ async function loadHomeGroups(){
   }catch(e){el.innerHTML='';}
 }
 
-async function genAiSummary(intlData){
-  const el=document.getElementById('ai-summary-text');
-  if(!el) return;
+
+async function fetchMarketData(){
   try{
-    const lines=Object.entries(intlData).map(([k,v])=>v?`${k}: ${v.close>1000?Math.round(v.close).toLocaleString():v.close.toFixed(2)} (${v.chgPct>=0?'+':''}${v.chgPct.toFixed(2)}%)`:'').filter(Boolean).join('、');
-    const prompt=`以下是昨日美股及亞洲市場收盤數據：${lines}。請用繁體中文寫2-3句話的開盤前市場解讀，重點放在對今日台股科技族群的影響，語氣簡潔專業，不要有多餘的標題或分點，直接寫句子。`;
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:200,
-        messages:[{role:'user',content:prompt}]
-      })
-    });
-    const d=await res.json();
-    const text=d.content?.[0]?.text||'';
-    if(text) el.textContent=text;
-  }catch(e){el.textContent='市場摘要暫時無法載入';}
+    const r=await fetch('https://stock-alert-91j1.onrender.com/market');
+    return await r.json();
+  }catch(e){return null;}
+}
+
+function genRuleSummary(d){
+  if(!d) return '市場數據載入中...';
+  const parts=[];
+  const ndx=d.nasdaq;
+  if(ndx){
+    if(ndx.chg_pct>=1.5) parts.push(`那斯達克大漲 +${ndx.chg_pct.toFixed(1)}%`);
+    else if(ndx.chg_pct>=0.5) parts.push(`那斯達克小漲 +${ndx.chg_pct.toFixed(1)}%`);
+    else if(ndx.chg_pct<=-1.5) parts.push(`那斯達克重跌 ${ndx.chg_pct.toFixed(1)}%`);
+    else if(ndx.chg_pct<=-0.5) parts.push(`那斯達克小跌 ${ndx.chg_pct.toFixed(1)}%`);
+    else parts.push(`那斯達克持平 ${ndx.chg_pct>=0?'+':''}${ndx.chg_pct.toFixed(1)}%`);
+  }
+  const sox=d.sox;
+  if(sox){
+    if(sox.chg_pct>=2) parts.push(`費半大漲 +${sox.chg_pct.toFixed(1)}%，半導體族群動能強`);
+    else if(sox.chg_pct>=1) parts.push(`費半上漲 +${sox.chg_pct.toFixed(1)}%`);
+    else if(sox.chg_pct<=-2) parts.push(`費半重跌 ${sox.chg_pct.toFixed(1)}%，半導體族群留意`);
+    else if(sox.chg_pct<=-1) parts.push(`費半下跌 ${sox.chg_pct.toFixed(1)}%`);
+  }
+  const tsm=d.tsm;
+  if(tsm){
+    if(tsm.chg_pct>=2) parts.push(`台積電ADR上漲 +${tsm.chg_pct.toFixed(1)}%`);
+    else if(tsm.chg_pct<=-2) parts.push(`台積電ADR下跌 ${tsm.chg_pct.toFixed(1)}%`);
+  }
+  const nvda=d.nvda;
+  if(nvda){
+    if(nvda.chg_pct>=3) parts.push(`輝達大漲 +${nvda.chg_pct.toFixed(1)}%，AI族群動能強`);
+    else if(nvda.chg_pct<=-3) parts.push(`輝達大跌 ${nvda.chg_pct.toFixed(1)}%，AI族群留意`);
+  }
+  const vix=d.vix;
+  if(vix){
+    if(vix.close>=25) parts.push(`VIX ${vix.close.toFixed(1)}，市場恐慌情緒偏高`);
+    else if(vix.close>=20) parts.push(`VIX ${vix.close.toFixed(1)}，市場略有不安`);
+    else parts.push(`VIX ${vix.close.toFixed(1)}，市場情緒穩定`);
+  }
+  let bullCount=0,bearCount=0;
+  if(ndx&&ndx.chg_pct>=0.5) bullCount++; else if(ndx&&ndx.chg_pct<=-0.5) bearCount++;
+  if(sox&&sox.chg_pct>=1) bullCount++; else if(sox&&sox.chg_pct<=-1) bearCount++;
+  if(tsm&&tsm.chg_pct>=1) bullCount++; else if(tsm&&tsm.chg_pct<=-1) bearCount++;
+  if(vix&&vix.close<20) bullCount++; else if(vix&&vix.close>=25) bearCount++;
+  const direction=bullCount>=3?'整體數據偏多方':bearCount>=3?'整體數據偏空方':'整體數據中性';
+  return (parts.length?parts.join('；')+'。':'')+direction+'。\n⚠️ 本摘要僅為市場數據整理，不構成投資建議。';
 }
 
 async function loadHomePage(){
@@ -3015,24 +3030,22 @@ async function loadHomePage(){
   // 1. 自選警示
   loadHomeWatch();
 
-  // 2. 國際指數（stooq）
-  const symbols={
-    nasdaq:{s:'^ndx',v:'nasdaq-val',c:'nasdaq-chg'},
-    sox:   {s:'^sox',v:'sox-val',  c:'sox-chg'},
-    sp:    {s:'^spx',v:'sp-val',   c:'sp-chg'},
-    tsm:   {s:'tsm.us',v:'tsm-val',c:'tsm-chg'},
-    nvda:  {s:'nvda.us',v:'nvda-val',c:'nvda-chg'},
-    vix:   {s:'^vix',v:'vix-val',  c:'vix-chg',isVix:true},
-    nikkei:{s:'^nkx',v:'nikkei-val',c:'nikkei-chg'},
-    kospi: {s:'^kospi',v:'kospi-val',c:'kospi-chg'},
-  };
-
-  const intlData={};
-  for(const [key,cfg] of Object.entries(symbols)){
-    const data=await fetchStooq(cfg.s);
-    intlData[{nasdaq:'那斯達克',sox:'費城半導體',sp:'S&P500',tsm:'台積電ADR',nvda:'輝達NVDA',vix:'VIX恐慌',nikkei:'日經225',kospi:'韓國KOSPI'}[key]]=data;
-    setIdx(cfg.v,cfg.c,data,cfg.isVix||false);
-    await new Promise(r=>setTimeout(r,100));
+  // 2. 國際指數（Render bot）
+  const mktEl=document.getElementById('ai-summary-text');
+  if(mktEl) mktEl.textContent='載入市場數據中...';
+  const mktData=await fetchMarketData();
+  if(mktData){
+    setIdx('nasdaq-val','nasdaq-chg',mktData.nasdaq);
+    setIdx('sox-val','sox-chg',mktData.sox);
+    setIdx('sp-val','sp-chg',mktData.sp500);
+    setIdx('tsm-val','tsm-chg',mktData.tsm);
+    setIdx('nvda-val','nvda-chg',mktData.nvda);
+    setIdx('vix-val','vix-chg',mktData.vix,true);
+    setIdx('nikkei-val','nikkei-chg',mktData.nikkei);
+    setIdx('kospi-val','kospi-chg',mktData.kospi);
+    if(mktEl) mktEl.textContent=genRuleSummary(mktData);
+  } else {
+    if(mktEl) mktEl.textContent='國際指數載入失敗，請確認網路連線。';
   }
 
   // 3. 台灣市場（FinMind TAIEX）
