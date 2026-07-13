@@ -2700,11 +2700,16 @@ let _moneyLoaded=false;
 let _moneyCache=null;
 
 async function fetchMoneyData(){
-  const todayStr=new Date().toISOString().slice(0,10);
+  const now=new Date();
+  const todayStr=now.toISOString().slice(0,10);
+  const hour=now.getHours();
   const cached=JSON.parse(localStorage.getItem('grp_money_cache_v1')||'null');
-  if(cached&&cached.date===todayStr&&cached.allPrice&&cached.allInst){
-    _moneyCache=cached;
-    return cached;
+  if(cached&&cached.allPrice&&cached.allInst){
+    // 同一天且還沒到18點，或同一天18點後已抓過 → 用快取
+    if(cached.date===todayStr&&(hour<18||cached.fetched)){
+      _moneyCache=cached;
+      return cached;
+    }
   }
   const startDate=(()=>{const d=new Date();d.setDate(d.getDate()-45);return d.toISOString().slice(0,10);})();
   const allIds=new Set();
@@ -2735,7 +2740,7 @@ async function fetchMoneyData(){
     done++; setProgress(); await new Promise(r=>setTimeout(r,0));
     await new Promise(r=>setTimeout(r,150));
   }
-  const cache={date:todayStr,allPrice,allInst};
+  const cache={date:todayStr,fetched:true,allPrice,allInst};
   localStorage.setItem('grp_money_cache_v1',JSON.stringify(cache));
   _moneyCache=cache;
   return cache;
@@ -2744,6 +2749,7 @@ async function fetchMoneyData(){
 async function initMoney(){
   if(_moneyLoaded&&_moneyCache) return;
   _moneyLoaded=true;
+  updateRefreshBtn();
   document.getElementById('money-main').innerHTML=`<div style="display:flex;align-items:center;justify-content:center;min-height:260px;color:var(--text3)"><div style="font-size:24px;animation:spin 1s linear infinite;display:inline-block">↺</div></div>`;
   try{
     const cache=await fetchMoneyData();
@@ -2753,6 +2759,8 @@ async function initMoney(){
       return;
     }
     renderMoney(cache.allPrice,cache.allInst,tradingDays);
+    loadHomeGroups();
+    updateRefreshBtn();
   } catch(e){
     document.getElementById('money-main').innerHTML=`<div style="padding:20px;color:var(--red)">載入失敗：${e.message}</div>`;
     _moneyLoaded=false;
@@ -2760,10 +2768,37 @@ async function initMoney(){
 }
 
 async function refreshMoney(){
+  // 防呆：今天已抓過就鎖住，18:00後才能再抓
+  const cached=JSON.parse(localStorage.getItem('grp_money_cache_v1')||'null');
+  const now=new Date();
+  const todayStr=now.toISOString().slice(0,10);
+  const hour=now.getHours();
+  if(cached&&cached.date===todayStr&&cached.fetched&&hour<18){
+    alert('今日資料已是最新，18:00後可再次更新。');
+    return;
+  }
   localStorage.removeItem('grp_money_cache_v1');
   _moneyLoaded=false;
   _moneyCache=null;
+  // 鎖住更新按鈕
+  const btn=document.querySelector('[onclick="refreshMoney()"]');
+  if(btn){btn.style.opacity='0.4';btn.style.pointerEvents='none';}
   await initMoney();
+  // 抓完後保持鎖住（直到18:00才解鎖，由renderMoney判斷）
+  updateRefreshBtn();
+}
+
+function updateRefreshBtn(){
+  const btn=document.querySelector('[onclick="refreshMoney()"]');
+  if(!btn) return;
+  const cached=JSON.parse(localStorage.getItem('grp_money_cache_v1')||'null');
+  const now=new Date();
+  const todayStr=now.toISOString().slice(0,10);
+  const hour=now.getHours();
+  const locked=cached&&cached.date===todayStr&&cached.fetched&&hour<18;
+  btn.style.opacity=locked?'0.4':'1';
+  btn.style.pointerEvents=locked?'none':'auto';
+  btn.title=locked?'今日資料已是最新，18:00後可再次更新':'點擊更新族群資金資料';
 }
 
 // 資金流向柱量圖（五根）
@@ -2973,11 +3008,81 @@ async function loadHomeGroups(){
 }
 
 
-async function fetchMarketData(){
+// 快取 key
+const INTL_CACHE_KEY='intl_market_v1';
+const TW_CACHE_KEY='tw_market_v1';
+
+function shouldRefresh(cacheKey, refreshHour){
   try{
-    const r=await fetch('https://stock-alert-91j1.onrender.com/market');
-    return await r.json();
+    const c=JSON.parse(localStorage.getItem(cacheKey)||'null');
+    if(!c) return true;
+    const now=new Date();
+    const today=now.toISOString().slice(0,10);
+    const hour=now.getHours();
+    // 同一天且還沒到刷新時間 → 用快取
+    if(c.date===today && hour<refreshHour) return false;
+    // 同一天且已過刷新時間且已抓過 → 用快取
+    if(c.date===today && c.fetched) return false;
+    return true;
+  }catch(e){return true;}
+}
+
+async function fetchYahoo(symbol){
+  try{
+    const url=`https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`;
+    const r=await fetch(url);
+    const d=await r.json();
+    const meta=d.chart.result[0].meta;
+    const close=meta.regularMarketPrice||0;
+    const prev=meta.chartPreviousClose||meta.previousClose||0;
+    const chg_pct=prev?((close-prev)/prev*100):0;
+    return{close:Math.round(close*100)/100,prev:Math.round(prev*100)/100,chg_pct:Math.round(chg_pct*100)/100};
   }catch(e){return null;}
+}
+
+async function fetchYahooTW(symbol){
+  try{
+    const url=`https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=2d`;
+    const r=await fetch(url);
+    const d=await r.json();
+    const meta=d.chart.result[0].meta;
+    const close=meta.regularMarketPrice||0;
+    const prev=meta.chartPreviousClose||meta.previousClose||0;
+    const chg_pct=prev?((close-prev)/prev*100):0;
+    return{close:Math.round(close),prev:Math.round(prev),chg_pct:Math.round(chg_pct*100)/100};
+  }catch(e){return null;}
+}
+
+async function fetchIntlMarket(){
+  // 8:00後才更新
+  if(!shouldRefresh(INTL_CACHE_KEY,8)){
+    const c=JSON.parse(localStorage.getItem(INTL_CACHE_KEY));
+    return c.data;
+  }
+  const SYMBOLS={nasdaq:'^IXIC',sox:'^SOX',sp500:'^GSPC',tsm:'TSM',nvda:'NVDA',vix:'^VIX',nikkei:'^N225',kospi:'^KS11'};
+  const data={};
+  for(const [key,sym] of Object.entries(SYMBOLS)){
+    data[key]=await fetchYahoo(sym);
+    await new Promise(r=>setTimeout(r,100));
+  }
+  const today=new Date().toISOString().slice(0,10);
+  localStorage.setItem(INTL_CACHE_KEY,JSON.stringify({date:today,fetched:true,data}));
+  return data;
+}
+
+async function fetchTWMarket(){
+  // 8:00後才更新
+  if(!shouldRefresh(TW_CACHE_KEY,8)){
+    const c=JSON.parse(localStorage.getItem(TW_CACHE_KEY));
+    return c.data;
+  }
+  const data={};
+  data.futures=await fetchYahooTW('^TWII'); // 台指期用加權現貨近似
+  await new Promise(r=>setTimeout(r,100));
+  data.night=await fetchYahooTW('TWN=F');
+  const today=new Date().toISOString().slice(0,10);
+  localStorage.setItem(TW_CACHE_KEY,JSON.stringify({date:today,fetched:true,data}));
+  return data;
 }
 
 function genRuleSummary(d){
@@ -3030,10 +3135,10 @@ async function loadHomePage(){
   // 1. 自選警示
   loadHomeWatch();
 
-  // 2. 國際指數（Render bot）
+  // 2. 國際指數（corsproxy + Yahoo Finance，8:00後更新快取）
   const mktEl=document.getElementById('ai-summary-text');
   if(mktEl) mktEl.textContent='載入市場數據中...';
-  const mktData=await fetchMarketData();
+  const mktData=await fetchIntlMarket();
   if(mktData){
     setIdx('nasdaq-val','nasdaq-chg',mktData.nasdaq);
     setIdx('sox-val','sox-chg',mktData.sox);
@@ -3046,6 +3151,31 @@ async function loadHomePage(){
     if(mktEl) mktEl.textContent=genRuleSummary(mktData);
   } else {
     if(mktEl) mktEl.textContent='國際指數載入失敗，請確認網路連線。';
+  }
+
+  // 2b. 台灣期指（corsproxy + Yahoo Finance，分開抓）
+  const twData=await fetchTWMarket();
+  if(twData){
+    if(twData.futures){
+      const fEl=document.getElementById('futures-val');
+      const fcEl=document.getElementById('futures-chg');
+      if(fEl) fEl.textContent=twData.futures.close.toLocaleString();
+      if(fcEl){
+        const p=twData.futures.chg_pct;
+        fcEl.textContent=`${p>=0?'+':''}${p.toFixed(2)}%`;
+        fcEl.style.color=p>=0?'var(--red)':'var(--green)';
+      }
+    }
+    if(twData.night){
+      const nEl=document.getElementById('night-val');
+      const ncEl=document.getElementById('night-chg');
+      if(nEl) nEl.textContent=twData.night.close.toLocaleString();
+      if(ncEl){
+        const p=twData.night.chg_pct;
+        ncEl.textContent=`${p>=0?'+':''}${p.toFixed(2)}%`;
+        ncEl.style.color=p>=0?'var(--red)':'var(--green)';
+      }
+    }
   }
 
   // 3. 台灣市場（FinMind TAIEX）
@@ -3102,9 +3232,6 @@ async function loadHomePage(){
       }
     }
   }catch(e){}
-
-  // 5. Claude API 市場摘要
-  genAiSummary(intlData);
 
   // 6. 族群資金前三
   loadHomeGroups();
