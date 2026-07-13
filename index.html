@@ -2617,8 +2617,83 @@ function renderMoney(allPrice,allInst,tradingDays){
 }
 
 
+function toggleAllGrp(){
+  const el=document.getElementById('grp-all');
+  const btn=document.getElementById('grp-expand-btn');
+  if(!el||!btn) return;
+  if(el.style.display==='none'){
+    el.style.display='block';
+    btn.textContent='收起 ▴';
+  } else {
+    el.style.display='none';
+    btn.textContent=`展開全部 ${GROUPS.length} 族群 ▾`;
+  }
+}
 
+// 族群詳細頁
+function showGrpDetail(g,allPrice,allInst,tradingDays){
+  document.getElementById('money-main').style.display='none';
+  const dp=document.getElementById('detail-page');
+  document.getElementById('detail-title').textContent=`${g.icon} ${g.name}`;
+  dp.style.display='block';
 
+  const today=tradingDays[tradingDays.length-1];
+  // 個股明細（計算量比）
+  const last10days=tradingDays.slice(-11,-1);
+  const stocks=g.stocks.map(id=>{
+    const pRows=allPrice[id]||[];
+    const pRow=pRows.slice(-1)[0];
+    const inst=parseInstG(allInst[id]||[],today);
+    const name=GRP_STOCK_MAP[id]||STOCK_MAP[id]||id;
+    const close=pRow?parseFloat(pRow.close):0;
+    const spread=pRow?parseFloat(pRow.spread):0;
+    const chgPct=close?((spread/close)*100):0;
+    const vol=pRow?parseInt(pRow.Trading_Volume||0)/1000:0;
+    // 個股量比
+    const avg10vol=last10days.reduce((s,d)=>{
+      const r=pRows.find(x=>x.date===d);
+      return s+(r?parseInt(r.Trading_Volume||0)/1000:0);
+    },0)/Math.max(last10days.length,1);
+    const volRatio=avg10vol>0?vol/avg10vol:0;
+    return{id,name,close,chgPct,vol,volRatio,foreign:inst.foreignBuy,trust:inst.trustBuy};
+  }).filter(s=>s.close>0).sort((a,b)=>b.foreign-a.foreign);
+
+  document.getElementById('detail-content').innerHTML=`
+    <div style="margin-bottom:14px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:8px 12px;flex:1;min-width:80px">
+          <div style="font-size:10px;color:var(--text3)">今日量比</div>
+          <div style="font-size:16px;font-weight:600;color:${g.volRatio>=1.5?'var(--red)':'var(--text)'}">${g.volRatio.toFixed(1)}x</div>
+        </div>
+        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:8px 12px;flex:1;min-width:80px">
+          <div style="font-size:10px;color:var(--text3)">外資</div>
+          <div style="font-size:16px;font-weight:600;color:${g.td.foreignBuy>=0?'var(--red)':'var(--green)'}">${fmtInst(g.td.foreignBuy)}</div>
+        </div>
+        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:8px 12px;flex:1;min-width:80px">
+          <div style="font-size:10px;color:var(--text3)">投信</div>
+          <div style="font-size:16px;font-weight:600;color:${g.td.trustBuy>=0?'var(--red)':'var(--green)'}">${fmtInst(g.td.trustBuy)}</div>
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">成分股明細</div>
+      ${stocks.map(s=>`
+        <div style="display:flex;align-items:center;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:10px 12px;margin-bottom:6px;cursor:pointer"
+          onclick="document.getElementById('stock-input').value='${s.id}';showPage('stock',null,'nav-stock');analyze();">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:500;color:var(--text)">${s.name} <span style="color:var(--text3);font-weight:400">${s.id}</span></div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">外資 <span style="color:${s.foreign>=0?'var(--red)':'var(--green)'}">${fmtInst(s.foreign)}</span>　投信 <span style="color:${s.trust>=0?'var(--red)':'var(--green)'}">${fmtInst(s.trust)}</span>　量比 <span style="color:${s.volRatio>=1.5?'var(--red)':s.volRatio>=1?'var(--amber)':'var(--text3)'}">${s.volRatio.toFixed(1)}x</span></div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:14px;font-weight:600;color:${s.chgPct>0?'var(--red)':s.chgPct<0?'var(--green)':'var(--text)'}">${s.chgPct>=0?'+':''}${s.chgPct.toFixed(1)}%</div>
+            <div style="font-size:11px;color:var(--text3)">${Math.round(s.vol).toLocaleString()}張</div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function closeDetail(){
+  document.getElementById('detail-page').style.display='none';
+  document.getElementById('money-main').style.display='block';
+}
 
 // 資料抓取（含快取）
 let _moneyLoaded=false;
@@ -2637,7 +2712,19 @@ async function fetchMoneyData(){
   const ids=[...allIds];
   const allPrice={},allInst={};
   let done=0,total=ids.length*2;
-  const setProgress=()=>{};
+  const setProgress=()=>{
+    const pct=Math.round(done/total*100);
+    const el=document.getElementById('money-main');
+    if(!el) return;
+    el.innerHTML=`<div style="padding:40px 20px;text-align:center">
+      <div style="font-size:13px;color:var(--text3);margin-bottom:16px">載入族群資金資料中...</div>
+      <div style="background:var(--bg3);border-radius:8px;height:8px;overflow:hidden;margin:0 20px 10px">
+        <div style="height:100%;background:var(--wine);border-radius:8px;width:${pct}%;transition:width 0.3s ease"></div>
+      </div>
+      <div style="font-size:12px;color:var(--text3)">${done} / ${total} 筆　${pct}%</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">首次載入約需 1-2 分鐘，之後當天快取不重抓</div>
+    </div>`;
+  };
   setProgress();
 
   for(const id of ids){
@@ -2666,7 +2753,6 @@ async function initMoney(){
       return;
     }
     renderMoney(cache.allPrice,cache.allInst,tradingDays);
-    loadHomeGroups(); // 族群資金載入完後更新今日焦點前三
   } catch(e){
     document.getElementById('money-main').innerHTML=`<div style="padding:20px;color:var(--red)">載入失敗：${e.message}</div>`;
     _moneyLoaded=false;
@@ -2796,54 +2882,20 @@ function calcNewRisk(ma20d, ma10d, ma20w){
 const HOME_CACHE_KEY='home_data_v1';
 let _homeLoaded=false;
 
-async function fetchMarketData(){
+async function fetchStooq(symbol){
   try{
-    const r=await fetch('https://stock-alert-91j1.onrender.com/market');
-    return await r.json();
+    const url=`https://stooq.com/q/l/?s=${symbol}&f=sd2t2ohlcv&e=csv`;
+    const r=await fetch(url);
+    const text=await r.text();
+    const lines=text.trim().split('\n');
+    if(lines.length<2) return null;
+    const vals=lines[1].split(',');
+    // Date,Time,Open,High,Low,Close,Volume
+    const close=parseFloat(vals[6]||vals[5]);
+    const open=parseFloat(vals[2]);
+    const chgPct=open>0?((close-open)/open*100):0;
+    return{close,chgPct};
   }catch(e){return null;}
-}
-
-function genRuleSummary(d){
-  if(!d) return '市場數據載入中...';
-  const parts=[];
-  const ndx=d.nasdaq;
-  if(ndx){
-    if(ndx.chg_pct>=1.5) parts.push(`那斯達克大漲 +${ndx.chg_pct.toFixed(1)}%`);
-    else if(ndx.chg_pct>=0.5) parts.push(`那斯達克小漲 +${ndx.chg_pct.toFixed(1)}%`);
-    else if(ndx.chg_pct<=-1.5) parts.push(`那斯達克重跌 ${ndx.chg_pct.toFixed(1)}%`);
-    else if(ndx.chg_pct<=-0.5) parts.push(`那斯達克小跌 ${ndx.chg_pct.toFixed(1)}%`);
-    else parts.push(`那斯達克持平 ${ndx.chg_pct>=0?'+':''}${ndx.chg_pct.toFixed(1)}%`);
-  }
-  const sox=d.sox;
-  if(sox){
-    if(sox.chg_pct>=2) parts.push(`費半大漲 +${sox.chg_pct.toFixed(1)}%，半導體族群動能強`);
-    else if(sox.chg_pct>=1) parts.push(`費半上漲 +${sox.chg_pct.toFixed(1)}%`);
-    else if(sox.chg_pct<=-2) parts.push(`費半重跌 ${sox.chg_pct.toFixed(1)}%，半導體族群留意`);
-    else if(sox.chg_pct<=-1) parts.push(`費半下跌 ${sox.chg_pct.toFixed(1)}%`);
-  }
-  const tsm=d.tsm;
-  if(tsm){
-    if(tsm.chg_pct>=2) parts.push(`台積電ADR上漲 +${tsm.chg_pct.toFixed(1)}%`);
-    else if(tsm.chg_pct<=-2) parts.push(`台積電ADR下跌 ${tsm.chg_pct.toFixed(1)}%`);
-  }
-  const nvda=d.nvda;
-  if(nvda){
-    if(nvda.chg_pct>=3) parts.push(`輝達大漲 +${nvda.chg_pct.toFixed(1)}%，AI族群動能強`);
-    else if(nvda.chg_pct<=-3) parts.push(`輝達大跌 ${nvda.chg_pct.toFixed(1)}%，AI族群留意`);
-  }
-  const vix=d.vix;
-  if(vix){
-    if(vix.close>=25) parts.push(`VIX ${vix.close.toFixed(1)}，市場恐慌情緒偏高`);
-    else if(vix.close>=20) parts.push(`VIX ${vix.close.toFixed(1)}，市場略有不安`);
-    else parts.push(`VIX ${vix.close.toFixed(1)}，市場情緒穩定`);
-  }
-  let bullCount=0,bearCount=0;
-  if(ndx&&ndx.chg_pct>=0.5) bullCount++; else if(ndx&&ndx.chg_pct<=-0.5) bearCount++;
-  if(sox&&sox.chg_pct>=1) bullCount++; else if(sox&&sox.chg_pct<=-1) bearCount++;
-  if(tsm&&tsm.chg_pct>=1) bullCount++; else if(tsm&&tsm.chg_pct<=-1) bearCount++;
-  if(vix&&vix.close<20) bullCount++; else if(vix&&vix.close>=25) bearCount++;
-  const direction=bullCount>=3?'整體數據偏多方':bearCount>=3?'整體數據偏空方':'整體數據中性';
-  return (parts.length?parts.join('；')+'。':'')+direction+'。\n⚠️ 本摘要僅為市場數據整理，不構成投資建議。';
 }
 
 function setIdx(valId,chgId,data,isVix=false){
@@ -2851,10 +2903,15 @@ function setIdx(valId,chgId,data,isVix=false){
   const cEl=document.getElementById(chgId);
   if(!vEl||!cEl||!data) return;
   vEl.textContent=data.close>1000?Math.round(data.close).toLocaleString():data.close.toFixed(2);
-  const pct=data.chg_pct;
+  const pct=data.chgPct;
   const sign=pct>=0?'+':'';
   cEl.textContent=`${sign}${pct.toFixed(2)}%`;
-  cEl.style.color=isVix?(pct>0?'var(--green)':'var(--red)'):(pct>=0?'var(--red)':'var(--green)');
+  // VIX反向：漲是壞事用綠色顯示
+  if(isVix){
+    cEl.style.color=pct>0?'var(--green)':'var(--red)';
+  } else {
+    cEl.style.color=pct>=0?'var(--red)':'var(--green)';
+  }
 }
 
 async function loadHomeWatch(){
@@ -2930,7 +2987,26 @@ async function loadHomeGroups(){
   }catch(e){el.innerHTML='';}
 }
 
-
+async function genAiSummary(intlData){
+  const el=document.getElementById('ai-summary-text');
+  if(!el) return;
+  try{
+    const lines=Object.entries(intlData).map(([k,v])=>v?`${k}: ${v.close>1000?Math.round(v.close).toLocaleString():v.close.toFixed(2)} (${v.chgPct>=0?'+':''}${v.chgPct.toFixed(2)}%)`:'').filter(Boolean).join('、');
+    const prompt=`以下是昨日美股及亞洲市場收盤數據：${lines}。請用繁體中文寫2-3句話的開盤前市場解讀，重點放在對今日台股科技族群的影響，語氣簡潔專業，不要有多餘的標題或分點，直接寫句子。`;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:200,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const d=await res.json();
+    const text=d.content?.[0]?.text||'';
+    if(text) el.textContent=text;
+  }catch(e){el.textContent='市場摘要暫時無法載入';}
+}
 
 async function loadHomePage(){
   if(_homeLoaded) return;
@@ -2939,43 +3015,24 @@ async function loadHomePage(){
   // 1. 自選警示
   loadHomeWatch();
 
-  // 2. 國際指數（Render bot → Yahoo Finance）
-  const mktEl=document.getElementById('ai-summary-text');
-  if(mktEl) mktEl.textContent='載入市場數據中...';
-  const mktData=await fetchMarketData();
-  if(mktData){
-    setIdx('nasdaq-val','nasdaq-chg',mktData.nasdaq);
-    setIdx('sox-val','sox-chg',mktData.sox);
-    setIdx('sp-val','sp-chg',mktData.sp500);
-    setIdx('tsm-val','tsm-chg',mktData.tsm);
-    setIdx('nvda-val','nvda-chg',mktData.nvda);
-    setIdx('vix-val','vix-chg',mktData.vix,true);
-    setIdx('nikkei-val','nikkei-chg',mktData.nikkei);
-    setIdx('kospi-val','kospi-chg',mktData.kospi);
-    // 台指期、夜盤
-    if(mktData.futures){
-      const fEl=document.getElementById('futures-val');
-      const fcEl=document.getElementById('futures-chg');
-      if(fEl) fEl.textContent=Math.round(mktData.futures.close).toLocaleString();
-      if(fcEl){
-        const p=mktData.futures.chg_pct;
-        fcEl.textContent=`${p>=0?'+':''}${p.toFixed(2)}%`;
-        fcEl.style.color=p>=0?'var(--red)':'var(--green)';
-      }
-    }
-    if(mktData.night){
-      const nEl=document.getElementById('night-val');
-      const ncEl=document.getElementById('night-chg');
-      if(nEl) nEl.textContent=Math.round(mktData.night.close).toLocaleString();
-      if(ncEl){
-        const p=mktData.night.chg_pct;
-        ncEl.textContent=`${p>=0?'+':''}${p.toFixed(2)}%`;
-        ncEl.style.color=p>=0?'var(--red)':'var(--green)';
-      }
-    }
-    if(mktEl) mktEl.textContent=genRuleSummary(mktData);
-  } else {
-    if(mktEl) mktEl.textContent='國際指數載入失敗，請確認網路連線。';
+  // 2. 國際指數（stooq）
+  const symbols={
+    nasdaq:{s:'^ndx',v:'nasdaq-val',c:'nasdaq-chg'},
+    sox:   {s:'^sox',v:'sox-val',  c:'sox-chg'},
+    sp:    {s:'^spx',v:'sp-val',   c:'sp-chg'},
+    tsm:   {s:'tsm.us',v:'tsm-val',c:'tsm-chg'},
+    nvda:  {s:'nvda.us',v:'nvda-val',c:'nvda-chg'},
+    vix:   {s:'^vix',v:'vix-val',  c:'vix-chg',isVix:true},
+    nikkei:{s:'^nkx',v:'nikkei-val',c:'nikkei-chg'},
+    kospi: {s:'^kospi',v:'kospi-val',c:'kospi-chg'},
+  };
+
+  const intlData={};
+  for(const [key,cfg] of Object.entries(symbols)){
+    const data=await fetchStooq(cfg.s);
+    intlData[{nasdaq:'那斯達克',sox:'費城半導體',sp:'S&P500',tsm:'台積電ADR',nvda:'輝達NVDA',vix:'VIX恐慌',nikkei:'日經225',kospi:'韓國KOSPI'}[key]]=data;
+    setIdx(cfg.v,cfg.c,data,cfg.isVix||false);
+    await new Promise(r=>setTimeout(r,100));
   }
 
   // 3. 台灣市場（FinMind TAIEX）
