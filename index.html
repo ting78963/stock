@@ -3008,6 +3008,8 @@ async function loadHomeGroups(){
 // 快取 key
 const INTL_CACHE_KEY='intl_market_v1';
 const TW_CACHE_KEY='tw_market_v1';
+const TAIEX_CACHE_KEY='taiex_data_v1';
+const FX_CACHE_KEY='fx_data_v1';
 
 function shouldRefresh(cacheKey, refreshHour){
   try{
@@ -3024,59 +3026,57 @@ function shouldRefresh(cacheKey, refreshHour){
   }catch(e){return true;}
 }
 
-async function fetchYahoo(symbol){
+async function fetchYahooBatch(symbols){
   try{
-    const url=`https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`;
-    const r=await fetch(url);
+    const syms=symbols.join(',');
+    const url=`https://corsproxy.io/?https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=regularMarketPrice,regularMarketPreviousClose,regularMarketChangePercent`;
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),5000); // 5秒 timeout
+    const r=await fetch(url,{signal:ctrl.signal});
+    clearTimeout(timer);
     const d=await r.json();
-    const meta=d.chart.result[0].meta;
-    const close=meta.regularMarketPrice||0;
-    const prev=meta.chartPreviousClose||meta.previousClose||0;
-    const chg_pct=prev?((close-prev)/prev*100):0;
-    return{close:Math.round(close*100)/100,prev:Math.round(prev*100)/100,chg_pct:Math.round(chg_pct*100)/100};
-  }catch(e){return null;}
-}
-
-async function fetchYahooTW(symbol){
-  try{
-    const url=`https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=2d`;
-    const r=await fetch(url);
-    const d=await r.json();
-    const meta=d.chart.result[0].meta;
-    const close=meta.regularMarketPrice||0;
-    const prev=meta.chartPreviousClose||meta.previousClose||0;
-    const chg_pct=prev?((close-prev)/prev*100):0;
-    return{close:Math.round(close),prev:Math.round(prev),chg_pct:Math.round(chg_pct*100)/100};
-  }catch(e){return null;}
+    const result={};
+    (d.quoteResponse?.result||[]).forEach(q=>{
+      const close=q.regularMarketPrice||0;
+      const prev=q.regularMarketPreviousClose||0;
+      const chg_pct=q.regularMarketChangePercent||0;
+      result[q.symbol]={close:Math.round(close*100)/100,prev:Math.round(prev*100)/100,chg_pct:Math.round(chg_pct*100)/100};
+    });
+    return result;
+  }catch(e){return {};}
 }
 
 async function fetchIntlMarket(){
-  // 8:00後才更新
   if(!shouldRefresh(INTL_CACHE_KEY,8)){
     const c=JSON.parse(localStorage.getItem(INTL_CACHE_KEY));
     return c.data;
   }
-  const SYMBOLS={nasdaq:'^IXIC',sox:'^SOX',sp500:'^GSPC',tsm:'TSM',nvda:'NVDA',vix:'^VIX',nikkei:'^N225',kospi:'^KS11'};
-  const data={};
-  for(const [key,sym] of Object.entries(SYMBOLS)){
-    data[key]=await fetchYahoo(sym);
-    await new Promise(r=>setTimeout(r,100));
-  }
+  const raw=await fetchYahooBatch(['^IXIC','^SOX','^GSPC','TSM','NVDA','^VIX','^N225','^KS11']);
+  const data={
+    nasdaq: raw['^IXIC']||null,
+    sox:    raw['^SOX']||null,
+    sp500:  raw['^GSPC']||null,
+    tsm:    raw['TSM']||null,
+    nvda:   raw['NVDA']||null,
+    vix:    raw['^VIX']||null,
+    nikkei: raw['^N225']||null,
+    kospi:  raw['^KS11']||null,
+  };
   const today=new Date().toISOString().slice(0,10);
   localStorage.setItem(INTL_CACHE_KEY,JSON.stringify({date:today,fetched:true,data}));
   return data;
 }
 
 async function fetchTWMarket(){
-  // 8:00後才更新
   if(!shouldRefresh(TW_CACHE_KEY,8)){
     const c=JSON.parse(localStorage.getItem(TW_CACHE_KEY));
     return c.data;
   }
-  const data={};
-  data.futures=await fetchYahooTW('^TWII'); // 台指期用加權現貨近似
-  await new Promise(r=>setTimeout(r,100));
-  data.night=await fetchYahooTW('TWN=F');
+  const raw=await fetchYahooBatch(['^TWII','TWN=F']);
+  const data={
+    futures: raw['^TWII']||null,
+    night:   raw['TWN=F']||null,
+  };
   const today=new Date().toISOString().slice(0,10);
   localStorage.setItem(TW_CACHE_KEY,JSON.stringify({date:today,fetched:true,data}));
   return data;
@@ -3175,10 +3175,19 @@ async function loadHomePage(){
     }
   }
 
-  // 3. 台灣市場（FinMind TAIEX）
+  // 3. 台灣市場（FinMind TAIEX，8:00後更新快取）
   try{
-    const start90=(()=>{const d=new Date();d.setMonth(d.getMonth()-6);return d.toISOString().slice(0,10);})();
-    const taiexRows=await fmFetch('TaiwanStockPrice','TAIEX',start90)||[];
+    let taiexRows=[];
+    if(!shouldRefresh(TAIEX_CACHE_KEY,8)){
+      taiexRows=JSON.parse(localStorage.getItem(TAIEX_CACHE_KEY)).data;
+    } else {
+      const start90=(()=>{const d=new Date();d.setMonth(d.getMonth()-6);return d.toISOString().slice(0,10);})();
+      taiexRows=await fmFetch('TaiwanStockPrice','TAIEX',start90)||[];
+      if(taiexRows.length>0){
+        const today=new Date().toISOString().slice(0,10);
+        localStorage.setItem(TAIEX_CACHE_KEY,JSON.stringify({date:today,fetched:true,data:taiexRows}));
+      }
+    }
     if(taiexRows.length>=2){
       const sorted=[...taiexRows].sort((a,b)=>a.date.localeCompare(b.date));
       const last=sorted[sorted.length-1];
@@ -3194,7 +3203,6 @@ async function loadHomePage(){
         cEl.textContent=`${chg>=0?'+':''}${chg.toFixed(0)} (${chgPct>=0?'+':''}${chgPct.toFixed(2)}%)`;
         cEl.style.color=chg>=0?'var(--red)':'var(--green)';
       }
-      // 大盤季線乖離（60日均）— 跟個股分析相同邏輯
       if(sorted.length>=60){
         const closes=sorted.map(r=>parseFloat(r.close)||0);
         const ma60=closes.slice(-60).reduce((a,b)=>a+b,0)/60;
@@ -3209,10 +3217,19 @@ async function loadHomePage(){
     }
   }catch(e){}
 
-  // 4. 匯率（FinMind）
+  // 4. 匯率（FinMind，8:00後更新快取）
   try{
-    const start=(()=>{const d=new Date();d.setDate(d.getDate()-10);return d.toISOString().slice(0,10);})();
-    const fxRows=await fmFetch('TaiwanExchangeRate','USD',start)||[];
+    let fxRows=[];
+    if(!shouldRefresh(FX_CACHE_KEY,8)){
+      fxRows=JSON.parse(localStorage.getItem(FX_CACHE_KEY)).data;
+    } else {
+      const start=(()=>{const d=new Date();d.setDate(d.getDate()-10);return d.toISOString().slice(0,10);})();
+      fxRows=await fmFetch('TaiwanExchangeRate','USD',start)||[];
+      if(fxRows.length>0){
+        const today=new Date().toISOString().slice(0,10);
+        localStorage.setItem(FX_CACHE_KEY,JSON.stringify({date:today,fetched:true,data:fxRows}));
+      }
+    }
     if(fxRows.length>=2){
       const sorted=[...fxRows].sort((a,b)=>a.date.localeCompare(b.date));
       const last=sorted[sorted.length-1];
