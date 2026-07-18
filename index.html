@@ -915,11 +915,15 @@ function analyze(raw){
   const ecCount=[ec1,ec2,ec3,ec4].filter(Boolean).length;
   const ecReady=ecCount===4;
   const ecPartial=ecCount>=2&&!ecReady;
-  const t1=ma150&&ma200?cur>ma150&&cur>ma200:null;
-  const t2=ma150&&ma200?ma150>ma200:null;
-  const t3=ma200&&ma200_4w?ma200>ma200_4w:null;
-  const t_100w=ma100w?cur>ma100w:null; // 100週MA條件
-  const t6=fromLo>=25;
+  // SEPA 改用均線系統
+  const t1=ma20w&&ma100w_w?cur>ma20w&&cur>ma100w_w:null;
+  const t2=ma20w&&ma100w_w?ma20w>ma100w_w:null;
+  const t3=ma100w_w&&ma100w_w_prev?ma100w_w>ma100w_w_prev:null;
+  const t_100w=ma100w?cur>ma100w:null;
+  // T6: 距26週低點 > +25%
+  const lo26w=wk.length>=26?Math.min(...wk.slice(-26)):lo52;
+  const fromLo26=lo26w>0?((cur-lo26w)/lo26w)*100:0;
+  const t6=fromLo26>=25;
   let base=0;
   if(wk_p===true)base+=20;if(dy_p===true)base+=10;
   if(pt_p===true)base+=15;else if(pt_p===null)base+=5;
@@ -965,7 +969,7 @@ function analyze(raw){
     breakValidation = 'none';
   }
 
-  return{cur,prev,dayChg,isLimitUp,curHigh,curLow,ma20d,ma100d,ma20w,ma60,ma150,ma200,ma200_4w,ma100w,dayGoldenCross,dayDeathCross,daysCrossed100,daysDropped100,daysDropped20,dy100_p,wkGoldenCross,wkGoldenCrossPrev,wkDeathCross,wkDeathCrossPrev,ma20w_prev,ma100w_w,ma100w_w_prev,closes:cl,ma20dArr,hi52,lo52,fromHi,fromLo,volR,volR20,curVol,avgV5,avgV20,reqVol,rsVal,t7,pat,wk_p,dy_p,pt_p,vl_p,t1,t2,t3,t_100w,t6,vcp,pe,stop,tgt1,tgt2,pivot20,ec1,ec2,ec2status,ec2vcpStatus,ec3,ec4,ecReady,ecPartial,ecCount,overall,verdict,breakValidation,breakReason};
+  return{cur,prev,dayChg,isLimitUp,curHigh,curLow,ma20d,ma100d,ma20w,ma60,ma150,ma200,ma200_4w,ma100w,dayGoldenCross,dayDeathCross,daysCrossed100,daysDropped100,daysDropped20,dy100_p,wkGoldenCross,wkGoldenCrossPrev,wkDeathCross,wkDeathCrossPrev,ma20w_prev,ma100w_w,ma100w_w_prev,closes:cl,ma20dArr,hi52,lo52,fromHi,fromLo,fromLo26,volR,volR20,curVol,avgV5,avgV20,reqVol,rsVal,t7,pat,wk_p,dy_p,pt_p,vl_p,t1,t2,t3,t_100w,t6,vcp,pe,stop,tgt1,tgt2,pivot20,ec1,ec2,ec2status,ec2vcpStatus,ec3,ec4,ecReady,ecPartial,ecCount,overall,verdict,breakValidation,breakReason};
 }
 
 function f(v,d=1){return v!=null?v.toFixed(d):'—';}
@@ -1349,8 +1353,8 @@ ${(()=>{
 <div class="ci">${ih(a.cur>(a.ma20d||0)&&a.cur>(a.ma60||0))}<div class="cb"><div class="cn">均線支撐確認</div><div class="cd">日線20MA ${f(a.ma20d,1)}｜60MA ${f(a.ma60,1)}<br>${a.cur>(a.ma20d||0)&&a.cur>(a.ma60||0)?'✓ 均線支撐良好':'✕ 均線支撐待確認'}</div></div></div>
 </div></div>
 <div class="card"><div class="card-head"><div class="card-title">SEPA動能系統（加分）</div><div style="display:flex;align-items:center;gap:8px"><div class="card-badge" style="background:${sc(bonusCount>=3?70:40)}18;color:${sc(bonusCount>=3?70:40)}">${bonusCount}/5</div><div class="ri-btn" data-info="ec" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div></div>
-<div class="ri-box" data-for="ec" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">SEPA 為 Minervini 趨勢樣板加分條件，共5項。T1-T3 確認長期均線多頭排列，T6 確認脫離底部區（距52週低點+25%），T7 確認相對大盤強勢。達標越多，趨勢品質越高。</div><div class="cl">
-${[{p:a.t1,n:'T1 現價在150/200日均線之上',d:`MA150 ${f(a.ma150,1)}｜MA200 ${f(a.ma200,1)}`},{p:a.t2,n:'T2 150日均線 > 200日均線',d:`MA150 ${f(a.ma150,1)} vs MA200 ${f(a.ma200,1)}`},{p:a.t3,n:'T3 200日均線持續上揚',d:`MA200現 ${f(a.ma200,1)} vs 4週前 ${f(a.ma200_4w,1)}`},{p:a.t6,n:'T6 距52週低點漲幅超過25%',d:`距低點 ${p(a.fromLo)}`},{p:a.t7,n:'T7 相對強度RS（對比加權指數）',d:a.rsVal!=null?`超額報酬 ${a.rsVal>=0?'+':''}${a.rsVal}%（≥+15%為強勢）`:'資料計算中'}].map(c=>`<div class="ci">${ih(c.p)}<div class="cb"><div class="cn">${c.n}</div><div class="cd">${c.d}</div></div></div>`).join('')}
+<div class="ri-box" data-for="ec" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">SEPA 為 Minervini 趨勢樣板加分條件，共5項。T1-T3 確認均線多頭排列（週20MA、週100MA），T6 確認脫離近期底部區（距26週低點+25%），T7 確認相對大盤強勢。達標越多，趨勢品質越高。</div><div class="cl">
+${[{p:a.t1,n:'T1 現價在週20MA與週100MA之上',d:`週20MA ${f(a.ma20w,1)}｜週100MA ${f(a.ma100w_w,1)}`},{p:a.t2,n:'T2 週20MA > 週100MA',d:`週20MA ${f(a.ma20w,1)} vs 週100MA ${f(a.ma100w_w,1)}`},{p:a.t3,n:'T3 週100MA持續上揚',d:`週100MA現 ${f(a.ma100w_w,1)} vs 上週 ${f(a.ma100w_w_prev,1)}`},{p:a.t6,n:'T6 距26週低點漲幅超過25%',d:`距26週低點 ${p(a.fromLo26)}`},{p:a.t7,n:'T7 相對強度RS（對比加權指數）',d:a.rsVal!=null?`超額報酬 ${a.rsVal>=0?'+':''}${a.rsVal}%（≥+15%為強勢）`:'資料計算中'}].map(c=>`<div class="ci">${ih(c.p)}<div class="cb"><div class="cn">${c.n}</div><div class="cd">${c.d}</div></div></div>`).join('')}
 </div></div>
 ${entryConfirmHtml(a)}
 ${['contracting','final_contraction','just_broke'].includes(a.vcp.status)?`
@@ -1458,6 +1462,17 @@ async function renderExtraData(stockCode, a) {
     const finData     = finRes.status==='fulfilled'     ? finRes.value     : [];
     const fxRawData   = fxRes.status==='fulfilled'      ? fxRes.value      : [];
     const priceData   = priceRes.status==='fulfilled'   ? priceRes.value   : [];
+    // 週線收盤（供KD/MACD計算）
+    const wkCloses=(()=>{
+      const sorted=[...priceData].sort((a,b)=>a.date.localeCompare(b.date));
+      const wk=[];let wkC=0,wkDay=0;
+      sorted.forEach((r,i)=>{
+        const d=new Date(r.date);const dow=d.getDay();
+        wkC=parseFloat(r.close)||0;wkDay++;
+        if(dow===5||i===sorted.length-1){wk.push(wkC);wkDay=0;}
+      });
+      return wk;
+    })();
     // balData和cashData獨立抓取
     let balData=[], cashData=[];
     try{ balData = await fmFetchExtra('TaiwanStockBalanceSheet', stockCode, startDate90); }catch(e){}
@@ -2035,14 +2050,12 @@ async function renderExtraData(stockCode, a) {
     const instDays=Object.keys(instMap).sort().slice(-10).map(date=>{
       const m=instMap[date];
       const totalVol=m.totalVol||0;
-      // 散戶 = 總成交量 - |外資| - |投信| - |自營|（原版邏輯）
-      const retail=totalVol>0
-        ? totalVol - Math.abs(m.f) - Math.abs(m.t) - Math.abs(m.dealer)
-        : -(m.f + m.t + m.dealer); // 無總量時fallback倒推
+      const priceRow=(priceData||[]).find(r=>r.date===date);
+      const changePct=priceRow?((parseFloat(priceRow.spread||0)/parseFloat(priceRow.close||1))*100):0;
       return{
         date:date.slice(5), f:m.f||0, g:0,
         t:m.t||0, dealer:m.dealer||0,
-        r:retail
+        totalVol:totalVol, changePct:changePct
       };
     });
     function calcStreakLocal(arr){
@@ -2057,6 +2070,7 @@ async function renderExtraData(stockCode, a) {
     const fStrk=calcStreakLocal(instDays.map(d=>d.f));
     const tStrk=calcStreakLocal(instDays.map(d=>d.t));
     const instHtml = instDays.length>0 ? renderInstChart(instDays,fStrk,tStrk) : '';
+    const kdMacdHtml = a.closes&&a.closes.length>30 ? renderKDMACD(a.closes, wkCloses) : '';
 
     // ── 5. 融資融券 ──
     const [marginRes2] = await Promise.allSettled([
@@ -2170,7 +2184,7 @@ async function renderExtraData(stockCode, a) {
         </div>
       </div>`;
 
-    el.innerHTML = debugHtml + mktHtml + rocketHtml + instHtml + marginHtml + riskHtml;
+    el.innerHTML = debugHtml + mktHtml + rocketHtml + instHtml + kdMacdHtml + marginHtml + riskHtml;
 
   } catch(e) {
     console.error("renderExtraData error:", e);
@@ -2802,25 +2816,161 @@ function updateRefreshBtn(){
 }
 
 // 資金流向柱量圖（五根）
+
+// 計算 KD（週/日）和 MACD
+function calcKD(closes, period=9){
+  if(!closes||closes.length<period) return{k:null,d:null,prev_k:null,prev_d:null};
+  let k=50,d=50;
+  let prev_k=50,prev_d=50,pprev_k=50,pprev_d=50;
+  for(let i=period-1;i<closes.length;i++){
+    const slice=closes.slice(i-period+1,i+1);
+    const hi=Math.max(...slice),lo=Math.min(...slice);
+    const rsv=hi===lo?50:((closes[i]-lo)/(hi-lo))*100;
+    pprev_k=prev_k;pprev_d=prev_d;
+    prev_k=k;prev_d=d;
+    k=k*2/3+rsv/3;
+    d=d*2/3+k/3;
+  }
+  return{k:Math.round(k*10)/10,d:Math.round(d*10)/10,prev_k:Math.round(prev_k*10)/10,prev_d:Math.round(prev_d*10)/10};
+}
+
+function calcMACD(closes,fast=12,slow=26,signal=9){
+  if(!closes||closes.length<slow+signal) return{dif:null,sig:null,hist:null,prev_hist:null};
+  function ema(arr,n){
+    let e=arr[0];const k=2/(n+1);
+    for(let i=1;i<arr.length;i++) e=arr[i]*k+e*(1-k);
+    return e;
+  }
+  function emaArr(arr,n){
+    const res=[];let e=arr[0];const k=2/(n+1);
+    for(let i=0;i<arr.length;i++){
+      if(i===0) res.push(arr[0]);
+      else{e=arr[i]*k+e*(1-k);res.push(e);}
+    }
+    return res;
+  }
+  const fastEma=emaArr(closes,fast);
+  const slowEma=emaArr(closes,slow);
+  const dif=fastEma.map((v,i)=>v-slowEma[i]).slice(slow-1);
+  const sigArr=emaArr(dif,signal);
+  const hist=dif.map((v,i)=>v-sigArr[i]);
+  const n=hist.length;
+  return{
+    dif:Math.round(dif[n-1]*100)/100,
+    sig:Math.round(sigArr[n-1]*100)/100,
+    hist:Math.round(hist[n-1]*100)/100,
+    prev_hist:Math.round(hist[n-2]*100)/100
+  };
+}
+
+function getKDStatus(kd){
+  if(!kd||kd.k==null) return{text:'資料不足',badge:'neutral'};
+  const cross=kd.prev_k<=kd.prev_d&&kd.k>kd.d;
+  const death=kd.prev_k>=kd.prev_d&&kd.k<kd.d;
+  if(cross) return{text:'黃金交叉',badge:'cross',k:kd.k,d:kd.d};
+  if(death) return{text:'死亡交叉',badge:'death',k:kd.k,d:kd.d};
+  if(kd.k>kd.d) return{text:'多方向上',badge:'up',k:kd.k,d:kd.d};
+  return{text:'空方向下',badge:'down',k:kd.k,d:kd.d};
+}
+
+function getMACDStatus(macd){
+  if(!macd||macd.hist==null) return{text:'資料不足',badge:'neutral'};
+  const turning=macd.prev_hist<=0&&macd.hist>0;
+  const turningDown=macd.prev_hist>=0&&macd.hist<0;
+  if(turning) return{text:'由綠轉紅',badge:'cross',hist:macd.hist,dif:macd.dif,sig:macd.sig};
+  if(turningDown) return{text:'由紅轉綠',badge:'death',hist:macd.hist,dif:macd.dif,sig:macd.sig};
+  if(macd.hist>0) return{text:'紅柱多方',badge:'up',hist:macd.hist,dif:macd.dif,sig:macd.sig};
+  return{text:'綠柱空方',badge:'down',hist:macd.hist,dif:macd.dif,sig:macd.sig};
+}
+
+function getThreeSignalDesc(wkKD,wkMACD,dayKD){
+  const wUp=wkKD.badge==='up'||wkKD.badge==='cross';
+  const mUp=wkMACD.badge==='up'||wkMACD.badge==='cross';
+  const dUp=dayKD.badge==='cross';
+  const wDown=wkKD.badge==='down'||wkKD.badge==='death';
+  const mDown=wkMACD.badge==='down'||wkMACD.badge==='death';
+  const dDown=dayKD.badge==='death';
+  if(wUp&&mUp&&dUp) return{text:'三項指標同時符合，多方強勢、空方力竭訊號出現。搭配外資投信買超可提高勝率。',color:'var(--red)'};
+  if(wDown&&mDown&&dDown) return{text:'三項指標同時向下，空方強勢、多方力竭。留意下方支撐與停損位置。',color:'var(--green)'};
+  if(wUp&&mUp&&!dUp) return{text:'大方向偏多、動能確認，等待日KD黃金交叉進場時機。',color:'var(--amber)'};
+  if(wUp&&!mUp&&dUp) return{text:'週KD向上但週MACD動能尚未確認，訊號強度下降，觀望。',color:'var(--amber)'};
+  if(!wUp&&mUp&&dUp) return{text:'週KD大方向偏空，短線反彈訊號出現，留意反彈力道。',color:'var(--amber)'};
+  if(wDown&&mDown&&!dDown) return{text:'大方向偏空、動能走弱，等待確認是否止跌。',color:'var(--green)'};
+  return{text:'指標分歧，方向不明，觀望等待方向確認。',color:'var(--text3)'};
+}
+
+function renderKDMACD(cl, wk){
+  const dayKDraw=calcKD(cl,9);
+  const wkKDraw=calcKD(wk,9);
+  const wkMACDraw=calcMACD(wk,12,26,9);
+  const dayKD=getKDStatus(dayKDraw);
+  const wkKD=getKDStatus(wkKDraw);
+  const wkMACD=getMACDStatus(wkMACDraw);
+  const desc=getThreeSignalDesc(wkKD,wkMACD,dayKD);
+  const badgeStyle={
+    up:'background:#fff0f0;color:#a32d2d',
+    down:'background:#eaf3de;color:#3b6d11',
+    cross:'background:#e6f1fb;color:#185fa5',
+    death:'background:#faeeda;color:#854f0b',
+    neutral:'background:var(--bg2);color:var(--text3)'
+  };
+  const rows=[
+    {label:'週 KD（大方向）',sub:`K:${wkKD.k??'—'}　D:${wkKD.d??'—'}`,val:wkKD.text,badge:wkKD.badge},
+    {label:'週 MACD（動能）',sub:`DIF:${wkMACD.dif??'—'}　柱:${wkMACD.hist??'—'}`,val:wkMACD.text,badge:wkMACD.badge},
+    {label:'日 KD（時機點）',sub:`K:${dayKD.k??'—'}　D:${dayKD.d??'—'}`,val:dayKD.text,badge:dayKD.badge},
+  ];
+  return`
+  <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">技術指標　週KD / 週MACD / 日KD</span>
+      <div class="ri-btn" data-info="kdmacd" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3)">ⓘ</div>
+    </div>
+    <div class="ri-box" data-for="kdmacd" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">【週KD】判斷中期趨勢大方向，向上代表多方趨勢。【週MACD】判斷動能強弱，由綠轉紅為最佳訊號。【日KD】找具體進場時機點，黃金交叉為進場參考。三項同時符合訊號最強；有VCP型態時不需依賴KD/MACD，直接用型態進場。⚠️ 本資料僅供參考，不構成投資建議。</div>
+    ${rows.map(r=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border)">
+      <div>
+        <div style="font-size:12px;color:var(--text3)">${r.label}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${r.sub}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:14px;font-weight:500;color:var(--text)">${r.val}</div>
+        <div style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;margin-top:3px;${badgeStyle[r.badge]||badgeStyle.neutral}">${r.val}</div>
+      </div>
+    </div>`).join('')}
+    <div style="display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--bg3)">
+      <div style="width:8px;height:8px;border-radius:50%;background:${desc.color};flex-shrink:0;margin-top:4px"></div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6">${desc.text}</div>
+    </div>
+  </div>`;
+}
 function renderInstChart(days,fStreak,tStreak){
-  const KEYS=['f','t','r'];
-  const NAMES={f:'外資',t:'投信',r:'散戶'};
-  const POS={f:'#b91c1c',t:'#7f1d1d',r:'#b91c1c'};
-  const NEG={f:'#166534',t:'#14532d',r:'#166534'};
-  const maxVal=Math.max(...days.flatMap(d=>KEYS.map(k=>Math.abs(d[k]||0))),1);
+  const KEYS=['f','t','vol'];
+  const NAMES={f:'外資',t:'投信',vol:'量價'};
+  const POS={f:'#b91c1c',t:'#7f1d1d'};
+  const NEG={f:'#166534',t:'#14532d'};
+  const maxVal=Math.max(...days.flatMap(d=>['f','t'].map(k=>Math.abs(d[k]||0))),1);
+  const maxVol=Math.max(...days.map(d=>d.totalVol||0),1);
   window._instDays=days;
   window._fStreak=fStreak;
   window._tStreak=tStreak;
-  const barsHtml=days.map((d,idx)=>`
+  const barsHtml=days.map((d,idx)=>{
+    const fv=d.f||0; const tv=d.t||0;
+    const fh=Math.max(Math.round(Math.abs(fv)/maxVal*82),3);
+    const th=Math.max(Math.round(Math.abs(tv)/maxVal*82),3);
+    const vh=Math.max(Math.round((d.totalVol||0)/maxVol*82),3);
+    const vColor=(d.changePct||0)>=0?'#b91c1c':'#166534';
+    return`
     <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:50px;cursor:pointer;padding:2px;border-radius:6px" onclick="showInstDetail(${idx})" id="inst-col-${idx}">
       <div style="display:flex;gap:2px;align-items:flex-end;height:85px">
-        ${KEYS.map(k=>{const v=d[k]||0;const h=Math.max(Math.round(Math.abs(v)/maxVal*82),3);return`<div style="width:7px;height:${h}px;background:${v>=0?POS[k]:NEG[k]};border-radius:2px 2px 0 0;align-self:flex-end"></div>`;}).join('')}
+        <div style="width:7px;height:${fh}px;background:${fv>=0?POS.f:NEG.f};border-radius:2px 2px 0 0;align-self:flex-end"></div>
+        <div style="width:7px;height:${th}px;background:${tv>=0?POS.t:NEG.t};border-radius:2px 2px 0 0;align-self:flex-end"></div>
+        <div style="width:7px;height:${vh}px;background:${vColor};border-radius:2px 2px 0 0;align-self:flex-end;opacity:0.7"></div>
       </div>
       <div style="font-size:10px;color:var(--text3);margin-top:4px">${d.date}</div>
       <div style="display:flex;gap:2px;margin-top:3px">
         ${KEYS.map(k=>`<div style="font-size:6.5px;color:var(--text3);width:7px;text-align:center;writing-mode:vertical-lr;height:20px;overflow:hidden">${NAMES[k]}</div>`).join('')}
       </div>
-    </div>`).join('');
+    </div>`;}).join('');
 
   const signalHtml=(()=>{
     let h='';
@@ -2840,9 +2990,9 @@ function renderInstChart(days,fStreak,tStreak){
         </div>
         <div class="ri-btn" data-info="inst" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3)">ⓘ</div>
       </div>
-      <div class="ri-box" data-for="inst" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">資金流向追蹤外資、投信、散戶近10日的買超賣超情況。主力合計（外資＋投信）持續買超為強勢訊號；散戶逆向操作時需特別留意。點任一天可看當日詳細數據。</div>
+      <div class="ri-box" data-for="inst" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">資金流向追蹤外資、投信近10日買賣超，搭配量價柱判斷主力動向。【量價柱判讀】放量上漲（柱高+紅）→主力積極進場；縮量上漲（柱矮+紅）→惜售整理；放量下跌（柱高+綠）→主力出貨最危險；縮量下跌（柱矮+綠）→正常回檔。量比≥1.5x為異常放量，需特別重視。單天訊號不可信，需連續3天以上確認。⚠️ 本資料僅供參考，不構成投資建議。</div>
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none"><div style="display:flex;gap:5px;align-items:flex-end;min-width:max-content;padding:4px 0">${barsHtml}</div></div>
-    <div style="font-size:10px;color:var(--text3);text-align:center;margin:6px 0 4px">買超=紅　賣超=綠　← 左右滑動 → 點任一天看詳細</div>
+    <div style="font-size:10px;color:var(--text3);text-align:center;margin:6px 0 4px">外資/投信：買超=紅 賣超=綠　量價：高度=成交量 顏色=漲跌　← 左右滑動 → 點任一天看詳細</div>
     <div id="instDetailPanel" style="display:none;background:var(--bg3);border-radius:var(--rs);padding:12px;margin:8px 0"></div>
     <div style="height:0.5px;background:var(--border2);margin:10px 0"></div>
     ${signalHtml}
@@ -2853,10 +3003,10 @@ function showInstDetail(idx){
   const days=window._instDays||[];
   const d=days[idx]; if(!d) return;
   const panel=document.getElementById('instDetailPanel'); if(!panel) return;
-  const KEYS=['f','t','r'];
-  const NAMES={f:'外資',t:'投信',r:'散戶'};
-  const POS={f:'#b91c1c',t:'#7f1d1d',r:'#b91c1c'};
-  const NEG={f:'#166534',t:'#14532d',r:'#166534'};
+  const KEYS=['f','t'];
+  const NAMES={f:'外資',t:'投信'};
+  const POS={f:'#b91c1c',t:'#7f1d1d'};
+  const NEG={f:'#166534',t:'#14532d'};
   const maxAbs=Math.max(...KEYS.map(k=>Math.abs(d[k]||0)),1);
   const total=(d.f||0)+(d.g||0)+(d.t||0);
   const fs=window._fStreak;
@@ -3102,45 +3252,54 @@ async function fetchTWMarket(){
 
 function genRuleSummary(d){
   if(!d) return '市場數據載入中...';
+  const sox=d.sox, tsm=d.tsm, nvda=d.nvda, vix=d.vix;
+  const nikkei=d.nikkei, kospi=d.kospi;
   const parts=[];
-  const ndx=d.nasdaq;
-  if(ndx){
-    if(ndx.chg_pct>=1.5) parts.push(`那斯達克大漲 +${ndx.chg_pct.toFixed(1)}%`);
-    else if(ndx.chg_pct>=0.5) parts.push(`那斯達克小漲 +${ndx.chg_pct.toFixed(1)}%`);
-    else if(ndx.chg_pct<=-1.5) parts.push(`那斯達克重跌 ${ndx.chg_pct.toFixed(1)}%`);
-    else if(ndx.chg_pct<=-0.5) parts.push(`那斯達克小跌 ${ndx.chg_pct.toFixed(1)}%`);
-    else parts.push(`那斯達克持平 ${ndx.chg_pct>=0?'+':''}${ndx.chg_pct.toFixed(1)}%`);
-  }
-  const sox=d.sox;
+
+  // 費半（核心指標，比那斯達克早3-6個月反映景氣）
   if(sox){
-    if(sox.chg_pct>=2) parts.push(`費半大漲 +${sox.chg_pct.toFixed(1)}%，半導體族群動能強`);
-    else if(sox.chg_pct>=1) parts.push(`費半上漲 +${sox.chg_pct.toFixed(1)}%`);
+    if(sox.chg_pct>=2) parts.push(`費半大漲 +${sox.chg_pct.toFixed(1)}%，半導體動能強勁`);
+    else if(sox.chg_pct>=0.5) parts.push(`費半上漲 +${sox.chg_pct.toFixed(1)}%`);
     else if(sox.chg_pct<=-2) parts.push(`費半重跌 ${sox.chg_pct.toFixed(1)}%，半導體族群留意`);
-    else if(sox.chg_pct<=-1) parts.push(`費半下跌 ${sox.chg_pct.toFixed(1)}%`);
+    else if(sox.chg_pct<=-0.5) parts.push(`費半下跌 ${sox.chg_pct.toFixed(1)}%`);
+    else parts.push(`費半持平 ${sox.chg_pct.toFixed(1)}%`);
   }
-  const tsm=d.tsm;
-  if(tsm){
-    if(tsm.chg_pct>=2) parts.push(`台積電ADR上漲 +${tsm.chg_pct.toFixed(1)}%`);
-    else if(tsm.chg_pct<=-2) parts.push(`台積電ADR下跌 ${tsm.chg_pct.toFixed(1)}%`);
+
+  // 台積電ADR（搭配費半一起看）
+  if(tsm&&sox){
+    if(tsm.chg_pct>=1&&sox.chg_pct>=1) parts.push(`台積電ADR +${tsm.chg_pct.toFixed(1)}%，費半同步走強，半導體情緒正面`);
+    else if(tsm.chg_pct>=1&&sox.chg_pct<0) parts.push(`台積電ADR漲 +${tsm.chg_pct.toFixed(1)}% 但費半走弱，訊號可信度下降`);
+    else if(tsm.chg_pct<=-1) parts.push(`台積電ADR下跌 ${tsm.chg_pct.toFixed(1)}%，開盤略有壓力`);
   }
-  const nvda=d.nvda;
+
+  // 輝達（AI族群風向球）
   if(nvda){
-    if(nvda.chg_pct>=3) parts.push(`輝達大漲 +${nvda.chg_pct.toFixed(1)}%，AI族群動能強`);
-    else if(nvda.chg_pct<=-3) parts.push(`輝達大跌 ${nvda.chg_pct.toFixed(1)}%，AI族群留意`);
+    if(nvda.chg_pct>=3) parts.push(`輝達 +${nvda.chg_pct.toFixed(1)}%，AI族群動能強`);
+    else if(nvda.chg_pct<=-3) parts.push(`輝達 ${nvda.chg_pct.toFixed(1)}%，AI族群留意`);
   }
-  const vix=d.vix;
+
+  // VIX（市場情緒）
   if(vix){
-    if(vix.close>=25) parts.push(`VIX ${vix.close.toFixed(1)}，市場恐慌情緒偏高`);
+    if(vix.close>=30) parts.push(`VIX ${vix.close.toFixed(1)}，市場極度恐慌，極度謹慎`);
+    else if(vix.close>=25) parts.push(`VIX ${vix.close.toFixed(1)}，恐慌偏高，保守操作`);
     else if(vix.close>=20) parts.push(`VIX ${vix.close.toFixed(1)}，市場略有不安`);
+    else if(vix.close<15) parts.push(`VIX ${vix.close.toFixed(1)}，市場過熱注意逢高賣壓`);
     else parts.push(`VIX ${vix.close.toFixed(1)}，市場情緒穩定`);
   }
-  let bullCount=0,bearCount=0;
-  if(ndx&&ndx.chg_pct>=0.5) bullCount++; else if(ndx&&ndx.chg_pct<=-0.5) bearCount++;
-  if(sox&&sox.chg_pct>=1) bullCount++; else if(sox&&sox.chg_pct<=-1) bearCount++;
-  if(tsm&&tsm.chg_pct>=1) bullCount++; else if(tsm&&tsm.chg_pct<=-1) bearCount++;
-  if(vix&&vix.close<20) bullCount++; else if(vix&&vix.close>=25) bearCount++;
-  const direction=bullCount>=3?'整體數據偏多方':bearCount>=3?'整體數據偏空方':'整體數據中性';
-  return (parts.length?parts.join('；')+'。':'')+direction+'。\n⚠️ 本摘要僅為市場數據整理，不構成投資建議。';
+
+  // 韓股（記憶體族群連動）
+  if(kospi){
+    if(kospi.chg_pct<=-3) parts.push(`韓股重挫 ${kospi.chg_pct.toFixed(1)}%，台股記憶體族群留意連動賣壓`);
+    else if(kospi.chg_pct>=2) parts.push(`韓股走強 +${kospi.chg_pct.toFixed(1)}%，亞股同步偏多`);
+  }
+
+  // 日股
+  if(nikkei){
+    if(nikkei.chg_pct<=-2) parts.push(`日經下跌 ${nikkei.chg_pct.toFixed(1)}%，亞洲資金情緒偏謹慎`);
+    else if(nikkei.chg_pct>=1.5&&kospi&&kospi.chg_pct>=1) parts.push(`日韓同步走強，亞洲資金偏多`);
+  }
+
+  return (parts.length?parts.join('。')+'。':'數據載入中。')+'\n⚠️ 本摘要僅為市場數據整理，不構成投資建議。';
 }
 
 async function loadHomePage(){
