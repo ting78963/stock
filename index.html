@@ -931,6 +931,9 @@ function analyze(raw){
   if(['just_broke','trending_up'].includes(vcp.status))base+=10;
   if(['contracting','final_contraction'].includes(vcp.status))base+=5;
   if(vcp.volDry)base+=5;
+  // 週均線系統加分（原T1/T2邏輯移入）
+  if(t1===true)base+=8; // 現價站上週20MA且週100MA
+  if(t2===true)base+=8; // 週20MA > 週100MA
   let bonus=0;
   if(t3===true)bonus+=8;
   if(t6)bonus+=8;if(t7===true)bonus+=8;
