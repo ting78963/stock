@@ -932,7 +932,7 @@ function analyze(raw){
   if(['contracting','final_contraction'].includes(vcp.status))base+=5;
   if(vcp.volDry)base+=5;
   let bonus=0;
-  if(t1===true)bonus+=8;if(t2===true)bonus+=8;if(t3===true)bonus+=8;
+  if(t3===true)bonus+=8;
   if(t6)bonus+=8;if(t7===true)bonus+=8;
   const overall=Math.min(100,base+bonus);
   const verdict=overall>=70?'強勢突破候選':overall>=45?'條件部分符合':'目前不符合條件';
@@ -969,7 +969,7 @@ function analyze(raw){
     breakValidation = 'none';
   }
 
-  return{cur,prev,dayChg,isLimitUp,curHigh,curLow,ma20d,ma100d,ma20w,ma60,ma150,ma200,ma200_4w,ma100w,dayGoldenCross,dayDeathCross,daysCrossed100,daysDropped100,daysDropped20,dy100_p,wkGoldenCross,wkGoldenCrossPrev,wkDeathCross,wkDeathCrossPrev,ma20w_prev,ma100w_w,ma100w_w_prev,closes:cl,ma20dArr,hi52,lo52,fromHi,fromLo,fromLo26,volR,volR20,curVol,avgV5,avgV20,reqVol,rsVal,t7,pat,wk_p,dy_p,pt_p,vl_p,t1,t2,t3,t_100w,t6,vcp,pe,stop,tgt1,tgt2,pivot20,ec1,ec2,ec2status,ec2vcpStatus,ec3,ec4,ecReady,ecPartial,ecCount,overall,verdict,breakValidation,breakReason};
+  return{cur,prev,dayChg,isLimitUp,curHigh,curLow,ma20d,ma100d,ma20w,ma60,ma150,ma200,ma200_4w,ma100w,dayGoldenCross,dayDeathCross,daysCrossed100,daysDropped100,daysDropped20,dy100_p,wkGoldenCross,wkGoldenCrossPrev,wkDeathCross,wkDeathCrossPrev,ma20w_prev,ma100w_w,ma100w_w_prev,closes:cl,wk,ma20dArr,hi52,lo52,fromHi,fromLo,fromLo26,volR,volR20,curVol,avgV5,avgV20,reqVol,rsVal,t7,pat,wk_p,dy_p,pt_p,vl_p,t1,t2,t3,t_100w,t6,vcp,pe,stop,tgt1,tgt2,pivot20,ec1,ec2,ec2status,ec2vcpStatus,ec3,ec4,ecReady,ecPartial,ecCount,overall,verdict,breakValidation,breakReason};
 }
 
 function f(v,d=1){return v!=null?v.toFixed(d):'—';}
@@ -1208,7 +1208,7 @@ function rResult(raw,a){
   // 持倉功能已移至資金流向APP
   const R=36,circ=2*Math.PI*R,off=circ-(a.overall/100)*circ,col=sc(a.overall);
   const cc=a.dayChg>0?'up':a.dayChg<0?'dn':'fl';
-  const bonusCount=[a.t1,a.t2,a.t3,a.t6,a.t7].filter(x=>x===true).length;
+  const bonusCount=[a.t3,a.t6,a.t7].filter(x=>x===true).length;
   return`<div class="shd">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
       <div>
@@ -1262,6 +1262,10 @@ ${(()=>{
   }
   return html;
 })()}
+<div style="height:0.5px;background:var(--border);margin:10px 0"></div>
+<div style="font-size:10px;color:var(--text3);letter-spacing:.08em;margin-bottom:6px">加分條件</div>
+<div class="ci">${ih(a.t3)}<div class="cb"><div class="cn">T3 週100MA持續上揚 <span style="display:inline-block;font-size:10px;padding:1px 6px;border-radius:3px;background:#e6f1fb;color:#185fa5;margin-left:4px">加分</span></div><div class="cd">週100MA現 ${f(a.ma100w_w,2)} vs 上週 ${f(a.ma100w_w_prev,2)}<br>${a.t3===true?'✓ 週100MA持續向上，長期趨勢強化':a.t3===false?'✕ 週100MA轉平或下彎':'△ 資料不足'}</div></div></div>
+<div class="ci">${ih(a.t6)}<div class="cb"><div class="cn">T6 距26週低點漲幅超過25% <span style="display:inline-block;font-size:10px;padding:1px 6px;border-radius:3px;background:#e6f1fb;color:#185fa5;margin-left:4px">加分</span></div><div class="cd">距26週低點 ${p(a.fromLo26)}<br>${a.t6?'✓ 已有效脫離近期底部區':'✕ 尚未脫離底部區'}</div></div></div>
 </div></div>
 
 <div class="card"><div class="card-head"><div class="card-title">均線系統 — 日線近期強弱</div><div class="ri-btn" data-info="daily" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div>
@@ -1305,6 +1309,9 @@ ${(()=>{
   }
   return html;
 })()}
+<div style="height:0.5px;background:var(--border);margin:10px 0"></div>
+<div style="font-size:10px;color:var(--text3);letter-spacing:.08em;margin-bottom:6px">加分條件</div>
+<div class="ci">${ih(a.t7)}<div class="cb"><div class="cn">T7 相對大盤強度RS <span style="display:inline-block;font-size:10px;padding:1px 6px;border-radius:3px;background:#e6f1fb;color:#185fa5;margin-left:4px">加分</span></div><div class="cd">${a.rsVal!=null?`超額報酬 ${a.rsVal>=0?'+':''}${a.rsVal}%（≥+15%為強勢）`:'資料計算中'}<br>${a.t7===true?'✓ 相對大盤強勢，主力偏好':a.t7==='warn'?'△ 略優於大盤，持續觀察':a.t7===false?'✕ 弱於大盤，相對強度不足':'△ 資料計算中'}</div></div></div>
 </div></div>
 <div class="card"><div class="card-head"><div class="card-title">四大法寶 — 型態與量能</div><div class="ri-btn" data-info="volume" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div>
 <div class="ri-box" data-for="volume" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">成交量是主力動向的指標。量比 ≥1.5x 為明顯爆量，代表主力積極介入；1.1-1.5x 為放量觀察；<1.1x 代表量能低迷。VCP突破時需要有效放量才算成立。</div><div class="cl">
@@ -1351,10 +1358,6 @@ ${(()=>{
   }
 })()}</div>
 <div class="ci">${ih(a.cur>(a.ma20d||0)&&a.cur>(a.ma60||0))}<div class="cb"><div class="cn">均線支撐確認</div><div class="cd">日線20MA ${f(a.ma20d,1)}｜60MA ${f(a.ma60,1)}<br>${a.cur>(a.ma20d||0)&&a.cur>(a.ma60||0)?'✓ 均線支撐良好':'✕ 均線支撐待確認'}</div></div></div>
-</div></div>
-<div class="card"><div class="card-head"><div class="card-title">SEPA動能系統（加分）</div><div style="display:flex;align-items:center;gap:8px"><div class="card-badge" style="background:${sc(bonusCount>=3?70:40)}18;color:${sc(bonusCount>=3?70:40)}">${bonusCount}/5</div><div class="ri-btn" data-info="ec" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div></div>
-<div class="ri-box" data-for="ec" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">SEPA 為 Minervini 趨勢樣板加分條件，共5項。T1-T3 確認均線多頭排列（週20MA、週100MA），T6 確認脫離近期底部區（距26週低點+25%），T7 確認相對大盤強勢。達標越多，趨勢品質越高。</div><div class="cl">
-${[{p:a.t1,n:'T1 現價在週20MA與週100MA之上',d:`週20MA ${f(a.ma20w,1)}｜週100MA ${f(a.ma100w_w,1)}`},{p:a.t2,n:'T2 週20MA > 週100MA',d:`週20MA ${f(a.ma20w,1)} vs 週100MA ${f(a.ma100w_w,1)}`},{p:a.t3,n:'T3 週100MA持續上揚',d:`週100MA現 ${f(a.ma100w_w,1)} vs 上週 ${f(a.ma100w_w_prev,1)}`},{p:a.t6,n:'T6 距26週低點漲幅超過25%',d:`距26週低點 ${p(a.fromLo26)}`},{p:a.t7,n:'T7 相對強度RS（對比加權指數）',d:a.rsVal!=null?`超額報酬 ${a.rsVal>=0?'+':''}${a.rsVal}%（≥+15%為強勢）`:'資料計算中'}].map(c=>`<div class="ci">${ih(c.p)}<div class="cb"><div class="cn">${c.n}</div><div class="cd">${c.d}</div></div></div>`).join('')}
 </div></div>
 ${entryConfirmHtml(a)}
 ${['contracting','final_contraction','just_broke'].includes(a.vcp.status)?`
@@ -1787,6 +1790,30 @@ async function renderExtraData(stockCode, a) {
         sub: growStreak>=2 ? `連續成長 ${growStreak} 個月` : '',
         ok: monthYoy!==null ? monthYoy>0 : curRev>0, score
       });
+
+      // 月營收 MoM（跟上個月比）
+      if(sorted.length>=2){
+        const momRev=parseFloat(sorted[sorted.length-1].revenue||0);
+        const momPrev=parseFloat(sorted[sorted.length-2].revenue||0);
+        const mom=momPrev>0?(momRev-momPrev)/momPrev*100:null;
+        // 連續MoM成長
+        let momStreak=0;
+        for(let i=sorted.length-1;i>=1;i--){
+          const c=parseFloat(sorted[i].revenue||0),p=parseFloat(sorted[i-1].revenue||0);
+          if(p>0&&c>p) momStreak++;
+          else break;
+        }
+        const momScore=mom===null?0:mom>=20?25:mom>=10?20:mom>=5?15:mom>=0?8:2;
+        rocketItems.push({
+          label:'月營收 MoM', maxScore:25,
+          curLabel, curVal:mom!==null?`${mom>=0?'+':''}${mom.toFixed(1)}%`:`${(momRev/1e8).toFixed(1)}億`,
+          prevVal:`前月：${(momPrev/1e8).toFixed(1)}億`,
+          extra:'',
+          trendUp:mom!==null?mom>0:momRev>0,
+          sub:momStreak>=2?`連續成長 ${momStreak} 個月`:'',
+          ok:mom!==null?mom>0:momRev>0, score:momScore
+        });
+      }
     }
 
     // ② 稅後淨利 YoY（18分）
@@ -1804,7 +1831,7 @@ async function renderExtraData(stockCode, a) {
         else if(prevVal!==0){ const chg=(curVal-prevVal)/Math.abs(prevVal)*100; chgText=`較前季 ${chg>=0?'+':''}${chg.toFixed(0)}%`; }
         const score = curVal<=0?0:yoy===null?(curVal>0?10:0):yoy>=50?18:yoy>=25?14:yoy>=0?9:3;
         rocketItems.push({
-          label:'稅後淨利 YoY', maxScore:18,
+          label:'稅後淨利 YoY', maxScore:20,
           curLabel:pat[pat.length-1].date, curVal:`${(curVal/1e8).toFixed(1)}億`,
           prevVal:`前季：${(prevVal/1e8).toFixed(1)}億`,
           extra: yoy!==null?`年增：${yoy>=0?'+':''}${yoy.toFixed(0)}%`:'',
@@ -1830,7 +1857,7 @@ async function renderExtraData(stockCode, a) {
           const diff = gpCurPct-gpPrevPct;
           const score = gpCurPct>=50?15:gpCurPct>=35?12:gpCurPct>=20?8:gpCurPct>=10?5:2;
           rocketItems.push({
-            label:'毛利率', maxScore:15,
+            label:'毛利率', maxScore:3,
             curLabel:curDate, curVal:`${gpCurPct.toFixed(1)}%`,
             prevVal:`前季：${gpPrevPct.toFixed(1)}%`,
             extra:'',
@@ -1859,7 +1886,7 @@ async function renderExtraData(stockCode, a) {
         const chgPct = prevEbitda!==0 ? (curEbitda-prevEbitda)/Math.abs(prevEbitda)*100 : null;
         const score = curEbitda<=0?0:chgPct===null?7:chgPct>=30?13:chgPct>=10?10:chgPct>=0?7:3;
         rocketItems.push({
-          label:'EBITDA', maxScore:13,
+          label:'EBITDA', maxScore:5,
           curLabel:oiItems[oiItems.length-1].date,
           curVal:`${(curEbitda/1e8).toFixed(1)}億`,
           prevVal:`前季：${(prevEbitda/1e8).toFixed(1)}億`,
@@ -1884,7 +1911,7 @@ async function renderExtraData(stockCode, a) {
         const prevFcf = prevOcf - prevCapex;
         const score = fcf<=0?0:fcf>=prevFcf?12:fcf>0?8:2;
         rocketItems.splice(4,0,{
-          label:'自由現金流', maxScore:12,
+          label:'自由現金流', maxScore:10,
           curLabel:ocfItems[ocfItems.length-1].date,
           curVal:`${fcf>=0?'+':''}${(fcf/1e8).toFixed(1)}億`,
           prevVal:`前季：${prevFcf>=0?'+':''}${(prevFcf/1e8).toFixed(1)}億`,
@@ -1913,7 +1940,7 @@ async function renderExtraData(stockCode, a) {
           const avg = roe3.reduce((s,r)=>s+r.roe,0)/roe3.length;
           const score = cur>=25?10:cur>=20?8:cur>=15?6:cur>=10?4:cur>=5?2:0;
           rocketItems.unshift({
-            label:'ROE', maxScore:10,
+            label:'ROE', maxScore:1,
             curLabel:niItems[niItems.length-1].date,
             curVal:`${cur.toFixed(1)}%`,
             prevVal:roe3.length>=2?`前季：${prev.toFixed(1)}%`:'',
@@ -1936,7 +1963,7 @@ async function renderExtraData(stockCode, a) {
         const yoy = sameQtrLastYear!==null&&sameQtrLastYear>0 ? (cur-sameQtrLastYear)/sameQtrLastYear*100 : null;
         const score = cur<=0?0:yoy===null?(cur>=prev?5:2):yoy>=30?7:yoy>=10?5:yoy>=0?3:1;
         rocketItems.push({
-          label:'合約負債 YoY', maxScore:7,
+          label:'合約負債 YoY', maxScore:15,
           curLabel:clItems[clItems.length-1].date,
           curVal:`${(cur/1e8).toFixed(1)}億`,
           prevVal:`前季：${(prev/1e8).toFixed(1)}億`,
@@ -1962,7 +1989,7 @@ async function renderExtraData(stockCode, a) {
           const prevRatio = prevAsset>0 ? prevLiab/prevAsset*100 : ratio;
           const score = ratio<30?5:ratio<45?4:ratio<60?2:1;
           rocketItems.push({
-            label:'負債比', maxScore:5,
+            label:'負債比', maxScore:1,
             curLabel:liabItems[liabItems.length-1].date,
             curVal:`${ratio.toFixed(1)}%`,
             prevVal:`前季：${prevRatio.toFixed(1)}%`,
@@ -1980,11 +2007,23 @@ async function renderExtraData(stockCode, a) {
     const scoreNorm = rocketMaxPossible>0 ? Math.round(rocketTotalScore/rocketMaxPossible*100) : 0;
     const okCount = rocketItems.filter(r=>r.ok).length;
     const total = rocketItems.length||1;
-    const rocketLabel = scoreNorm>=80?'基本面強勁，大跌可抱':scoreNorm>=60?'基本面良好':scoreNorm>=40?'基本面普通':'基本面偏弱';
+    const rocketLabel = scoreNorm>=80?'基本面強勁':scoreNorm>=60?'基本面良好':scoreNorm>=40?'基本面普通':'基本面偏弱';
+    const rocketColor = scoreNorm>=80?'var(--red)':scoreNorm>=60?'var(--amber)':scoreNorm>=40?'var(--text2)':'var(--text3)';
 
     // 火箭指標ⓘ說明由全域函數處理
 
     const rocketHtml = `
+<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+  <div>
+    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">火箭指標 — 基本面綜合分數</div>
+    <div style="font-size:13px;color:var(--text2)">${rocketLabel}</div>
+  </div>
+  <div style="text-align:right">
+    <div style="font-size:32px;font-weight:700;color:${rocketColor};line-height:1">${scoreNorm}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:2px">/ 100</div>
+  </div>
+</div>
+` + `
       <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div style="display:flex;align-items:center;gap:6px">
@@ -2070,7 +2109,7 @@ async function renderExtraData(stockCode, a) {
     const fStrk=calcStreakLocal(instDays.map(d=>d.f));
     const tStrk=calcStreakLocal(instDays.map(d=>d.t));
     const instHtml = instDays.length>0 ? renderInstChart(instDays,fStrk,tStrk) : '';
-    const kdMacdHtml = a.closes&&a.closes.length>30 ? renderKDMACD(a.closes, wkCloses) : '';
+    const kdMacdHtml = a.closes&&a.closes.length>30 ? renderKDMACD(a.closes, a.wk) : '';
 
     // ── 5. 融資融券 ──
     const [marginRes2] = await Promise.allSettled([
