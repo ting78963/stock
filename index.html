@@ -1832,7 +1832,7 @@ async function renderExtraData(stockCode, a) {
         if(prevVal<0&&curVal>0) chgText='虧轉盈 ✓';
         else if(prevVal>0&&curVal<0) chgText='盈轉虧 ✗';
         else if(prevVal!==0){ const chg=(curVal-prevVal)/Math.abs(prevVal)*100; chgText=`較前季 ${chg>=0?'+':''}${chg.toFixed(0)}%`; }
-        const score = curVal<=0?0:yoy===null?(curVal>0?10:0):yoy>=50?18:yoy>=25?14:yoy>=0?9:3;
+        const score = curVal<=0?0:yoy===null?(curVal>0?12:0):yoy>=50?20:yoy>=25?16:yoy>=0?10:3;
         rocketItems.push({
           label:'稅後淨利 YoY', maxScore:20,
           curLabel:pat[pat.length-1].date, curVal:`${(curVal/1e8).toFixed(1)}億`,
@@ -1858,7 +1858,7 @@ async function renderExtraData(stockCode, a) {
           const gpCurPct = gpCur/revCur*100;
           const gpPrevPct = gpPrev/revPrev*100;
           const diff = gpCurPct-gpPrevPct;
-          const score = gpCurPct>=50?15:gpCurPct>=35?12:gpCurPct>=20?8:gpCurPct>=10?5:2;
+          const score = gpCurPct>=50?3:gpCurPct>=35?2:gpCurPct>=20?1:0;
           rocketItems.push({
             label:'毛利率', maxScore:3,
             curLabel:curDate, curVal:`${gpCurPct.toFixed(1)}%`,
@@ -1887,7 +1887,7 @@ async function renderExtraData(stockCode, a) {
         const curEbitda = curOi + Math.abs(curDep) + Math.abs(curAmor);
         const prevEbitda = prevOi + Math.abs(prevDep) + Math.abs(prevAmor);
         const chgPct = prevEbitda!==0 ? (curEbitda-prevEbitda)/Math.abs(prevEbitda)*100 : null;
-        const score = curEbitda<=0?0:chgPct===null?7:chgPct>=30?13:chgPct>=10?10:chgPct>=0?7:3;
+        const score = curEbitda<=0?0:chgPct===null?3:chgPct>=30?5:chgPct>=10?4:chgPct>=0?3:1;
         rocketItems.push({
           label:'EBITDA', maxScore:5,
           curLabel:oiItems[oiItems.length-1].date,
@@ -1912,7 +1912,7 @@ async function renderExtraData(stockCode, a) {
         const prevOcf = ocfItems.length>=2 ? parseFloat(ocfItems[ocfItems.length-2].value||0) : 0;
         const prevCapex = capexItems.length>=2 ? Math.abs(parseFloat(capexItems[capexItems.length-2].value||0)) : 0;
         const prevFcf = prevOcf - prevCapex;
-        const score = fcf<=0?0:fcf>=prevFcf?12:fcf>0?8:2;
+        const score = fcf<=0?0:fcf>=prevFcf?10:fcf>0?6:1;
         rocketItems.splice(4,0,{
           label:'自由現金流', maxScore:10,
           curLabel:ocfItems[ocfItems.length-1].date,
@@ -1941,7 +1941,7 @@ async function renderExtraData(stockCode, a) {
           const cur = roe3[roe3.length-1].roe;
           const prev = roe3.length>=2 ? roe3[roe3.length-2].roe : cur;
           const avg = roe3.reduce((s,r)=>s+r.roe,0)/roe3.length;
-          const score = cur>=25?10:cur>=20?8:cur>=15?6:cur>=10?4:cur>=5?2:0;
+          const score = cur>=25?1:cur>=15?1:cur>=10?1:0;
           rocketItems.unshift({
             label:'ROE', maxScore:1,
             curLabel:niItems[niItems.length-1].date,
@@ -1964,7 +1964,7 @@ async function renderExtraData(stockCode, a) {
         const prev = parseFloat(clItems[clItems.length-2].value||0);
         const sameQtrLastYear = clItems.length>=5 ? parseFloat(clItems[clItems.length-5].value||0) : null;
         const yoy = sameQtrLastYear!==null&&sameQtrLastYear>0 ? (cur-sameQtrLastYear)/sameQtrLastYear*100 : null;
-        const score = cur<=0?0:yoy===null?(cur>=prev?5:2):yoy>=30?7:yoy>=10?5:yoy>=0?3:1;
+        const score = cur<=0?0:yoy===null?(cur>=prev?10:3):yoy>=100?15:yoy>=50?13:yoy>=30?10:yoy>=10?7:yoy>=0?4:1;
         rocketItems.push({
           label:'合約負債 YoY', maxScore:15,
           curLabel:clItems[clItems.length-1].date,
@@ -1990,7 +1990,7 @@ async function renderExtraData(stockCode, a) {
           const prevLiab = liabItems.length>=2 ? parseFloat(liabItems[liabItems.length-2].value||0) : curLiab;
           const prevAsset = assetItems.length>=2 ? parseFloat(assetItems[assetItems.length-2].value||0) : curAsset;
           const prevRatio = prevAsset>0 ? prevLiab/prevAsset*100 : ratio;
-          const score = ratio<30?5:ratio<45?4:ratio<60?2:1;
+          const score = ratio<30?1:ratio<45?1:ratio<60?0:0;
           rocketItems.push({
             label:'負債比', maxScore:1,
             curLabel:liabItems[liabItems.length-1].date,
