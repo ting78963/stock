@@ -2112,7 +2112,31 @@ async function renderExtraData(stockCode, a) {
     const fStrk=calcStreakLocal(instDays.map(d=>d.f));
     const tStrk=calcStreakLocal(instDays.map(d=>d.t));
     const instHtml = instDays.length>0 ? renderInstChart(instDays,fStrk,tStrk) : '';
-    const kdMacdHtml = a.closes&&a.closes.length>30 ? renderKDMACD(a.closes, a.wk) : '';
+    // 日線 OHLC 資料（供KD高低價計算）
+    const dayOHLC=(priceData||[]).sort((a,b)=>a.date.localeCompare(b.date)).map(r=>({
+      close:parseFloat(r.close)||0,
+      high:parseFloat(r.max||r.high||r.close)||0,
+      low:parseFloat(r.min||r.low||r.close)||0
+    }));
+    // 週線 OHLC（每週累積高低）
+    const wkOHLC=(()=>{
+      const sorted=(priceData||[]).sort((a,b)=>a.date.localeCompare(b.date));
+      const wk=[];let buf=[];
+      sorted.forEach((r,i)=>{
+        buf.push(r);
+        const dow=new Date(r.date).getDay();
+        if(dow===5||i===sorted.length-1){
+          wk.push({
+            close:parseFloat(buf[buf.length-1].close)||0,
+            high:Math.max(...buf.map(x=>parseFloat(x.max||x.high||x.close)||0)),
+            low:Math.min(...buf.map(x=>parseFloat(x.min||x.low||x.close)||0))
+          });
+          buf=[];
+        }
+      });
+      return wk;
+    })();
+    const kdMacdHtml = dayOHLC.length>30 ? renderKDMACD(dayOHLC, wkOHLC, fStrk, tStrk) : '';
 
     // ── 5. 融資融券 ──
     const [marginRes2] = await Promise.allSettled([
@@ -2860,29 +2884,28 @@ function updateRefreshBtn(){
 // 資金流向柱量圖（五根）
 
 // 計算 KD（週/日）和 MACD
-function calcKD(closes, period=9){
-  if(!closes||closes.length<period) return{k:null,d:null,prev_k:null,prev_d:null};
+function calcKD(data, period=9){
+  // data = [{close, high, low}] 或純收盤價陣列（向下相容）
+  const isOHLC=data.length>0&&typeof data[0]==='object';
+  if(!data||data.length<period) return{k:null,d:null,hist:[]};
   let k=50,d=50;
-  let prev_k=50,prev_d=50,pprev_k=50,pprev_d=50;
-  for(let i=period-1;i<closes.length;i++){
-    const slice=closes.slice(i-period+1,i+1);
-    const hi=Math.max(...slice),lo=Math.min(...slice);
-    const rsv=hi===lo?50:((closes[i]-lo)/(hi-lo))*100;
-    pprev_k=prev_k;pprev_d=prev_d;
-    prev_k=k;prev_d=d;
+  const hist=[];
+  for(let i=period-1;i<data.length;i++){
+    const slice=data.slice(i-period+1,i+1);
+    const hi=isOHLC?Math.max(...slice.map(x=>x.high)):Math.max(...slice);
+    const lo=isOHLC?Math.min(...slice.map(x=>x.low)):Math.min(...slice);
+    const cl=isOHLC?data[i].close:data[i];
+    const rsv=hi===lo?50:((cl-lo)/(hi-lo))*100;
+    const pk=k,pd=d;
     k=k*2/3+rsv/3;
     d=d*2/3+k/3;
+    hist.push({k:Math.round(k*10)/10,d:Math.round(d*10)/10,pk:Math.round(pk*10)/10,pd:Math.round(pd*10)/10});
   }
-  return{k:Math.round(k*10)/10,d:Math.round(d*10)/10,prev_k:Math.round(prev_k*10)/10,prev_d:Math.round(prev_d*10)/10};
+  return{k:hist[hist.length-1]?.k??null,d:hist[hist.length-1]?.d??null,hist};
 }
 
 function calcMACD(closes,fast=12,slow=26,signal=9){
-  if(!closes||closes.length<slow+signal) return{dif:null,sig:null,hist:null,prev_hist:null};
-  function ema(arr,n){
-    let e=arr[0];const k=2/(n+1);
-    for(let i=1;i<arr.length;i++) e=arr[i]*k+e*(1-k);
-    return e;
-  }
+  if(!closes||closes.length<slow+signal) return{dif:null,sig:null,hist:null,histArr:[]};
   function emaArr(arr,n){
     const res=[];let e=arr[0];const k=2/(n+1);
     for(let i=0;i<arr.length;i++){
@@ -2891,93 +2914,163 @@ function calcMACD(closes,fast=12,slow=26,signal=9){
     }
     return res;
   }
-  const fastEma=emaArr(closes,fast);
-  const slowEma=emaArr(closes,slow);
+  const cl=closes.map(x=>typeof x==='object'?x.close:x);
+  const fastEma=emaArr(cl,fast);
+  const slowEma=emaArr(cl,slow);
   const dif=fastEma.map((v,i)=>v-slowEma[i]).slice(slow-1);
   const sigArr=emaArr(dif,signal);
-  const hist=dif.map((v,i)=>v-sigArr[i]);
-  const n=hist.length;
+  const histArr=dif.map((v,i)=>Math.round((v-sigArr[i])*100)/100);
+  const n=histArr.length;
   return{
     dif:Math.round(dif[n-1]*100)/100,
     sig:Math.round(sigArr[n-1]*100)/100,
-    hist:Math.round(hist[n-1]*100)/100,
-    prev_hist:Math.round(hist[n-2]*100)/100
+    hist:histArr[n-1],
+    prev_hist:histArr[n-2],
+    histArr:histArr.slice(-3)
   };
 }
 
-function getKDStatus(kd){
-  if(!kd||kd.k==null) return{text:'資料不足',badge:'neutral'};
-  const cross=kd.prev_k<=kd.prev_d&&kd.k>kd.d;
-  const death=kd.prev_k>=kd.prev_d&&kd.k<kd.d;
-  if(cross) return{text:'黃金交叉',badge:'cross',k:kd.k,d:kd.d};
-  if(death) return{text:'死亡交叉',badge:'death',k:kd.k,d:kd.d};
-  if(kd.k>kd.d) return{text:'多方向上',badge:'up',k:kd.k,d:kd.d};
-  return{text:'空方向下',badge:'down',k:kd.k,d:kd.d};
+function getKDSignal(hist3){
+  // hist3 = 最近3筆 {k,d,pk,pd}
+  if(!hist3||hist3.length<2) return{text:'資料不足',badge:'neutral',trend:null};
+  const last=hist3[hist3.length-1];
+  const prev=hist3[hist3.length-2];
+  const cross=prev.k<=prev.d&&last.k>last.d;
+  const death=prev.k>=prev.d&&last.k<last.d;
+  const nearCross=last.k<last.d&&(last.d-last.k)<3; // 即將黃金交叉
+  const nearDeath=last.k>last.d&&(last.k-last.d)<3; // 即將死亡交叉
+  const trend=last.k>prev.k?'up':'down';
+  if(cross) return{text:'⚡ 黃金交叉',badge:'cross',trend,k:last.k,d:last.d};
+  if(death) return{text:'💀 死亡交叉',badge:'death',trend,k:last.k,d:last.d};
+  if(nearCross) return{text:'即將黃金交叉',badge:'near_cross',trend,k:last.k,d:last.d};
+  if(nearDeath) return{text:'即將死亡交叉',badge:'near_death',trend,k:last.k,d:last.d};
+  if(last.k>last.d) return{text:'多方向上',badge:'up',trend,k:last.k,d:last.d};
+  return{text:'空方向下',badge:'down',trend,k:last.k,d:last.d};
 }
 
-function getMACDStatus(macd){
-  if(!macd||macd.hist==null) return{text:'資料不足',badge:'neutral'};
+function getMACDSignal(macd){
+  if(!macd||macd.hist==null) return{text:'資料不足',badge:'neutral',trend:null};
+  const arr=macd.histArr||[];
+  const trend=arr.length>=2?(arr[arr.length-1]>arr[arr.length-2]?'up':'down'):null;
   const turning=macd.prev_hist<=0&&macd.hist>0;
   const turningDown=macd.prev_hist>=0&&macd.hist<0;
-  if(turning) return{text:'由綠轉紅',badge:'cross',hist:macd.hist,dif:macd.dif,sig:macd.sig};
-  if(turningDown) return{text:'由紅轉綠',badge:'death',hist:macd.hist,dif:macd.dif,sig:macd.sig};
-  if(macd.hist>0) return{text:'紅柱多方',badge:'up',hist:macd.hist,dif:macd.dif,sig:macd.sig};
-  return{text:'綠柱空方',badge:'down',hist:macd.hist,dif:macd.dif,sig:macd.sig};
+  const nearZeroUp=macd.hist<0&&macd.hist>-0.1&&trend==='up';
+  const nearZeroDown=macd.hist>0&&macd.hist<0.1&&trend==='down';
+  if(turning) return{text:'⚡ 由綠轉紅',badge:'cross',trend,hist:macd.hist,arr};
+  if(turningDown) return{text:'💀 由紅轉綠',badge:'death',trend,hist:macd.hist,arr};
+  if(nearZeroUp) return{text:'空方力竭，即將轉紅',badge:'near_cross',trend,hist:macd.hist,arr};
+  if(nearZeroDown) return{text:'多方力竭，即將轉綠',badge:'near_death',trend,hist:macd.hist,arr};
+  if(macd.hist>0) return{text:'紅柱多方',badge:'up',trend,hist:macd.hist,arr};
+  return{text:'綠柱空方',badge:'down',trend,hist:macd.hist,arr};
 }
 
-function getThreeSignalDesc(wkKD,wkMACD,dayKD){
-  const wUp=wkKD.badge==='up'||wkKD.badge==='cross';
-  const mUp=wkMACD.badge==='up'||wkMACD.badge==='cross';
-  const dUp=dayKD.badge==='cross';
-  const wDown=wkKD.badge==='down'||wkKD.badge==='death';
-  const mDown=wkMACD.badge==='down'||wkMACD.badge==='death';
-  const dDown=dayKD.badge==='death';
-  if(wUp&&mUp&&dUp) return{text:'三項指標同時符合，多方強勢、空方力竭訊號出現。搭配外資投信買超可提高勝率。',color:'var(--red)'};
-  if(wDown&&mDown&&dDown) return{text:'三項指標同時向下，空方強勢、多方力竭。留意下方支撐與停損位置。',color:'var(--green)'};
-  if(wUp&&mUp&&!dUp) return{text:'大方向偏多、動能確認，等待日KD黃金交叉進場時機。',color:'var(--amber)'};
-  if(wUp&&!mUp&&dUp) return{text:'週KD向上但週MACD動能尚未確認，訊號強度下降，觀望。',color:'var(--amber)'};
-  if(!wUp&&mUp&&dUp) return{text:'週KD大方向偏空，短線反彈訊號出現，留意反彈力道。',color:'var(--amber)'};
-  if(wDown&&mDown&&!dDown) return{text:'大方向偏空、動能走弱，等待確認是否止跌。',color:'var(--green)'};
-  return{text:'指標分歧，方向不明，觀望等待方向確認。',color:'var(--text3)'};
+function getSignalDesc(wkKD,wkMACD,dayKD,dayMACD,fStreak,tStreak){
+  const chipOk=(fStreak&&fStreak.streak>=3&&fStreak.dir>0)||(tStreak&&tStreak.streak>=3&&tStreak.dir>0);
+  const wkGold=wkKD.badge==='cross';
+  const wkUp=wkKD.badge==='up'||wkGold;
+  const mTurnRed=wkMACD.badge==='cross';
+  const mRed=wkMACD.badge==='up'||mTurnRed;
+  const dayGold=dayKD.badge==='cross';
+  const dayNearGold=dayKD.badge==='near_cross';
+  const dayUp=dayKD.badge==='up'||dayGold;
+  const dayMACDTurnRed=dayMACD.badge==='cross';
+  const dayMACDRed=dayMACD.badge==='up'||dayMACDTurnRed;
+  const dayMACDNearRed=dayMACD.badge==='near_cross';
+  const wkDeath=wkKD.badge==='death'||wkKD.badge==='down';
+  const mGreen=wkMACD.badge==='down'||wkMACD.badge==='death';
+  const dayDeath=dayKD.badge==='death';
+  const dayMACDGreen=dayMACD.badge==='down'||dayMACD.badge==='death';
+
+  // 最強訊號
+  if(wkGold&&mTurnRed&&dayGold&&dayMACDTurnRed)
+    return{text:'🚀 週日KD黃金交叉＋週日MACD同步由綠轉紅，四重確認強烈進場訊號！搭配外資投信買超勝率最高。',color:'#b91c1c',level:5};
+  if(wkGold&&dayGold&&mRed&&dayMACDRed)
+    return{text:'🚀 週KD黃金交叉＋日KD黃金交叉，雙重黃金交叉強烈進場訊號！動能全面轉多。',color:'#b91c1c',level:5};
+  if(wkUp&&mTurnRed&&dayGold)
+    return{text:'⚡ 週MACD由綠轉紅＋日KD黃金交叉，進場訊號確認！週線動能轉強，日線時機點到位。',color:'#b91c1c',level:4};
+  if(wkGold&&mRed&&dayNearGold)
+    return{text:'⚡ 週KD黃金交叉＋日KD即將黃金交叉，強烈進場訊號蓄勢，密切留意日KD交叉時機。',color:'#b91c1c',level:4};
+  if(wkUp&&mRed&&dayGold)
+    return{text:'✅ 週線偏多動能確認，日KD黃金交叉進場時機到位，可留意進場。',color:'#b91c1c',level:3};
+  if(wkUp&&mRed&&dayMACDTurnRed&&!dayGold)
+    return{text:'✅ 週線偏多，日MACD由綠轉紅空方力竭，等待日KD黃金交叉確認。',color:'#b91c1c',level:3};
+  if(wkUp&&mRed&&dayNearGold)
+    return{text:'🔔 週線偏多動能確認，日KD即將黃金交叉，密切留意進場時機。',color:'#854f0b',level:3};
+  if(wkUp&&mRed&&dayMACDNearRed)
+    return{text:'🔔 週線偏多，日MACD空方力竭趨近零軸，等待轉紅確認。',color:'#854f0b',level:2};
+  if(wkUp&&mRed&&!dayUp)
+    return{text:'⏳ 大方向偏多動能確認，等待日KD黃金交叉進場時機。',color:'#854f0b',level:2};
+  if(wkUp&&!mRed&&dayGold)
+    return{text:'⚠️ 日KD黃金交叉但週MACD動能未確認，訊號強度下降，謹慎觀望。',color:'#854f0b',level:1};
+
+  // 空方訊號
+  if(wkDeath&&mGreen&&dayDeath&&dayMACDGreen)
+    return{text:'🔴 週日KD死亡交叉＋週日MACD同步轉綠，空方強勢，嚴格停損或觀望。',color:'#166534',level:-5};
+  if(wkDeath&&dayDeath)
+    return{text:'🔴 週日KD雙死亡交叉，空方強勢，避免進場。',color:'#166534',level:-4};
+  if(wkDeath&&mGreen)
+    return{text:'⚠️ 週線偏空動能走弱，等待止跌訊號再觀察。',color:'#166534',level:-2};
+
+  return{text:'📊 指標分歧，方向不明，觀望等待訊號確認。',color:'var(--text2)',level:0};
 }
 
-function renderKDMACD(cl, wk){
-  const dayKDraw=calcKD(cl,9);
-  const wkKDraw=calcKD(wk,9);
-  const wkMACDraw=calcMACD(wk,12,26,9);
-  const dayKD=getKDStatus(dayKDraw);
-  const wkKD=getKDStatus(wkKDraw);
-  const wkMACD=getMACDStatus(wkMACDraw);
-  const desc=getThreeSignalDesc(wkKD,wkMACD,dayKD);
+function trendArr(arr,formatter){
+  if(!arr||arr.length===0) return '—';
+  const vals=arr.map(formatter);
+  const dir=arr[arr.length-1]>arr[0]?'↑':'↓';
+  return vals.join(' → ')+' '+dir;
+}
+
+function renderKDMACD(dayData, wkData, fStreak, tStreak){
+  // dayData = [{close,high,low}], wkData = [{close,high,low}]
+  const dayKDraw=calcKD(dayData,9);
+  const wkKDraw=calcKD(wkData,9);
+  const wkMACDraw=calcMACD(wkData,12,26,9);
+  const dayMACDraw=calcMACD(dayData,12,26,9);
+
+  const dayKD=getKDSignal(dayKDraw.hist.slice(-3));
+  const wkKD=getKDSignal(wkKDraw.hist.slice(-3));
+  const wkMACD=getMACDSignal(wkMACDraw);
+  const dayMACD=getMACDSignal(dayMACDraw);
+  const desc=getSignalDesc(wkKD,wkMACD,dayKD,dayMACD,fStreak,tStreak);
+
   const badgeStyle={
     up:'background:#fff0f0;color:#a32d2d',
     down:'background:#eaf3de;color:#3b6d11',
-    cross:'background:#e6f1fb;color:#185fa5',
-    death:'background:#faeeda;color:#854f0b',
+    cross:'background:#e6f1fb;color:#185fa5;font-weight:600',
+    near_cross:'background:#e6f1fb;color:#185fa5',
+    death:'background:#faeeda;color:#854f0b;font-weight:600',
+    near_death:'background:#faeeda;color:#854f0b',
     neutral:'background:var(--bg2);color:var(--text3)'
   };
+
+  // 週KD K值最近3筆
+  const wkKHist=wkKDraw.hist.slice(-3).map(x=>x.k);
+  const dayKHist=dayKDraw.hist.slice(-3).map(x=>x.k);
+  const wkMHist=wkMACDraw.histArr||[];
+  const dayMHist=dayMACDraw.histArr||[];
+
   const rows=[
-    {label:'週 KD（大方向）',sub:`K:${wkKD.k??'—'}　D:${wkKD.d??'—'}`,val:wkKD.text,badge:wkKD.badge},
-    {label:'週 MACD（動能）',sub:`DIF:${wkMACD.dif??'—'}　柱:${wkMACD.hist??'—'}`,val:wkMACD.text,badge:wkMACD.badge},
-    {label:'日 KD（時機點）',sub:`K:${dayKD.k??'—'}　D:${dayKD.d??'—'}`,val:dayKD.text,badge:dayKD.badge},
+    {label:'週 KD（大方向）',trend:trendArr(wkKHist,v=>v.toFixed(1)),val:wkKD.text,badge:wkKD.badge,sub:`K:${wkKD.k??'—'}　D:${wkKD.d??'—'}`},
+    {label:'週 MACD（動能）',trend:trendArr(wkMHist,v=>v.toFixed(2)),val:wkMACD.text,badge:wkMACD.badge,sub:`柱:${wkMACD.hist??'—'}`},
+    {label:'日 KD（時機點）',trend:trendArr(dayKHist,v=>v.toFixed(1)),val:dayKD.text,badge:dayKD.badge,sub:`K:${dayKD.k??'—'}　D:${dayKD.d??'—'}`},
+    {label:'日 MACD（動能）',trend:trendArr(dayMHist,v=>v.toFixed(2)),val:dayMACD.text,badge:dayMACD.badge,sub:`柱:${dayMACD.hist??'—'}`},
   ];
   return`
   <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <span style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">技術指標　週KD / 週MACD / 日KD</span>
+      <span style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">技術指標　週KD / 週MACD / 日KD / 日MACD</span>
       <div class="ri-btn" data-info="kdmacd" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3)">ⓘ</div>
     </div>
-    <div class="ri-box" data-for="kdmacd" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">【週KD】判斷中期趨勢大方向，向上代表多方趨勢。【週MACD】判斷動能強弱，由綠轉紅為最佳訊號。【日KD】找具體進場時機點，黃金交叉為進場參考。三項同時符合訊號最強；有VCP型態時不需依賴KD/MACD，直接用型態進場。⚠️ 本資料僅供參考，不構成投資建議。</div>
+    <div class="ri-box" data-for="kdmacd" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">【週KD】中期趨勢大方向，黃金交叉為強烈多方訊號。【週MACD】週線動能，由綠轉紅代表中期動能轉多。【日KD】進場時機點，黃金交叉為日線進場訊號。【日MACD】日線動能，負柱縮小趨近零代表空方力竭。顯示連續3筆數值變化，搭配外資投信方向判斷。有VCP型態時優先用型態進場。⚠️ 本資料僅供參考，不構成投資建議。</div>
     ${rows.map(r=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border)">
-      <div>
+    <div style="padding:8px 0;border-bottom:0.5px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
         <div style="font-size:12px;color:var(--text3)">${r.label}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:2px">${r.sub}</div>
+        <div style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;${badgeStyle[r.badge]||badgeStyle.neutral}">${r.val}</div>
       </div>
-      <div style="text-align:right">
-        <div style="font-size:14px;font-weight:500;color:var(--text)">${r.val}</div>
-        <div style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;margin-top:3px;${badgeStyle[r.badge]||badgeStyle.neutral}">${r.val}</div>
-      </div>
+      <div style="font-size:11px;color:var(--text3)">${r.trend}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:1px">${r.sub}</div>
     </div>`).join('')}
     <div style="display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--bg3)">
       <div style="width:8px;height:8px;border-radius:50%;background:${desc.color};flex-shrink:0;margin-top:4px"></div>
