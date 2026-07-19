@@ -286,75 +286,114 @@ html.font-xl{font-size:19px}
 
 <!-- 頁籤 -->
 <div id="tabs" style="background:#fff;border-bottom:0.5px solid var(--border);display:flex;overflow-x:auto;padding:0 16px;scrollbar-width:none;position:sticky;top:47px;z-index:99">
-  <div class="tab-item active" onclick="showPage('home',this)">今日焦點</div>
+  <div class="tab-item active" onclick="showPage('home',this)">說明中心</div>
   <div class="tab-item" onclick="showPage('money',this)">族群資金</div>
   <div class="tab-item" onclick="showPage('stock',this)">個股分析</div>
   <div class="tab-item" onclick="showPage('watch',this)">自選清單</div>
   <div class="tab-item" onclick="showPage('settings',this)">設定</div>
 </div>
 
-<!-- 今日焦點 -->
+<!-- 說明中心 -->
 <div class="app-page active" id="page-home">
   <div style="padding:14px 16px">
+    <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px">說明中心</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:16px">操作系統完整說明</div>
 
-    <!-- 自選警示 -->
-    <div id="home-watch-alert" style="display:none;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:500;color:var(--wine);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">⭐ 自選清單警示</div>
-      <div id="home-watch-list"></div>
-    </div>
-
-    <div class="sec-label">國際指數</div>
-    <div id="intl-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-      <div class="idx-card"><div class="idx-name">那斯達克</div><div class="idx-val" id="nasdaq-val">—</div><div class="idx-chg" id="nasdaq-chg">—</div></div>
-      <div class="idx-card"><div class="idx-name">費城半導體</div><div class="idx-val" id="sox-val">—</div><div class="idx-chg" id="sox-chg">—</div></div>
-      <div class="idx-card"><div class="idx-name">S&amp;P 500</div><div class="idx-val" id="sp-val">—</div><div class="idx-chg" id="sp-chg">—</div></div>
-      <div class="idx-card"><div class="idx-name">台積電 ADR</div><div class="idx-val" id="tsm-val">—</div><div class="idx-chg" id="tsm-chg">—</div></div>
-      <div class="idx-card"><div class="idx-name">輝達 NVDA</div><div class="idx-val" id="nvda-val">—</div><div class="idx-chg" id="nvda-chg">—</div></div>
-      <div class="idx-card"><div class="idx-name">VIX 恐慌</div><div class="idx-val" id="vix-val">—</div><div class="idx-chg" id="vix-chg">—</div></div>
-      <div class="idx-card"><div class="idx-name">日經 225</div><div class="idx-val" id="nikkei-val">—</div><div class="idx-chg" id="nikkei-chg">—</div></div>
-      <div class="idx-card"><div class="idx-name">韓國 KOSPI</div><div class="idx-val" id="kospi-val">—</div><div class="idx-chg" id="kospi-chg">—</div></div>
-    </div>
-
-    <div class="home-card" id="ai-summary-card">
-      <div style="font-size:10px;font-weight:600;color:var(--wine);letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px">✦ 市場數據摘要</div>
-      <div id="ai-summary-text" style="font-size:13px;color:var(--text2);line-height:1.7">載入中...</div>
-    </div>
-
-    <div class="sec-label">台灣市場</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
-      <div class="taiex-card"><div class="taiex-label">加權指數</div><div class="taiex-val" id="taiex-val">—</div><div class="taiex-chg" id="taiex-chg">—</div></div>
-      <div class="taiex-card"><div class="taiex-label">台指期</div><div class="taiex-val" id="futures-val">—</div><div class="taiex-chg" id="futures-chg">—</div></div>
-      <div class="taiex-card"><div class="taiex-label">夜盤</div><div class="taiex-val" id="night-val">—</div><div class="taiex-chg" id="night-chg">—</div></div>
-    </div>
-
-    <div class="home-card" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div>
-        <div style="font-size:13px;color:var(--text2)">大盤季線乖離</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:2px" id="deviate-sub">60日均線 —</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:21px;font-weight:700" id="deviate-val">—</div>
-        <div style="font-size:11px;margin-top:2px" id="deviate-note">—</div>
+    <!-- 操作系統總覽 -->
+    <div class="home-card" style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">🚀 選股到進場完整流程</div>
+      <div style="font-size:12px;color:var(--text2);line-height:2">
+        <div>① 🔥 火箭指標高分 → 基本面強的好公司</div>
+        <div>② 📊 外資投信連續買超 → 主力正在進場</div>
+        <div>③ 📈 均線系統多頭排列 → 大方向確認</div>
+        <div>④ 📉 週K低檔（&lt;50）→ 多頭剛啟動，空間大</div>
+        <div>⑤ ⚡ 日MACD由綠轉紅 → 進場時機到</div>
+        <div>⑥ 💎 有VCP型態 → 最佳進場，優先選擇</div>
       </div>
     </div>
 
-    <div class="home-card" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div>
-        <div style="font-size:13px;color:var(--text2)">USD / TWD</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:2px">台幣匯率</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:17px;font-weight:600;color:var(--text)" id="fx-val">—</div>
-        <div style="font-size:11px;margin-top:2px" id="fx-note">—</div>
+    <!-- 族群資金說明 -->
+    <div class="home-card" style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">📊 族群資金怎麼看</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.9">
+        <div style="margin-bottom:6px"><b>量比：</b>今日成交量 ÷ 10日均量</div>
+        <div>≥ 1.5x 異常放量，需特別重視</div>
+        <div>1.0-1.5x 普通量，訊號參考</div>
+        <div>&lt; 1.0x 縮量，市場觀望</div>
+        <div style="margin-top:8px;margin-bottom:6px"><b>法人訊號：</b></div>
+        <div>外資投信共買 → 追，訊號最強</div>
+        <div>外資投信共賣 → 出貨警示</div>
+        <div>外資買投信賣 → 觀察</div>
+        <div>投信買外資賣 → 觀察</div>
       </div>
     </div>
 
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div class="sec-label" style="margin-bottom:0">族群資金前三</div>
-      <span style="font-size:10px;color:var(--text3);opacity:0.6">點卡片看成分股</span>
+    <!-- 柱量圖說明 -->
+    <div class="home-card" style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">📊 柱量圖判讀（外資／投信／量價）</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.9">
+        <div style="margin-bottom:6px"><b>量價柱：</b>高度=成交量大小，顏色=漲跌方向</div>
+        <div>放量上漲（柱高+紅）→ 主力積極買進，最強訊號</div>
+        <div>縮量上漲（柱矮+紅）→ 惜售，賣壓不重</div>
+        <div>放量下跌（柱高+綠）→ 主力出貨，最危險</div>
+        <div>縮量下跌（柱矮+綠）→ 正常回檔整理</div>
+        <div style="margin-top:8px">外資賣+放量上漲 → 有其他主力承接，背離訊號</div>
+        <div>三根全紅 → 最強多方共識</div>
+        <div>三根全綠 → 最強空方，嚴格停損</div>
+        <div style="margin-top:8px;color:var(--text3)">※ 單天訊號不可信，需連續3天以上確認</div>
+      </div>
     </div>
-    <div id="home-group-list">
-      <div style="padding:20px;text-align:center;color:var(--text3)">載入中...</div>
+
+    <!-- 技術指標說明 -->
+    <div class="home-card" style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">📉 週K位置 / 日MACD能量</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.9">
+        <div style="margin-bottom:6px"><b>週K位置：</b>判斷在多頭的哪個階段</div>
+        <div>週K &lt; 50 且向上 → 低檔啟動，空間大，最佳</div>
+        <div>週K 50-80 → 中段，空間縮小</div>
+        <div>週K &gt; 80 → 高檔超買，不追，等回調</div>
+        <div>K往D靠近 → 空方力竭，轉折準備中</div>
+        <div style="margin-top:8px;margin-bottom:6px"><b>日MACD能量（5天）：</b>看能量方向</div>
+        <div>負值持續遞減 → 空方衰竭，準備進場</div>
+        <div>由負轉正（穿越0軸）→ 進場確認</div>
+        <div>正值持續遞增 → 多方增強，持股</div>
+        <div>能量中斷 → 訊號不穩，觀望</div>
+        <div style="margin-top:8px;font-weight:500;color:var(--wine)">最佳進場：週K低檔 + 日MACD由綠轉紅</div>
+      </div>
+    </div>
+
+    <!-- VCP說明 -->
+    <div class="home-card" style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">💎 VCP型態說明</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.9">
+        <div>VCP（波動收縮型態）是 Minervini 的核心進場型態</div>
+        <div style="margin-top:6px">整理過程中波動幅度持續縮小，代表籌碼在集中</div>
+        <div style="margin-top:6px">◈ 即將突破 → 密切關注，準備進場</div>
+        <div>🚀 突破爆發 → 放量突破，最強進場訊號</div>
+        <div style="margin-top:6px;color:var(--text3)">※ 有VCP時不需等KD/MACD，直接用型態進場</div>
+      </div>
+    </div>
+
+    <!-- 火箭指標說明 -->
+    <div class="home-card" style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">🔥 火箭指標（基本面分數）</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.9">
+        <div style="margin-bottom:6px">評分項目（共100分）：</div>
+        <div>月營收 MoM（25分）→ 環比成長最重要</div>
+        <div>月營收 YoY（20分）→ 年增率確認趨勢</div>
+        <div>稅後淨利 YoY（20分）→ 獲利加速</div>
+        <div>合約負債 YoY（15分）→ 未來訂單能見度</div>
+        <div>自由現金流（10分）→ 財務健康</div>
+        <div>EBITDA（5分）→ 本業獲利</div>
+        <div>毛利率（3分）、ROE（1分）、負債比（1分）</div>
+        <div style="margin-top:8px;font-weight:500;color:var(--wine)">≥ 70分 → 強勢突破候選</div>
+        <div style="color:var(--text3)">※ 法人最看重MoM、YoY、合約負債連續成長</div>
+      </div>
+    </div>
+
+    <!-- 免責聲明 -->
+    <div style="font-size:11px;color:var(--text3);text-align:center;padding:12px 0 8px;line-height:1.6">
+      ⚠️ 本APP所有資料僅供參考，不構成投資建議。<br>投資有風險，請自行判斷評估。
     </div>
 
   </div>
@@ -421,7 +460,7 @@ html.font-xl{font-size:19px}
 <nav style="background:#fff;border-top:0.5px solid var(--border);display:flex;padding:8px 0 16px;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:100">
   <button class="nav-btn active" id="nav-home" onclick="showPage('home',null,'nav-home')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    <span>焦點</span>
+    <span>說明</span>
   </button>
   <button class="nav-btn" id="nav-money" onclick="showPage('money',null,'nav-money')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
@@ -2333,7 +2372,6 @@ function showPage(id, tabEl, navId){
   if(navId) document.getElementById(navId)?.classList.add('active');
   const tabMap={home:0,money:1,stock:2,watch:3,settings:4};
   if(tabMap[id]!==undefined) document.querySelectorAll('.tab-item')[tabMap[id]]?.classList.add('active');
-  if(id==='home') loadHomePage();
   if(id==='money') initMoney();
   if(id==='watch'){if(typeof rW==='function')rW();}
   if(id==='stock') renderSearchHistory();
@@ -3227,18 +3265,65 @@ function renderInstChart(days,fStreak,tStreak){
   </div>`;
 }
 
+function getInstDetailDesc(d){
+  const f=d.f||0;
+  const t=d.t||0;
+  const vol=d.totalVol||0;
+  const chg=d.changePct||0;
+  const isUp=chg>=0;
+  const isDown=chg<0;
+  // 計算量比（用totalVol跟前幾天比較，這裡用簡單判斷）
+  const isHighVol=vol>0&&d.volRatio>=1.5;
+  const isLowVol=vol>0&&d.volRatio<1.0;
+  const fBig=Math.abs(f)>vol*0.1; // 外資超過總量10%算大
+  const fBuy=f>0,fSell=f<0;
+  const tBuy=t>0,tSell=t<0;
+  const mainBuy=f+t>0;
+  const mainSell=f+t<0;
+
+  // 最強訊號
+  if(fBuy&&tBuy&&isHighVol&&isUp) return{text:'三方共識買進，最強多方訊號',color:'#b91c1c'};
+  if(fSell&&tSell&&isHighVol&&isDown) return{text:'三方共識出貨，最危險訊號，注意停損',color:'#166534'};
+  // 背離訊號
+  if(fSell&&isHighVol&&isUp) return{text:'外資出貨但有其他主力承接，背離訊號，觀察後續',color:'#854f0b'};
+  if(fBuy&&isHighVol&&isDown) return{text:'外資低接但賣壓沉重，股價未能反映，觀察',color:'#854f0b'};
+  // 放量訊號
+  if(isHighVol&&isUp&&fBuy) return{text:'放量上漲，主力積極買進，強烈多方訊號',color:'#b91c1c'};
+  if(isHighVol&&isUp&&fSell) return{text:'放量上漲但外資賣出，注意是否有其他主力撐盤',color:'#854f0b'};
+  if(isHighVol&&isDown&&fSell) return{text:'放量下跌外資賣超，主力出貨，危險訊號',color:'#166534'};
+  if(isHighVol&&isDown&&fBuy) return{text:'放量下跌但外資買進，可能是主力逢低承接',color:'#854f0b'};
+  // 縮量訊號
+  if(isLowVol&&isUp) return{text:'縮量上漲，惜售整理，賣壓不重，量能待確認',color:'#854f0b'};
+  if(isLowVol&&isDown) return{text:'縮量下跌，正常回檔整理，賣壓不重',color:'#854f0b'};
+  // 普通量
+  if(mainBuy&&isUp) return{text:'主力買超，股價配合上漲，訊號偏多',color:'#b91c1c'};
+  if(mainSell&&isDown) return{text:'主力賣超，股價配合下跌，訊號偏空',color:'#166534'};
+  return{text:'量能普通，訊號參考性低，持續觀察',color:'var(--text3)'};
+}
+
 function showInstDetail(idx){
   const days=window._instDays||[];
   const d=days[idx]; if(!d) return;
   const panel=document.getElementById('instDetailPanel'); if(!panel) return;
-  const KEYS=['f','t'];
-  const NAMES={f:'外資',t:'投信'};
+  const KEYS=['f','t','vol'];
+  const NAMES={f:'外資',t:'投信',vol:'量價'};
   const POS={f:'#b91c1c',t:'#7f1d1d'};
   const NEG={f:'#166534',t:'#14532d'};
-  const maxAbs=Math.max(...KEYS.map(k=>Math.abs(d[k]||0)),1);
-  const total=(d.f||0)+(d.g||0)+(d.t||0);
+  const maxAbs=Math.max(Math.abs(d.f||0),Math.abs(d.t||0),1);
+  const maxVol=Math.max(d.totalVol||0,1);
+  const total=(d.f||0)+(d.t||0);
   const fs=window._fStreak;
   const ts=window._tStreak;
+  const desc=getInstDetailDesc(d);
+  const vColor=(d.changePct||0)>=0?'#b91c1c':'#166534';
+  const chgText=(d.changePct||0)>=0?`+${(d.changePct||0).toFixed(2)}%`:`${(d.changePct||0).toFixed(2)}%`;
+
+  // 三根柱子高度
+  const fh=Math.max(Math.round(Math.abs(d.f||0)/maxAbs*120),4);
+  const th=Math.max(Math.round(Math.abs(d.t||0)/maxAbs*120),4);
+  const vh=Math.max(Math.round((d.totalVol||0)/maxVol*120),4);
+  const fv=d.f||0,tv=d.t||0;
+
   panel.style.display='block';
   panel.innerHTML=`
     <div style="display:flex;justify-content:space-between;margin-bottom:10px">
@@ -3246,11 +3331,38 @@ function showInstDetail(idx){
       <button data-close="true" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;line-height:1;padding:4px">✕</button>
     </div>
     <div style="display:flex;gap:8px;align-items:flex-end;height:160px;margin-bottom:14px">
-      ${KEYS.map(k=>{const v=d[k]||0;const h=Math.max(Math.round(Math.abs(v)/maxAbs*120),4);const color=v>=0?POS[k]:NEG[k];const sign=v>=0?'+':'';return`<div style="display:flex;flex-direction:column;align-items:center;flex:1"><div style="display:flex;align-items:flex-end;justify-content:center;width:100%;height:120px"><div style="width:30px;height:${h}px;background:${color};border-radius:4px 4px 0 0"></div></div><div style="font-size:11px;color:var(--text2);margin-top:6px;white-space:nowrap">${NAMES[k]}</div><div style="font-size:11px;font-weight:700;color:${color};margin-top:2px">${sign}${Math.round(Math.abs(v)).toLocaleString()}</div><div style="font-size:10px;color:var(--text3)">張</div></div>`;}).join('')}
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+        <div style="display:flex;align-items:flex-end;justify-content:center;width:100%;height:120px">
+          <div style="width:30px;height:${fh}px;background:${fv>=0?POS.f:NEG.f};border-radius:4px 4px 0 0"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:6px">外資</div>
+        <div style="font-size:11px;font-weight:700;color:${fv>=0?POS.f:NEG.f};margin-top:2px">${fv>=0?'+':''}${Math.round(Math.abs(fv)).toLocaleString()}</div>
+        <div style="font-size:10px;color:var(--text3)">張</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+        <div style="display:flex;align-items:flex-end;justify-content:center;width:100%;height:120px">
+          <div style="width:30px;height:${th}px;background:${tv>=0?POS.t:NEG.t};border-radius:4px 4px 0 0"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:6px">投信</div>
+        <div style="font-size:11px;font-weight:700;color:${tv>=0?POS.t:NEG.t};margin-top:2px">${tv>=0?'+':''}${Math.round(Math.abs(tv)).toLocaleString()}</div>
+        <div style="font-size:10px;color:var(--text3)">張</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+        <div style="display:flex;align-items:flex-end;justify-content:center;width:100%;height:120px">
+          <div style="width:30px;height:${vh}px;background:${vColor};border-radius:4px 4px 0 0;opacity:0.7"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:6px">量價</div>
+        <div style="font-size:11px;font-weight:700;color:${vColor};margin-top:2px">${chgText}</div>
+        <div style="font-size:10px;color:var(--text3)">${Math.round(d.totalVol||0).toLocaleString()}張</div>
+      </div>
     </div>
     <div style="background:var(--bg);border-radius:var(--rs);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <div style="font-size:12px;color:var(--text3)">主力合計（外資＋投信）</div>
       <div style="font-size:16px;font-weight:700;color:${total>=0?'var(--red)':'var(--green)'}">${total>=0?'+':''}${Math.round(total).toLocaleString()} 張</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:var(--rs);padding:10px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:8px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${desc.color};flex-shrink:0;margin-top:4px"></div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6">${desc.text}</div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       ${fs&&fs.streak>0?`<span style="font-size:12px;color:var(--text2)">外資連續 <strong style="color:${fs.dir>0?'var(--red)':'var(--green)'}">${fs.streak}天${fs.dir>0?'買超':'賣超'}</strong></span>`:''}
