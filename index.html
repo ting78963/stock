@@ -2926,7 +2926,8 @@ function calcMACD(closes,fast=12,slow=26,signal=9){
     sig:Math.round(sigArr[n-1]*100)/100,
     hist:histArr[n-1],
     prev_hist:histArr[n-2],
-    histArr:histArr.slice(-3)
+    histArr:histArr.slice(-3),
+    histArr5:histArr.slice(-5)
   };
 }
 
@@ -3021,58 +3022,134 @@ function trendArr(arr,formatter){
   return vals.join(' → ')+' '+dir;
 }
 
+// 判斷5天能量是否單調遞增或遞減
+function isMonotone(arr){
+  if(!arr||arr.length<2) return 'insufficient';
+  let up=true,down=true;
+  for(let i=1;i<arr.length;i++){
+    if(arr[i]<=arr[i-1]) up=false;
+    if(arr[i]>=arr[i-1]) down=false;
+  }
+  if(up) return 'up';
+  if(down) return 'down';
+  return 'mixed';
+}
+
+function getWkKPosition(wkKHist){
+  if(!wkKHist||wkKHist.length===0) return{text:'資料不足',badge:'neutral',k:null};
+  const k=wkKHist[wkKHist.length-1];
+  const trend=wkKHist.length>=2?(k>wkKHist[0]?'up':'down'):null;
+  if(k<50&&trend==='up') return{text:'🟢 低檔啟動，位置佳',badge:'cross',k};
+  if(k>=50&&k<80&&trend==='up') return{text:'🟡 中段趨勢，空間縮小',badge:'up',k};
+  if(k>=80) return{text:'🔴 高檔超買，等回調',badge:'death',k};
+  if(k<50&&trend==='down') return{text:'空方下行中',badge:'down',k};
+  return{text:`週K ${k}`,badge:'neutral',k};
+}
+
+function getDayMACDSignal(histArr5){
+  if(!histArr5||histArr5.length<2) return{text:'資料不足',badge:'neutral',energy:'insufficient'};
+  const mono=isMonotone(histArr5);
+  const last=histArr5[histArr5.length-1];
+  const prev=histArr5[histArr5.length-2];
+  const crossZeroUp=prev<=0&&last>0;
+  const crossZeroDown=prev>=0&&last<0;
+  const nearZero=Math.abs(last)<0.05;
+
+  if(crossZeroUp) return{text:'⚡ 由綠轉紅，進場確認',badge:'cross',energy:'up'};
+  if(crossZeroDown) return{text:'💀 由紅轉綠，多方力竭',badge:'death',energy:'down'};
+
+  if(last<0&&mono==='up')
+    return{text:'🟡 空方能量遞減，準備進場',badge:'near_cross',energy:'up'};
+  if(last>0&&mono==='up')
+    return{text:'🟢 多方能量遞增，持股',badge:'up',energy:'up'};
+  if(last>0&&mono==='down')
+    return{text:'🟡 多方能量遞減，留意出場',badge:'near_death',energy:'down'};
+  if(last<0&&mono==='down')
+    return{text:'🔴 空方能量遞增，不進場',badge:'down',energy:'down'};
+  if(mono==='mixed'&&last<0&&nearZero)
+    return{text:'⚠️ 能量中斷，訊號不穩，觀望',badge:'neutral',energy:'mixed'};
+  if(mono==='mixed')
+    return{text:'⚠️ 能量中斷，方向不明，觀望',badge:'neutral',energy:'mixed'};
+  return{text:`OSC ${last.toFixed(2)}`,badge:'neutral',energy:'mixed'};
+}
+
+function getFinalDesc(wkPos,dayMACDSig){
+  const wkGood=wkPos.badge==='cross';
+  const wkMid=wkPos.badge==='up';
+  const wkBad=wkPos.badge==='death';
+  const dEnter=dayMACDSig.badge==='cross';
+  const dReady=dayMACDSig.badge==='near_cross';
+  const dHold=dayMACDSig.badge==='up';
+  const dWeak=dayMACDSig.badge==='near_death';
+  const dExit=dayMACDSig.badge==='death';
+  const dMixed=dayMACDSig.badge==='neutral';
+
+  if(wkGood&&dEnter) return{text:'🚀 週K低檔＋日MACD由綠轉紅，最佳進場時機！',color:'#b91c1c'};
+  if(wkGood&&dReady) return{text:'⚡ 週K低檔，空方能量遞減中，密切關注日MACD穿越0軸時機。',color:'#b91c1c'};
+  if(wkGood&&dHold) return{text:'✅ 週K低檔，多方能量持續增強，可持股觀察。',color:'#b91c1c'};
+  if(wkGood&&dWeak) return{text:'🟡 週K低檔但日MACD多方能量遞減，留意是否回調。',color:'#854f0b'};
+  if(wkGood&&dMixed) return{text:'⚠️ 週K位置佳但日MACD能量中斷，等待方向穩定再進場。',color:'#854f0b'};
+  if(wkMid&&dEnter) return{text:'✅ 日MACD由綠轉紅，週K中段可進場，控制倉位。',color:'#854f0b'};
+  if(wkMid&&dReady) return{text:'🔔 週K中段，日MACD空方力竭中，等待穿越0軸確認。',color:'#854f0b'};
+  if(wkBad&&dEnter) return{text:'⚠️ 週K高檔超買，即使日MACD轉紅也不追高，等回調。',color:'#854f0b'};
+  if(wkBad) return{text:'🔴 週K高檔超買，不進場，等待週K回落至80以下再評估。',color:'#166534'};
+  if(dExit) return{text:'💀 日MACD多方力竭，留意停損或減倉。',color:'#166534'};
+  return{text:'📊 訊號尚未明確，持續觀察能量變化。',color:'var(--text2)'};
+}
+
 function renderKDMACD(dayData, wkData, fStreak, tStreak){
-  // dayData = [{close,high,low}], wkData = [{close,high,low}]
-  const dayKDraw=calcKD(dayData,9);
   const wkKDraw=calcKD(wkData,9);
-  const wkMACDraw=calcMACD(wkData,12,26,9);
   const dayMACDraw=calcMACD(dayData,12,26,9);
 
-  const dayKD=getKDSignal(dayKDraw.hist.slice(-3));
-  const wkKD=getKDSignal(wkKDraw.hist.slice(-3));
-  const wkMACD=getMACDSignal(wkMACDraw);
-  const dayMACD=getMACDSignal(dayMACDraw);
-  const desc=getSignalDesc(wkKD,wkMACD,dayKD,dayMACD,fStreak,tStreak);
+  // 週K 最近3週K值
+  const wkKHist=wkKDraw.hist.slice(-3).map(x=>x.k);
+  // 日MACD OSC 最近5天
+  const dayMHist5=(dayMACDraw.histArr5||dayMACDraw.histArr||[]).slice(-5);
+
+  const wkPos=getWkKPosition(wkKHist);
+  const dayMACDSig=getDayMACDSignal(dayMHist5);
+  const desc=getFinalDesc(wkPos,dayMACDSig);
 
   const badgeStyle={
-    up:'background:#fff0f0;color:#a32d2d',
-    down:'background:#eaf3de;color:#3b6d11',
     cross:'background:#e6f1fb;color:#185fa5;font-weight:600',
-    near_cross:'background:#e6f1fb;color:#185fa5',
-    death:'background:#faeeda;color:#854f0b;font-weight:600',
+    near_cross:'background:#fff0f0;color:#a32d2d',
+    up:'background:#fff0f0;color:#a32d2d',
     near_death:'background:#faeeda;color:#854f0b',
+    death:'background:#faeeda;color:#854f0b;font-weight:600',
+    down:'background:#eaf3de;color:#3b6d11',
     neutral:'background:var(--bg2);color:var(--text3)'
   };
 
-  // 週KD K值最近3筆
-  const wkKHist=wkKDraw.hist.slice(-3).map(x=>x.k);
-  const dayKHist=dayKDraw.hist.slice(-3).map(x=>x.k);
-  const wkMHist=wkMACDraw.histArr||[];
-  const dayMHist=dayMACDraw.histArr||[];
+  const wkTrend=wkKHist.length>=2?wkKHist.map(v=>v.toFixed(1)).join(' → ')+(wkKHist[wkKHist.length-1]>wkKHist[0]?' ↑':' ↓'):'—';
+  const dayMTrend=dayMHist5.length>=2?dayMHist5.map(v=>v.toFixed(2)).join(' → ')+(dayMHist5[dayMHist5.length-1]>dayMHist5[0]?' ↑':' ↓'):'—';
 
-  const rows=[
-    {label:'週 KD（大方向）',trend:trendArr(wkKHist,v=>v.toFixed(1)),val:wkKD.text,badge:wkKD.badge,sub:`K:${wkKD.k??'—'}　D:${wkKD.d??'—'}`},
-    {label:'週 MACD（動能）',trend:trendArr(wkMHist,v=>v.toFixed(2)),val:wkMACD.text,badge:wkMACD.badge,sub:`柱:${wkMACD.hist??'—'}`},
-    {label:'日 KD（時機點）',trend:trendArr(dayKHist,v=>v.toFixed(1)),val:dayKD.text,badge:dayKD.badge,sub:`K:${dayKD.k??'—'}　D:${dayKD.d??'—'}`},
-    {label:'日 MACD（動能）',trend:trendArr(dayMHist,v=>v.toFixed(2)),val:dayMACD.text,badge:dayMACD.badge,sub:`柱:${dayMACD.hist??'—'}`},
-  ];
   return`
   <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <span style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">技術指標　週KD / 週MACD / 日KD / 日MACD</span>
+      <span style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em">技術指標　週K位置 / 日MACD能量</span>
       <div class="ri-btn" data-info="kdmacd" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3)">ⓘ</div>
     </div>
-    <div class="ri-box" data-for="kdmacd" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">【週KD】中期趨勢大方向，黃金交叉為強烈多方訊號。【週MACD】週線動能，由綠轉紅代表中期動能轉多。【日KD】進場時機點，黃金交叉為日線進場訊號。【日MACD】日線動能，負柱縮小趨近零代表空方力竭。顯示連續3筆數值變化，搭配外資投信方向判斷。有VCP型態時優先用型態進場。⚠️ 本資料僅供參考，不構成投資建議。</div>
-    ${rows.map(r=>`
+    <div class="ri-box" data-for="kdmacd" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">【週K位置】判斷現在在多頭的哪個階段。週K&lt;50為低檔啟動，空間大；50-80為中段；&gt;80高檔不追。【日MACD能量】觀察5天OSC數值是否持續遞減（空方衰竭）或遞增（多方增強）。能量中斷代表訊號不穩，需觀望。週K低檔＋日MACD由綠轉紅為最佳進場時機。有VCP型態時優先用型態進場。⚠️ 本資料僅供參考，不構成投資建議。</div>
+
     <div style="padding:8px 0;border-bottom:0.5px solid var(--border)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
-        <div style="font-size:12px;color:var(--text3)">${r.label}</div>
-        <div style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;${badgeStyle[r.badge]||badgeStyle.neutral}">${r.val}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div style="font-size:12px;color:var(--text3)">週 K 位置（最近3週）</div>
+        <div style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;${badgeStyle[wkPos.badge]||badgeStyle.neutral}">${wkPos.text}</div>
       </div>
-      <div style="font-size:11px;color:var(--text3)">${r.trend}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:1px">${r.sub}</div>
-    </div>`).join('')}
-    <div style="display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--bg3)">
+      <div style="font-size:11px;color:var(--text3)">${wkTrend}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:1px">週K值：${wkPos.k??'—'}　（&lt;50低檔 / 50-80中段 / &gt;80高檔）</div>
+    </div>
+
+    <div style="padding:8px 0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div style="font-size:12px;color:var(--text3)">日 MACD 能量（最近5天）</div>
+        <div style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;${badgeStyle[dayMACDSig.badge]||badgeStyle.neutral}">${dayMACDSig.text}</div>
+      </div>
+      <div style="font-size:11px;color:var(--text3)">${dayMTrend}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:1px">OSC值：${dayMHist5[dayMHist5.length-1]?.toFixed(3)??'—'}　（負值遞減=空方衰竭 / 穿越0=進場 / 正值遞增=持股）</div>
+    </div>
+
+    <div style="display:flex;align-items:flex-start;gap:8px;margin-top:4px;padding:10px 12px;border-radius:8px;background:var(--bg3)">
       <div style="width:8px;height:8px;border-radius:50%;background:${desc.color};flex-shrink:0;margin-top:4px"></div>
       <div style="font-size:12px;color:var(--text2);line-height:1.6">${desc.text}</div>
     </div>
