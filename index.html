@@ -2118,22 +2118,19 @@ async function renderExtraData(stockCode, a) {
       high:parseFloat(r.max||r.high||r.close)||0,
       low:parseFloat(r.min||r.low||r.close)||0
     }));
-    // 週線 OHLC（每週累積高低）
+    // 週線 OHLC（每5個交易日一組，避免UTC時區偏移問題）
     const wkOHLC=(()=>{
       const sorted=(priceData||[]).sort((a,b)=>a.date.localeCompare(b.date));
-      const wk=[];let buf=[];
-      sorted.forEach((r,i)=>{
-        buf.push(r);
-        const dow=new Date(r.date).getDay();
-        if(dow===5||i===sorted.length-1){
-          wk.push({
-            close:parseFloat(buf[buf.length-1].close)||0,
-            high:Math.max(...buf.map(x=>parseFloat(x.max||x.high||x.close)||0)),
-            low:Math.min(...buf.map(x=>parseFloat(x.min||x.low||x.close)||0))
-          });
-          buf=[];
-        }
-      });
+      const wk=[];
+      for(let i=0;i<sorted.length;i+=5){
+        const buf=sorted.slice(i,i+5);
+        if(buf.length===0) continue;
+        wk.push({
+          close:parseFloat(buf[buf.length-1].close)||0,
+          high:Math.max(...buf.map(x=>parseFloat(x.max||x.high||x.close)||0)),
+          low:Math.min(...buf.map(x=>parseFloat(x.min||x.low||x.close)||0))
+        });
+      }
       return wk;
     })();
     const kdMacdHtml = dayOHLC.length>30 ? renderKDMACD(dayOHLC, wkOHLC, fStrk, tStrk) : '';
@@ -3035,15 +3032,30 @@ function isMonotone(arr){
   return 'mixed';
 }
 
-function getWkKPosition(wkKHist){
+function getWkKPosition(wkKHist, wkDHist){
   if(!wkKHist||wkKHist.length===0) return{text:'資料不足',badge:'neutral',k:null};
   const k=wkKHist[wkKHist.length-1];
+  const d=wkDHist?wkDHist[wkDHist.length-1]:null;
   const trend=wkKHist.length>=2?(k>wkKHist[0]?'up':'down'):null;
-  if(k<50&&trend==='up') return{text:'🟢 低檔啟動，位置佳',badge:'cross',k};
-  if(k>=50&&k<80&&trend==='up') return{text:'🟡 中段趨勢，空間縮小',badge:'up',k};
-  if(k>=80) return{text:'🔴 高檔超買，等回調',badge:'death',k};
-  if(k<50&&trend==='down') return{text:'空方下行中',badge:'down',k};
-  return{text:`週K ${k}`,badge:'neutral',k};
+
+  // 計算K和D的差距變化
+  let gapNarrowing=false;
+  if(wkKHist.length>=3&&wkDHist&&wkDHist.length>=3){
+    const gaps=wkKHist.map((kv,i)=>kv-(wkDHist[i]||0));
+    // 差距在縮小（空方下的K往D靠近，或多方下的K往D靠近）
+    const lastGap=Math.abs(gaps[gaps.length-1]);
+    const prevGap=Math.abs(gaps[gaps.length-2]);
+    const prevPrevGap=Math.abs(gaps[gaps.length-3]);
+    gapNarrowing=lastGap<prevGap&&prevGap<prevPrevGap;
+  }
+
+  if(k<50&&trend==='up') return{text:'🟢 低檔啟動，位置佳',badge:'cross',k,d};
+  if(k<50&&k<(d||100)&&gapNarrowing) return{text:'🟡 空方力竭，K值往D靠近中',badge:'near_cross',k,d};
+  if(k<50&&trend==='down'&&!gapNarrowing) return{text:'空方下行中',badge:'down',k,d};
+  if(k>=50&&k<80&&trend==='up') return{text:'🟡 中段趨勢，空間縮小',badge:'up',k,d};
+  if(k>=80) return{text:'🔴 高檔超買，等回調',badge:'death',k,d};
+  if(k>(d||0)&&gapNarrowing) return{text:'🟡 多方力竭，注意回調',badge:'near_death',k,d};
+  return{text:`週K ${k}`,badge:'neutral',k,d};
 }
 
 function getDayMACDSignal(histArr5){
@@ -3101,12 +3113,13 @@ function renderKDMACD(dayData, wkData, fStreak, tStreak){
   const wkKDraw=calcKD(wkData,9);
   const dayMACDraw=calcMACD(dayData,12,26,9);
 
-  // 週K 最近3週K值
-  const wkKHist=wkKDraw.hist.slice(-3).map(x=>x.k);
+  // 週K 最近5週K值和D值
+  const wkKHist=wkKDraw.hist.slice(-5).map(x=>x.k);
+  const wkDHist=wkKDraw.hist.slice(-5).map(x=>x.d);
   // 日MACD OSC 最近5天
   const dayMHist5=(dayMACDraw.histArr5||dayMACDraw.histArr||[]).slice(-5);
 
-  const wkPos=getWkKPosition(wkKHist);
+  const wkPos=getWkKPosition(wkKHist,wkDHist);
   const dayMACDSig=getDayMACDSignal(dayMHist5);
   const desc=getFinalDesc(wkPos,dayMACDSig);
 
@@ -3137,7 +3150,7 @@ function renderKDMACD(dayData, wkData, fStreak, tStreak){
         <div style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;${badgeStyle[wkPos.badge]||badgeStyle.neutral}">${wkPos.text}</div>
       </div>
       <div style="font-size:11px;color:var(--text3)">${wkTrend}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:1px">週K值：${wkPos.k??'—'}　（&lt;50低檔 / 50-80中段 / &gt;80高檔）</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:1px">週K：${wkPos.k??'—'}　週D：${wkPos.d??'—'}　（&lt;50低檔 / 50-80中段 / &gt;80高檔）</div>
     </div>
 
     <div style="padding:8px 0">
