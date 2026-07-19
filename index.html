@@ -3030,8 +3030,8 @@ function isMonotone(arr){
   }
   const total=arr.length-1;
   // 80%以上方向一致就算乾淨
-  if(upCount/total>=0.8) return 'up';
-  if(downCount/total>=0.8) return 'down';
+  if(upCount/total>=0.75) return 'up';
+  if(downCount/total>=0.75) return 'down';
   return 'mixed';
 }
 
