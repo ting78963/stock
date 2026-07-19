@@ -3022,13 +3022,16 @@ function trendArr(arr,formatter){
 // 判斷5天能量是否單調遞增或遞減
 function isMonotone(arr){
   if(!arr||arr.length<2) return 'insufficient';
-  let up=true,down=true;
+  // 允許相等，只看整體方向是否一致（不嚴格單調）
+  let upCount=0,downCount=0;
   for(let i=1;i<arr.length;i++){
-    if(arr[i]<=arr[i-1]) up=false;
-    if(arr[i]>=arr[i-1]) down=false;
+    if(arr[i]>arr[i-1]) upCount++;
+    else if(arr[i]<arr[i-1]) downCount++;
   }
-  if(up) return 'up';
-  if(down) return 'down';
+  const total=arr.length-1;
+  // 80%以上方向一致就算乾淨
+  if(upCount/total>=0.8) return 'up';
+  if(downCount/total>=0.8) return 'down';
   return 'mixed';
 }
 
@@ -3146,7 +3149,7 @@ function renderKDMACD(dayData, wkData, fStreak, tStreak){
 
     <div style="padding:8px 0;border-bottom:0.5px solid var(--border)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-        <div style="font-size:12px;color:var(--text3)">週 K 位置（最近3週）</div>
+        <div style="font-size:12px;color:var(--text3)">週 K 位置（最近5週）</div>
         <div style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;${badgeStyle[wkPos.badge]||badgeStyle.neutral}">${wkPos.text}</div>
       </div>
       <div style="font-size:11px;color:var(--text3)">${wkTrend}</div>
