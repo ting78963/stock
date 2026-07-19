@@ -429,7 +429,22 @@ html.font-xl{font-size:19px}
       <div id="ac" style="display:none;border-top:0.5px solid var(--border);margin-top:6px"></div>
       <div id="search-history" style="margin-top:10px"></div>
     </div>
-    <div id="ra"></div>
+    <div id="ra">
+      <!-- 預設狀態 -->
+      <div id="stock-default-view">
+        <!-- 即將突破的自選股 -->
+        <div id="stock-vcp-alert" style="margin-bottom:12px"></div>
+        <!-- 明日參考數值 -->
+        <div id="stock-mkt-card" style="margin-bottom:12px">
+          <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">載入市場數值中...</div>
+        </div>
+        <!-- 族群資金前三 -->
+        <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">族群資金前三</div>
+        <div id="stock-group-list">
+          <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">載入中...</div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1418,6 +1433,9 @@ ${['contracting','final_contraction','just_broke'].includes(a.vcp.status)?`
 async function doSearch(){
   const raw=document.getElementById('ti').value.trim();
   if(!raw)return;
+  // 隱藏預設狀態，顯示搜尋結果
+  const defView=document.getElementById('stock-default-view');
+  if(defView) defView.style.display='none';
   let code=raw.replace(/\D/g,'');
   if(!code){
     // 先用 findStockByName（含全市場清單）
@@ -2373,6 +2391,11 @@ function showPage(id, tabEl, navId){
   const tabMap={home:0,money:1,stock:2,watch:3,settings:4};
   if(tabMap[id]!==undefined) document.querySelectorAll('.tab-item')[tabMap[id]]?.classList.add('active');
   if(id==='money') initMoney();
+  if(id==='stock'){
+    const defView=document.getElementById('stock-default-view');
+    if(defView) defView.style.display='block';
+    loadStockDefault();
+  }
   if(id==='watch'){if(typeof rW==='function')rW();}
   if(id==='stock') renderSearchHistory();
   if(id==='settings') renderSettings();
@@ -3443,6 +3466,142 @@ async function loadHomeWatch(){
   }).join('');
 }
 
+
+async function loadStockDefault(){
+  // ① 即將突破的自選股
+  const vcpEl=document.getElementById('stock-vcp-alert');
+  if(vcpEl){
+    const wl=LS.get('watch')||[];
+    const alerts=wl.filter(w=>['final_contraction','just_broke'].includes(w.vcpStatus));
+    if(alerts.length){
+      vcpEl.innerHTML=`
+        <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">⭐ 自選股即將突破</div>
+        ${alerts.map(w=>{
+          const badge=w.vcpStatus==='just_broke'
+            ?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--rbg);color:var(--red);border:0.5px solid var(--rbr);font-weight:600">🚀 突破爆發</span>`
+            :`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--abg);color:var(--amber);border:0.5px solid var(--abr);font-weight:600">◈ 即將突破</span>`;
+          return`<div onclick="document.getElementById('ti').value='${w.code}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:14px;font-weight:500;color:var(--text)">${w.code} ${w.name||''}</div>
+            ${badge}
+          </div>`;
+        }).join('')}`;
+    } else {
+      vcpEl.innerHTML='';
+    }
+  }
+
+  // ② 明日參考數值（從快取抓TAIEX和匯率）
+  const mktEl=document.getElementById('stock-mkt-card');
+  if(mktEl){
+    try{
+      // 大盤乖離率
+      let devText='資料不足',devColor='var(--text3)',devScore=0;
+      const taiexCache=JSON.parse(localStorage.getItem(TAIEX_CACHE_KEY||'taiex_data_v1')||'null');
+      if(taiexCache&&taiexCache.data&&taiexCache.data.length>=60){
+        const sorted=[...taiexCache.data].sort((a,b)=>a.date.localeCompare(b.date));
+        const closes=sorted.map(r=>parseFloat(r.close)||0);
+        const cur=closes[closes.length-1];
+        const ma60=closes.slice(-60).reduce((a,b)=>a+b,0)/60;
+        const dev=(cur-ma60)/ma60*100;
+        if(dev>=14){devText=`+${dev.toFixed(1)}% ⚠️ 乖離偏大`;devColor='var(--amber)';devScore=1;}
+        else if(dev<-10){devText=`${dev.toFixed(1)}% 大幅低於均線`;devColor='var(--green)';devScore=1;}
+        else{devText=`${dev>=0?'+':''}${dev.toFixed(1)}% ✅ 正常`;devColor='var(--red)';}
+      }
+      // 匯率
+      let fxText='資料不足',fxColor='var(--text3)',fxScore=0;
+      const fxCache=JSON.parse(localStorage.getItem(FX_CACHE_KEY||'fx_data_v1')||'null');
+      if(fxCache&&fxCache.data&&fxCache.data.length>=2){
+        const sorted=[...fxCache.data].sort((a,b)=>a.date.localeCompare(b.date));
+        const last=sorted[sorted.length-1];
+        const rate=parseFloat(last.spot_sell||last.cash_sell||0);
+        const last5=sorted.slice(-5).map(r=>parseFloat(r.spot_sell||r.cash_sell||0));
+        const trend=last5[last5.length-1]-last5[0];
+        if(Math.abs(trend)>=0.5){fxText=`${rate.toFixed(3)} ${trend>0?'台幣貶值⚠️':'台幣升值'}`;fxColor=trend>0?'var(--amber)':'var(--green)';if(trend>0)fxScore=1;}
+        else{fxText=`${rate.toFixed(3)} ✅ 匯率穩定`;fxColor='var(--text2)';}
+      }
+      // 大盤近5日走勢
+      let instText='資料不足',instColor='var(--text3)',instScore=0;
+      if(taiexCache&&taiexCache.data&&taiexCache.data.length>=5){
+        const sorted=[...taiexCache.data].sort((a,b)=>a.date.localeCompare(b.date));
+        const last5=sorted.slice(-5).map(r=>parseFloat(r.close)||0);
+        const chg=(last5[4]-last5[0])/last5[0]*100;
+        if(chg<=-5){instText=`下跌${Math.abs(chg).toFixed(1)}%，謹慎`;instColor='var(--amber)';instScore=1;}
+        else if(chg>=3){instText=`上漲${chg.toFixed(1)}%，偏多`;instColor='var(--red)';}
+        else{instText=`${chg>=0?'+':''}${chg.toFixed(1)}%，持平`;instColor='var(--text2)';}
+      }
+      // 建議文字
+      const totalScore=devScore+fxScore+instScore;
+      let suggestion='',sugColor='',sugBg='';
+      if(totalScore===0){suggestion='三項條件全部正常，市場環境良好';sugColor='var(--red)';sugBg='var(--rbg)';}
+      else if(totalScore===1){suggestion='大致正常，優先關注火箭指標高且外資買超個股';sugColor='var(--red)';sugBg='var(--rbg)';}
+      else if(totalScore===2){suggestion='部分條件偏弱，建議嚴格篩選最強標的';sugColor='var(--amber)';sugBg='var(--abg)';}
+      else{suggestion='條件全面偏弱，建議保持觀望';sugColor='var(--green)';sugBg='var(--gbg)';}
+
+      mktEl.innerHTML=`
+        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px">
+          <div style="font-size:10px;color:var(--text3);letter-spacing:.1em;margin-bottom:12px">// 明日參考數值（依今日收盤資料）</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border)">
+            <span style="font-size:13px;color:var(--text2)">① 大盤季線乖離率</span>
+            <span style="font-size:13px;font-weight:600;color:${devColor}">${devText}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border)">
+            <span style="font-size:13px;color:var(--text2)">② USD/TWD 5日變化</span>
+            <span style="font-size:13px;font-weight:600;color:${fxColor}">${fxText}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border)">
+            <span style="font-size:13px;color:var(--text2)">③ 大盤近5日走勢</span>
+            <span style="font-size:13px;font-weight:600;color:${instColor}">${instText}</span>
+          </div>
+          <div style="margin-top:12px;padding:10px 12px;background:${sugBg};border-radius:var(--rs)">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px">明日建議</div>
+            <div style="font-size:13px;font-weight:600;color:${sugColor}">${suggestion}</div>
+          </div>
+        </div>`;
+    }catch(e){mktEl.innerHTML='';}
+  }
+
+  // ③ 族群資金前三
+  const grpEl=document.getElementById('stock-group-list');
+  if(grpEl){
+    const cached=JSON.parse(localStorage.getItem('grp_money_cache_v1')||'null');
+    if(!cached||!cached.allPrice){
+      grpEl.innerHTML=`<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px">請先進入「族群資金」載入資料</div>`;
+      return;
+    }
+    try{
+      const tradingDays=getTradingDaysG(cached.allPrice,20);
+      if(tradingDays.length<2){grpEl.innerHTML='';return;}
+      const today=tradingDays[tradingDays.length-1];
+      const yesterday=tradingDays[tradingDays.length-2];
+      const last10=tradingDays.slice(-11,-1);
+      const grpData=GROUPS.map(g=>{
+        const td=calcGroupDay(g,cached.allPrice,cached.allInst||{},today);
+        return{...g,td};
+      }).sort((a,b)=>b.td.totalVol-a.td.totalVol).slice(0,3);
+      grpEl.innerHTML=grpData.map((g,i)=>{
+        const fBuy=g.td.foreignBuy>=0,tBuy=g.td.trustBuy>=0;
+        const sig=fBuy&&tBuy?`<span style="font-size:11px;padding:1px 7px;border-radius:7px;background:var(--rbg);color:var(--red);border:0.5px solid var(--rbr)">外資投信共買</span>`
+          :!fBuy&&!tBuy?`<span style="font-size:11px;padding:1px 7px;border-radius:7px;background:var(--gbg);color:var(--green);border:0.5px solid var(--gbr)">外資投信共賣</span>`
+          :fBuy?`<span style="font-size:11px;padding:1px 7px;border-radius:7px;background:var(--abg);color:var(--amber);border:0.5px solid var(--abr)">外資買/投信賣</span>`
+          :`<span style="font-size:11px;padding:1px 7px;border-radius:7px;background:var(--abg);color:var(--amber);border:0.5px solid var(--abr)">投信買/外資賣</span>`;
+        return`<div onclick="showPage('money',null,'nav-money')" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <div style="font-size:16px;font-weight:500;color:var(--text3);width:20px">${i+1}</div>
+            <div style="font-size:14px;font-weight:500;flex:1;color:var(--text)">${g.icon} ${g.name}</div>
+            <div style="font-size:13px;color:var(--text2)">${fmtV(g.td.totalVol)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            ${sig}
+            <div style="margin-left:auto;display:flex;gap:8px">
+              <span style="font-size:11px;color:var(--text3)">外資 <strong style="color:${g.td.foreignBuy>=0?'var(--red)':'var(--green)'}">${fmtInst(g.td.foreignBuy)}</strong></span>
+              <span style="font-size:11px;color:var(--text3)">投信 <strong style="color:${g.td.trustBuy>=0?'var(--red)':'var(--green)'}">${fmtInst(g.td.trustBuy)}</strong></span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }catch(e){grpEl.innerHTML='';}
+  }
+}
 async function loadHomeGroups(){
   const el=document.getElementById('home-group-list');
   if(!el) return;
