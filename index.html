@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="強勢選股">
@@ -2083,7 +2083,7 @@ async function renderExtraData(stockCode, a) {
     <div style="font-size:11px;color:var(--text3);margin-top:2px">/ 100</div>
   </div>
 </div>
-` + `
+` + (rocketItems.length===0?`<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;color:var(--text3)">財務資料載入失敗</span><button onclick="doSearch()" style="font-size:12px;padding:5px 12px;background:var(--wine);color:#fff;border:none;border-radius:20px;cursor:pointer">重試</button></div>`:'') + `
       <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div style="display:flex;align-items:center;gap:6px">
@@ -2151,10 +2151,14 @@ async function renderExtraData(stockCode, a) {
       const totalVol=m.totalVol||0;
       const priceRow=(priceData||[]).find(r=>r.date===date);
       const changePct=priceRow?((parseFloat(priceRow.spread||0)/parseFloat(priceRow.close||1))*100):0;
+      // 計算量比（今日÷5日均量）
+      const dates5=Object.keys(instMap).sort().slice(-6,-1);
+      const avg5=dates5.length>0?dates5.reduce((s,d)=>s+(instMap[d]?.totalVol||0),0)/dates5.length:0;
+      const volRatio=avg5>0?totalVol/avg5:1;
       return{
         date:date.slice(5), f:m.f||0, g:0,
         t:m.t||0, dealer:m.dealer||0,
-        totalVol:totalVol, changePct:changePct
+        totalVol:totalVol, changePct:changePct, volRatio:Math.round(volRatio*100)/100
       };
     });
     function calcStreakLocal(arr){
@@ -2403,7 +2407,11 @@ function showPage(id, tabEl, navId){
 
 function switchToAnalyze(){
   showPage('stock',null,'nav-stock');
-  setTimeout(()=>document.getElementById('ti')?.focus(),100);
+  setTimeout(()=>{
+    window.scrollTo({top:0,behavior:'smooth'});
+    const ti=document.getElementById('ti');
+    if(ti){ti.focus();}
+  },100);
 }
 
 // 搜尋歷史
@@ -3480,8 +3488,8 @@ async function loadStockDefault(){
           const badge=w.vcpStatus==='just_broke'
             ?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--rbg);color:var(--red);border:0.5px solid var(--rbr);font-weight:600">🚀 突破爆發</span>`
             :`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--abg);color:var(--amber);border:0.5px solid var(--abr);font-weight:600">◈ 即將突破</span>`;
-          return`<div onclick="document.getElementById('ti').value='${w.code}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
-            <div style="font-size:14px;font-weight:500;color:var(--text)">${w.code} ${w.name||''}</div>
+          return`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:14px;font-weight:500;color:var(--text)">${w.sym} ${w.name||''}</div>
             ${badge}
           </div>`;
         }).join('')}`;
