@@ -388,7 +388,7 @@ html.font-xl{font-size:19px}
         <div>自由現金流（10分）→ 財務健康</div>
         <div>EBITDA（5分）→ 本業獲利</div>
         <div>毛利率（3分）、ROE（1分）、負債比（1分）</div>
-        <div style="margin-top:8px;font-weight:500;color:var(--wine)">≥ 75分 → 強勢突破候選　∞ → 超強！所有條件符合</div>
+        <div style="margin-top:8px;font-weight:500;color:var(--wine)">≥ 75分 → 強勢突破候選　∞ → 超級強勢！所有條件符合</div>
         <div style="color:var(--text3)">※ 法人最看重MoM、YoY、合約負債連續成長</div>
       </div>
     </div>
@@ -994,7 +994,7 @@ function analyze(raw){
   if(t3===true)bonus+=8;
   if(t6)bonus+=8;if(t7===true)bonus+=8;
   const overall=base+bonus; // 不限制100，超過顯示∞
-  const verdict=overall>=100?'超強！':overall>=75?'強勢突破候選':overall>=50?'條件部分符合':'目前不符合條件';
+  const verdict=overall>=100?'超級強勢！':overall>=75?'強勢突破候選':overall>=50?'條件部分符合':'目前不符合條件';
   const reqVol=Math.round(avgV20*1.5);
   // ── 真假突破判斷（收盤後直接判斷，不限VCP狀態）──
   let breakValidation = 'none';
@@ -1303,7 +1303,7 @@ function rResult(raw,a){
     </div>
     <div class="dnote" style="margin-top:8px">📅 資料來源：台灣證交所，收盤後更新</div>
   </div>
-<div class="scard ${a.overall>=75?'scard-gold':'scard-normal'}"><div class="rw" style="width:84px;height:84px;border-radius:50%;background:${a.overall>=75?'#f5c842':col+'22'};border:${a.overall>=75?'3px solid #fff':'3px solid '+col};${a.overall>=75?'animation:goldBreath 2s ease-in-out infinite':'animation:breathe 2s ease-in-out infinite'}"><div class="rc"><div class="rnum" style="color:${a.overall>=75?'#fff':col};${a.overall>=75?'text-shadow:0 1px 4px rgba(0,0,0,0.3)':''}">${a.overall}</div><div class="rden" style="color:${a.overall>=70?'rgba(255,255,255,0.85)':''}">${a.overall>=100?'超強！':'/100'}</div></div></div><div class="sinfo"><div class="sverdict" style="color:${a.overall>=75?'#fff':col};${a.overall>=75?'text-shadow:0 2px 6px rgba(0,0,0,0.35)':''}">${a.verdict}</div><div class="sbreak" style="${a.overall>=75?'color:rgba(255,255,255,0.9);text-shadow:0 1px 4px rgba(0,0,0,0.3)':''}">加分條件 ${bonusCount}/3 項達標<br>75分以上為強勢候選，∞代表所有條件符合</div>
+<div class="scard ${a.overall>=75?'scard-gold':'scard-normal'}"><div class="rw" style="width:84px;height:84px;border-radius:50%;background:${a.overall>=75?'#f5c842':col+'22'};border:${a.overall>=75?'3px solid #fff':'3px solid '+col};${a.overall>=75?'animation:goldBreath 2s ease-in-out infinite':'animation:breathe 2s ease-in-out infinite'}"><div class="rc"><div class="rnum" style="color:${a.overall>=75?'#fff':col};${a.overall>=75?'text-shadow:0 1px 4px rgba(0,0,0,0.3)':''}">${a.overall>=100?'♾️':a.overall}</div><div class="rden" style="color:${a.overall>=75?'rgba(255,255,255,0.85)':''}">/100</div></div></div><div class="sinfo"><div class="sverdict" style="color:${a.overall>=75?'#fff':col};${a.overall>=75?'text-shadow:0 2px 6px rgba(0,0,0,0.35)':''}">${a.verdict}</div><div class="sbreak" style="${a.overall>=75?'color:rgba(255,255,255,0.9);text-shadow:0 1px 4px rgba(0,0,0,0.3)':''}">加分條件 ${bonusCount}/3 項達標<br>75分以上為強勢候選，∞代表所有條件符合</div>
 </div></div>
 <div class="card"><div class="card-head"><div class="card-title">均線系統 — 週線趨勢判斷</div><div class="ri-btn" data-info="weekly" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div>
 <div class="ri-box" data-for="weekly" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">週線均線系統判斷中長期趨勢方向。週20MA 為中期趨勢基準，站上代表多頭走勢；週100MA 為長期趨勢，站上代表牛市格局。兩條均線出現黃金交叉是強力多頭訊號。</div><div class="cl">
@@ -2073,7 +2073,7 @@ async function renderExtraData(stockCode, a) {
     const rocketColor = scoreNorm>=80?'var(--red)':scoreNorm>=60?'var(--amber)':scoreNorm>=40?'var(--text2)':'var(--text3)';
     const overallColor = a.overall>=100?'#f5c842':a.overall>=75?'#f5c842':a.overall>=50?'var(--amber)':'var(--text3)';
     const overallDisplay = a.overall>=100?'∞':a.overall;
-    const overallLabel = a.overall>=100?'超強！所有條件符合':a.overall>=75?'強勢突破候選':a.overall>=50?'條件部分符合':'目前不符合條件';
+    const overallLabel = a.overall>=100?'超級強勢！所有條件符合':a.overall>=75?'強勢突破候選':a.overall>=50?'條件部分符合':'目前不符合條件';
 
     // 火箭指標ⓘ說明由全域函數處理
 
@@ -2085,8 +2085,8 @@ async function renderExtraData(stockCode, a) {
       <div style="font-size:13px;color:${overallColor};font-weight:600">${overallLabel}</div>
     </div>
     <div style="text-align:right">
-      <div style="font-size:36px;font-weight:700;color:${overallColor};line-height:1">${overallDisplay}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:2px">${a.overall>=100?'所有條件全符合':'/100'}</div>
+      <div style="font-size:36px;font-weight:700;color:${overallColor};line-height:1">${a.overall>=100?'♾️':overallDisplay}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">${a.overall>=100?'':'/100'}</div>
     </div>
   </div>
   <div style="font-size:10px;color:var(--text3)">≥100超強 / 75-99強勢 / 50-74部分符合 / &lt;50不符合</div>
