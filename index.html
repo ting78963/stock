@@ -2071,9 +2071,9 @@ async function renderExtraData(stockCode, a) {
     const total = rocketItems.length||1;
     const rocketLabel = scoreNorm>=80?'基本面強勁':scoreNorm>=60?'基本面良好':scoreNorm>=40?'基本面普通':'基本面偏弱';
     const rocketColor = scoreNorm>=80?'var(--red)':scoreNorm>=60?'var(--amber)':scoreNorm>=40?'var(--text2)':'var(--text3)';
-    const overallColor = overall>=100?'#f5c842':overall>=75?'#f5c842':overall>=50?'var(--amber)':'var(--text3)';
-    const overallDisplay = overall>=100?'∞':overall;
-    const overallLabel = overall>=100?'超強！所有條件符合':overall>=75?'強勢突破候選':overall>=50?'條件部分符合':'目前不符合條件';
+    const overallColor = a.overall>=100?'#f5c842':a.overall>=75?'#f5c842':a.overall>=50?'var(--amber)':'var(--text3)';
+    const overallDisplay = a.overall>=100?'∞':a.overall;
+    const overallLabel = a.overall>=100?'超強！所有條件符合':a.overall>=75?'強勢突破候選':a.overall>=50?'條件部分符合':'目前不符合條件';
 
     // 火箭指標ⓘ說明由全域函數處理
 
@@ -2086,7 +2086,7 @@ async function renderExtraData(stockCode, a) {
     </div>
     <div style="text-align:right">
       <div style="font-size:36px;font-weight:700;color:${overallColor};line-height:1">${overallDisplay}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:2px">${overall>=100?'所有條件全符合':'/100'}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">${a.overall>=100?'所有條件全符合':'/100'}</div>
     </div>
   </div>
   <div style="font-size:10px;color:var(--text3)">≥100超強 / 75-99強勢 / 50-74部分符合 / &lt;50不符合</div>
