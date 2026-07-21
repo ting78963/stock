@@ -1181,9 +1181,9 @@ function entryConfirmHtml(a){
   // 有效突破金色橫幅
   const isValidBreak = a.breakValidation==='true';
   const goldBanner = isValidBreak ? `
-    <div style="background:#f5c842;border:1px solid #e6b800;border-radius:var(--rs);padding:12px 14px;margin-bottom:12px;animation:goldPulse 1.5s ease-in-out infinite">
-      <div style="font-size:var(--fs-sm);font-weight:700;color:#f5c842;margin-bottom:3px">✦ 有效突破確認</div>
-      <div style="font-size:var(--fs-xs);color:#fff;line-height:1.5">${a.breakReason}</div>
+    <div style="background:#f5c842;border:1px solid #e6b800;border-radius:var(--rs);padding:12px 14px;margin-bottom:12px;animation:goldPulse 1.5s ease-in-out infinite;text-align:center">
+      <div style="font-size:var(--fs-sm);font-weight:700;color:#fff;margin-bottom:3px">✦ 有效突破確認</div>
+      <div style="font-size:var(--fs-sm);color:#fff;line-height:1.5;font-weight:500">${a.breakReason}</div>
     </div>` : '';
 
   // VCP品質徽章（永遠顯示，符合就亮起，不符合就透明灰色）
@@ -2111,6 +2111,7 @@ async function renderExtraData(stockCode, a) {
         grid.innerHTML=`<div style="grid-column:span 2;color:var(--text3);font-size:var(--fs-sm);text-align:center;padding:12px 0">財報資料載入中</div>`;
         return;
       }
+      grid.innerHTML = ''; // 清空避免重複
       rocketItems.forEach((r,i)=>{
         const card=document.createElement('div');
         card.style.cssText='background:var(--bg3);border-radius:var(--rs);border:0.5px solid var(--border);padding:11px 12px';
