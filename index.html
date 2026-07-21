@@ -2971,13 +2971,7 @@ function updateRefreshBtn(){
 function calcKD(data, period=9){
   const isOHLC=data.length>0&&typeof data[0]==='object';
   if(!data||data.length<period) return{k:null,d:null,hist:[]};
-  // 用第一筆RSV當初始值，而不是50
-  const firstSlice=data.slice(0,period);
-  const firstHi=isOHLC?Math.max(...firstSlice.map(x=>x.high)):Math.max(...firstSlice);
-  const firstLo=isOHLC?Math.min(...firstSlice.map(x=>x.low)):Math.min(...firstSlice);
-  const firstCl=isOHLC?data[period-1].close:data[period-1];
-  const firstRSV=firstHi===firstLo?50:((firstCl-firstLo)/(firstHi-firstLo))*100;
-  let k=firstRSV,d=firstRSV;
+  let k=50,d=50;
   const hist=[];
   for(let i=period-1;i<data.length;i++){
     const slice=data.slice(i-period+1,i+1);
@@ -3262,7 +3256,7 @@ function renderKDMACD(dayData, wkData, fStreak, tStreak){
   };
 
   const dayKTrend=dayKHist.length>=2?dayKHist.map(v=>v.toFixed(1)).join(' → ')+(dayKHist[dayKHist.length-1]>dayKHist[dayKHist.length-2]?' ↑':' ↓'):'—';
-  const dayMTrend=dayMHist5.length>=2?dayMHist5.map(v=>v.toFixed(2)).join(' → ')+(dayMHist5[dayMHist5.length-1]>dayMHist5[0]?' ↑':' ↓'):'—';
+  const dayMTrend=dayMHist5.length>=2?dayMHist5.map(v=>v.toFixed(2)).join(' → ')+(dayMHist5[dayMHist5.length-1]>dayMHist5[dayMHist5.length-2]?' ↑':' ↓'):'—';
 
   return`
   <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
