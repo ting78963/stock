@@ -356,7 +356,7 @@ html.font-xl{font-size:19px}
         <div>週K &gt; 80 → 高檔超買，不追，等回調</div>
         <div>K往D靠近 → 空方力竭，轉折準備中</div>
         <div style="margin-top:8px;margin-bottom:6px"><b>日MACD能量（5天）：</b>看能量方向</div>
-        <div>負值持續遞減 → 空方衰竭，準備進場</div>
+        <div>負值持續遞減 → 空方衰竭，強烈關注</div>
         <div>由負轉正（穿越0軸）→ 進場確認</div>
         <div>正值持續遞增 → 多方增強，持股</div>
         <div>能量中斷 → 訊號不穩，觀望</div>
@@ -370,7 +370,7 @@ html.font-xl{font-size:19px}
       <div style="font-size:12px;color:var(--text2);line-height:1.9">
         <div>VCP（波動收縮型態）是 Minervini 的核心進場型態</div>
         <div style="margin-top:6px">整理過程中波動幅度持續縮小，代表籌碼在集中</div>
-        <div style="margin-top:6px">◈ 即將突破 → 密切關注，準備進場</div>
+        <div style="margin-top:6px">◈ 即將突破 → 密切關注，強烈關注</div>
         <div>🚀 突破爆發 → 放量突破，最強進場訊號</div>
         <div style="margin-top:6px;color:var(--text3)">※ 有VCP時不需等KD/MACD，直接用型態進場</div>
       </div>
@@ -388,7 +388,7 @@ html.font-xl{font-size:19px}
         <div>自由現金流（10分）→ 財務健康</div>
         <div>EBITDA（5分）→ 本業獲利</div>
         <div>毛利率（3分）、ROE（1分）、負債比（1分）</div>
-        <div style="margin-top:8px;font-weight:500;color:var(--wine)">≥ 70分 → 強勢突破候選</div>
+        <div style="margin-top:8px;font-weight:500;color:var(--wine)">≥ 75分 → 強勢突破候選　∞ → 超強！所有條件符合</div>
         <div style="color:var(--text3)">※ 法人最看重MoM、YoY、合約負債連續成長</div>
       </div>
     </div>
@@ -981,20 +981,20 @@ function analyze(raw){
   const fromLo26=lo26w>0?((cur-lo26w)/lo26w)*100:0;
   const t6=fromLo26>=25;
   let base=0;
-  if(wk_p===true)base+=20;if(dy_p===true)base+=10;
-  if(pt_p===true)base+=15;else if(pt_p===null)base+=5;
-  if(vl_p===true)base+=15;else if(vl_p==='warn')base+=7;
-  if(['just_broke','trending_up'].includes(vcp.status))base+=10;
-  if(['contracting','final_contraction'].includes(vcp.status))base+=5;
-  if(vcp.volDry)base+=5;
-  // 週均線系統加分（原T1/T2邏輯移入）
-  if(t1===true)base+=8; // 現價站上週20MA且週100MA
-  if(t2===true)base+=8; // 週20MA > 週100MA
+  // 週均線系統（28分）
+  if(wk_p===true)base+=28;
+  // 日均線系統（25分）
+  if(dy_p===true)base+=25;
+  // 型態（18分）
+  if(pt_p===true)base+=18;else if(pt_p===null)base+=7;
+  // 量能（19分）
+  if(vl_p===true)base+=19;else if(vl_p==='warn')base+=9;
+  // VCP不計分（型態顯示保留，分數移除）
   let bonus=0;
   if(t3===true)bonus+=8;
   if(t6)bonus+=8;if(t7===true)bonus+=8;
-  const overall=Math.min(100,base+bonus);
-  const verdict=overall>=70?'強勢突破候選':overall>=45?'條件部分符合':'目前不符合條件';
+  const overall=base+bonus; // 不限制100，超過顯示∞
+  const verdict=overall>=100?'超強！':overall>=75?'強勢突破候選':overall>=50?'條件部分符合':'目前不符合條件';
   const reqVol=Math.round(avgV20*1.5);
   // ── 真假突破判斷（收盤後直接判斷，不限VCP狀態）──
   let breakValidation = 'none';
@@ -1303,7 +1303,7 @@ function rResult(raw,a){
     </div>
     <div class="dnote" style="margin-top:8px">📅 資料來源：台灣證交所，收盤後更新</div>
   </div>
-<div class="scard ${a.overall>=70?'scard-gold':'scard-normal'}"><div class="rw" style="width:84px;height:84px;border-radius:50%;background:${a.overall>=70?'#f5c842':col+'22'};border:${a.overall>=70?'3px solid #fff':'3px solid '+col};${a.overall>=70?'animation:goldBreath 2s ease-in-out infinite':'animation:breathe 2s ease-in-out infinite'}"><div class="rc"><div class="rnum" style="color:${a.overall>=70?'#fff':col};${a.overall>=70?'text-shadow:0 1px 4px rgba(0,0,0,0.3)':''}">${a.overall}</div><div class="rden" style="color:${a.overall>=70?'rgba(255,255,255,0.85)':''}">/100</div></div></div><div class="sinfo"><div class="sverdict" style="color:${a.overall>=70?'#fff':col};${a.overall>=70?'text-shadow:0 2px 6px rgba(0,0,0,0.35)':''}">${a.verdict}</div><div class="sbreak" style="${a.overall>=70?'color:rgba(255,255,255,0.9);text-shadow:0 1px 4px rgba(0,0,0,0.3)':''}">加分條件 ${bonusCount}/5 項達標<br>70分以上為強勢候選</div>
+<div class="scard ${a.overall>=75?'scard-gold':'scard-normal'}"><div class="rw" style="width:84px;height:84px;border-radius:50%;background:${a.overall>=75?'#f5c842':col+'22'};border:${a.overall>=75?'3px solid #fff':'3px solid '+col};${a.overall>=75?'animation:goldBreath 2s ease-in-out infinite':'animation:breathe 2s ease-in-out infinite'}"><div class="rc"><div class="rnum" style="color:${a.overall>=75?'#fff':col};${a.overall>=75?'text-shadow:0 1px 4px rgba(0,0,0,0.3)':''}">${a.overall}</div><div class="rden" style="color:${a.overall>=70?'rgba(255,255,255,0.85)':''}">${a.overall>=100?'超強！':'/100'}</div></div></div><div class="sinfo"><div class="sverdict" style="color:${a.overall>=75?'#fff':col};${a.overall>=75?'text-shadow:0 2px 6px rgba(0,0,0,0.35)':''}">${a.verdict}</div><div class="sbreak" style="${a.overall>=75?'color:rgba(255,255,255,0.9);text-shadow:0 1px 4px rgba(0,0,0,0.3)':''}">加分條件 ${bonusCount}/3 項達標<br>75分以上為強勢候選，∞代表所有條件符合</div>
 </div></div>
 <div class="card"><div class="card-head"><div class="card-title">均線系統 — 週線趨勢判斷</div><div class="ri-btn" data-info="weekly" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div>
 <div class="ri-box" data-for="weekly" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">週線均線系統判斷中長期趨勢方向。週20MA 為中期趨勢基準，站上代表多頭走勢；週100MA 為長期趨勢，站上代表牛市格局。兩條均線出現黃金交叉是強力多頭訊號。</div><div class="cl">
@@ -2071,10 +2071,26 @@ async function renderExtraData(stockCode, a) {
     const total = rocketItems.length||1;
     const rocketLabel = scoreNorm>=80?'基本面強勁':scoreNorm>=60?'基本面良好':scoreNorm>=40?'基本面普通':'基本面偏弱';
     const rocketColor = scoreNorm>=80?'var(--red)':scoreNorm>=60?'var(--amber)':scoreNorm>=40?'var(--text2)':'var(--text3)';
+    const overallColor = overall>=100?'#f5c842':overall>=75?'#f5c842':overall>=50?'var(--amber)':'var(--text3)';
+    const overallDisplay = overall>=100?'∞':overall;
+    const overallLabel = overall>=100?'超強！所有條件符合':overall>=75?'強勢突破候選':overall>=50?'條件部分符合':'目前不符合條件';
 
     // 火箭指標ⓘ說明由全域函數處理
 
     const rocketHtml = `
+<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <div>
+      <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">個股綜合評分</div>
+      <div style="font-size:13px;color:${overallColor};font-weight:600">${overallLabel}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:36px;font-weight:700;color:${overallColor};line-height:1">${overallDisplay}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">${overall>=100?'所有條件全符合':'/100'}</div>
+    </div>
+  </div>
+  <div style="font-size:10px;color:var(--text3)">≥100超強 / 75-99強勢 / 50-74部分符合 / &lt;50不符合</div>
+</div>
 <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
   <div>
     <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">火箭指標 — 基本面綜合分數</div>
@@ -3076,7 +3092,7 @@ function getSignalDesc(wkKD,wkMACD,dayKD,dayMACD,fStreak,tStreak){
   if(wkDeath&&mGreen&&dayDeath&&dayMACDGreen)
     return{text:'🔴 週日KD死亡交叉＋週日MACD同步轉綠，空方強勢，嚴格停損或觀望。',color:'#166534',level:-5};
   if(wkDeath&&dayDeath)
-    return{text:'🔴 週日KD雙死亡交叉，空方強勢，避免進場。',color:'#166534',level:-4};
+    return{text:'🔴 週日KD雙死亡交叉，空方強勢，風險偏高，謹慎評估。',color:'#166534',level:-4};
   if(wkDeath&&mGreen)
     return{text:'⚠️ 週線偏空動能走弱，等待止跌訊號再觀察。',color:'#166534',level:-2};
 
@@ -3145,13 +3161,13 @@ function getDayMACDSignal(histArr5){
   if(crossZeroDown) return{text:'💀 由紅轉綠，多方力竭',badge:'death',energy:'down'};
 
   if(last<0&&mono==='up')
-    return{text:'🟡 空方能量遞減，準備進場',badge:'near_cross',energy:'up'};
+    return{text:'🟡 空方能量遞減，強烈關注',badge:'near_cross',energy:'up'};
   if(last>0&&mono==='up')
     return{text:'🟢 多方能量遞增，持股',badge:'up',energy:'up'};
   if(last>0&&mono==='down')
     return{text:'🟡 多方能量遞減，留意出場',badge:'near_death',energy:'down'};
   if(last<0&&mono==='down')
-    return{text:'🔴 空方能量遞增，不進場',badge:'down',energy:'down'};
+    return{text:'🔴 空方能量遞增，需謹慎',badge:'down',energy:'down'};
   if(mono==='mixed'&&last<0&&nearZero)
     return{text:'⚠️ 能量中斷，訊號不穩，觀望',badge:'neutral',energy:'mixed'};
   if(mono==='mixed')
@@ -3175,10 +3191,10 @@ function getFinalDesc(wkPos,dayMACDSig){
   if(wkGood&&dHold) return{text:'✅ 週K低檔，多方能量持續增強，可持股觀察。',color:'#b91c1c'};
   if(wkGood&&dWeak) return{text:'🟡 週K低檔但日MACD多方能量遞減，留意是否回調。',color:'#854f0b'};
   if(wkGood&&dMixed) return{text:'⚠️ 週K位置佳但日MACD能量中斷，等待方向穩定再進場。',color:'#854f0b'};
-  if(wkMid&&dEnter) return{text:'✅ 日MACD由綠轉紅，週K中段可進場，控制倉位。',color:'#854f0b'};
+  if(wkMid&&dEnter) return{text:'✅ 日MACD由綠轉紅，週K中段訊號出現，注意風險控管。',color:'#854f0b'};
   if(wkMid&&dReady) return{text:'🔔 週K中段，日MACD空方力竭中，等待穿越0軸確認。',color:'#854f0b'};
   if(wkBad&&dEnter) return{text:'⚠️ 週K高檔超買，即使日MACD轉紅也不追高，等回調。',color:'#854f0b'};
-  if(wkBad) return{text:'🔴 週K高檔超買，不進場，等待週K回落至80以下再評估。',color:'#166534'};
+  if(wkBad) return{text:'🔴 週K高檔超買，位置偏高，需謹慎。',color:'#166534'};
   if(dExit) return{text:'💀 日MACD多方力竭，留意停損或減倉。',color:'#166534'};
   return{text:'📊 訊號尚未明確，持續觀察能量變化。',color:'var(--text2)'};
 }
@@ -3198,11 +3214,11 @@ function renderKDMACD(dayData, wkData, fStreak, tStreak){
   const desc=getFinalDesc(wkPos,dayMACDSig);
 
   const badgeStyle={
-    cross:'background:#e6f1fb;color:#185fa5;font-weight:600',
+    cross:'background:#f5c842;color:#fff;font-weight:700',
     near_cross:'background:#fff0f0;color:#a32d2d',
     up:'background:#fff0f0;color:#a32d2d',
-    near_death:'background:#faeeda;color:#854f0b',
-    death:'background:#faeeda;color:#854f0b;font-weight:600',
+    near_death:'background:#fbeaf0;color:#993556',
+    death:'background:#b91c1c;color:#fff;font-weight:700',
     down:'background:#eaf3de;color:#3b6d11',
     neutral:'background:var(--bg2);color:var(--text3)'
   };
