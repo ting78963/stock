@@ -2969,10 +2969,15 @@ function updateRefreshBtn(){
 
 // 計算 KD（週/日）和 MACD
 function calcKD(data, period=9){
-  // data = [{close, high, low}] 或純收盤價陣列（向下相容）
   const isOHLC=data.length>0&&typeof data[0]==='object';
   if(!data||data.length<period) return{k:null,d:null,hist:[]};
-  let k=50,d=50;
+  // 用第一筆RSV當初始值，而不是50
+  const firstSlice=data.slice(0,period);
+  const firstHi=isOHLC?Math.max(...firstSlice.map(x=>x.high)):Math.max(...firstSlice);
+  const firstLo=isOHLC?Math.min(...firstSlice.map(x=>x.low)):Math.min(...firstSlice);
+  const firstCl=isOHLC?data[period-1].close:data[period-1];
+  const firstRSV=firstHi===firstLo?50:((firstCl-firstLo)/(firstHi-firstLo))*100;
+  let k=firstRSV,d=firstRSV;
   const hist=[];
   for(let i=period-1;i<data.length;i++){
     const slice=data.slice(i-period+1,i+1);
@@ -2989,27 +2994,48 @@ function calcKD(data, period=9){
 }
 
 function calcMACD(closes,fast=12,slow=26,signal=9){
-  if(!closes||closes.length<slow+signal) return{dif:null,sig:null,hist:null,histArr:[]};
+  if(!closes||closes.length<slow+signal) return{dif:null,sig:null,hist:null,histArr:[],histArr5:[]};
   function emaArr(arr,n){
-    const res=[];let e=arr[0];const k=2/(n+1);
+    const res=[];
+    // 用前N筆SMA當初始值
+    const initSMA=arr.slice(0,n).reduce((a,b)=>a+b,0)/n;
+    let e=initSMA;
+    const k=2/(n+1);
     for(let i=0;i<arr.length;i++){
-      if(i===0) res.push(arr[0]);
-      else{e=arr[i]*k+e*(1-k);res.push(e);}
+      if(i<n-1){res.push(null);continue;}
+      if(i===n-1){res.push(initSMA);continue;}
+      e=arr[i]*k+e*(1-k);
+      res.push(e);
     }
     return res;
   }
   const cl=closes.map(x=>typeof x==='object'?x.close:x);
   const fastEma=emaArr(cl,fast);
   const slowEma=emaArr(cl,slow);
-  const dif=fastEma.map((v,i)=>v-slowEma[i]).slice(slow-1);
-  const sigArr=emaArr(dif,signal);
-  const histArr=dif.map((v,i)=>Math.round((v-sigArr[i])*100)/100);
+  // DIF只取兩者都有值的部分
+  const dif=[];
+  for(let i=0;i<cl.length;i++){
+    if(fastEma[i]!=null&&slowEma[i]!=null) dif.push(fastEma[i]-slowEma[i]);
+  }
+  if(dif.length<signal) return{dif:null,sig:null,hist:null,histArr:[],histArr5:[]};
+  // Signal用SMA初始
+  const sigInit=dif.slice(0,signal).reduce((a,b)=>a+b,0)/signal;
+  const sigArr=[];let sigE=sigInit;const sigK=2/(signal+1);
+  for(let i=0;i<dif.length;i++){
+    if(i<signal-1){sigArr.push(null);continue;}
+    if(i===signal-1){sigArr.push(sigInit);continue;}
+    sigE=dif[i]*sigK+sigE*(1-sigK);
+    sigArr.push(sigE);
+  }
+  const histArr=dif.map((v,i)=>sigArr[i]!=null?Math.round((v-sigArr[i])*100)/100:null).filter(x=>x!=null);
   const n=histArr.length;
+  const difLast=dif[dif.length-1];
+  const sigLast=sigArr[sigArr.length-1];
   return{
-    dif:Math.round(dif[n-1]*100)/100,
-    sig:Math.round(sigArr[n-1]*100)/100,
-    hist:histArr[n-1],
-    prev_hist:histArr[n-2],
+    dif:Math.round(difLast*100)/100,
+    sig:sigLast!=null?Math.round(sigLast*100)/100:null,
+    hist:histArr[n-1]??null,
+    prev_hist:histArr[n-2]??null,
     histArr:histArr.slice(-3),
     histArr5:histArr.slice(-5)
   };
@@ -3235,7 +3261,7 @@ function renderKDMACD(dayData, wkData, fStreak, tStreak){
     neutral:'background:var(--bg2);color:var(--text3)'
   };
 
-  const dayKTrend=dayKHist.length>=2?dayKHist.map(v=>v.toFixed(1)).join(' → ')+(dayKHist[dayKHist.length-1]>dayKHist[0]?' ↑':' ↓'):'—';
+  const dayKTrend=dayKHist.length>=2?dayKHist.map(v=>v.toFixed(1)).join(' → ')+(dayKHist[dayKHist.length-1]>dayKHist[dayKHist.length-2]?' ↑':' ↓'):'—';
   const dayMTrend=dayMHist5.length>=2?dayMHist5.map(v=>v.toFixed(2)).join(' → ')+(dayMHist5[dayMHist5.length-1]>dayMHist5[0]?' ↑':' ↓'):'—';
 
   return`
