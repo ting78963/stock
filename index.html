@@ -999,28 +999,33 @@ function analyze(raw){
   // ── 真假突破判斷（收盤後直接判斷，不限VCP狀態）──
   let breakValidation = 'none';
   let breakReason = '';
-  const upperShadow = curHigh > 0 ? (curHigh - cur) / curHigh * 100 : 0;
-  const isVolOk = volR >= 1.5;
+  // 上影線 = 最高價 - 收盤價；實體 = |收盤 - 開盤|（用prev近似開盤）
+  const shadowLen = curHigh - cur;
+  const bodyLen = Math.abs(cur - prev) || 1;
+  const isLongShadow = shadowLen > bodyLen * 2; // 上影線 > 實體2倍 = 長上影線
+  const isVolOk = volR >= 1.5; // 5日均量比
   const vcpPivotRef = vcp.pivot || pivot20;
   const isCloseAbove = cur >= vcpPivotRef * 1.003;
   const isNearHigh = cur >= vcpPivotRef * 0.997;
-  const isLongShadow = upperShadow > 2.0;
   // 突破失敗：前日曾突破，今日跌回pivot以下
   const prevCloseAbove = prev >= vcpPivotRef * 1.003;
-  const isFailed = prevCloseAbove && cur < vcpPivotRef && volR20 >= 1.0;
+  const isFailed = prevCloseAbove && cur < vcpPivotRef && volR >= 1.0;
 
   if(isFailed){
     breakValidation = 'failed';
     breakReason = `前日收盤 ${f(prev,1)} 已突破 pivot ${f(vcpPivotRef,1)}，今日跌回 ${f(cur,1)}，疑似假突破，考慮出場`;
+  } else if(isLimitUp && isCloseAbove){
+    breakValidation = 'true';
+    breakReason = `漲停突破 VCP pivot ${f(vcpPivotRef,1)} 元，最強確認訊號，無上影線`;
   } else if(isCloseAbove && isVolOk && !isLongShadow){
     breakValidation = 'true';
-    breakReason = `收盤 ${f(cur,1)} 元突破 VCP pivot ${f(vcpPivotRef,1)} 元，量能充足（${f(volR20,1)}x），無長上影線`;
+    breakReason = `收盤 ${f(cur,1)} 元突破 VCP pivot ${f(vcpPivotRef,1)} 元，量能充足（${f(volR,1)}x），無長上影線`;
   } else if(isCloseAbove && isLongShadow){
     breakValidation = 'warning';
-    breakReason = `收盤突破 VCP pivot 但有長上影線（${upperShadow.toFixed(1)}%），恐為假突破，需觀察次日`;
+    breakReason = `收盤突破 VCP pivot 但有長上影線（上影線${f(shadowLen,1)}元 > 實體${f(bodyLen,1)}元×2），恐為假突破，需觀察次日`;
   } else if(isCloseAbove && !isVolOk){
     breakValidation = 'warning';
-    breakReason = `收盤突破 VCP pivot 但量能不足（${f(volR20,1)}x < 1.5x），突破可信度低`;
+    breakReason = `收盤突破 VCP pivot 但量能不足（${f(volR,1)}x < 1.5x），突破可信度低`;
   } else if(isNearHigh){
     breakValidation = 'near';
     breakReason = `收盤 ${f(cur,1)} 元貼近 VCP pivot ${f(vcpPivotRef,1)} 元（差 ${f(vcpPivotRef-cur,1)} 元），等待放量突破確認`;
@@ -3188,29 +3193,48 @@ function getDayMACDSignal(histArr5){
   const crossZeroUp=prev<=0&&last>0;
   const crossZeroDown=prev>=0&&last<0;
   const nearZero=Math.abs(last)<0.05;
+  // 最後兩筆方向（重點關注）
+  const lastUp=last>prev;
+  const lastDown=last<prev;
 
-  if(crossZeroUp) return{text:'⚡ 由綠轉紅，進場確認',badge:'cross',energy:'up'};
+  if(crossZeroUp) return{text:'⚡ 由綠轉紅，強烈關注',badge:'cross',energy:'up'};
   if(crossZeroDown) return{text:'💀 由紅轉綠，多方力竭',badge:'death',energy:'down'};
 
+  // 整體遞減但最後兩筆回升 → 能量恢復中
+  if(last<0&&mono==='down'&&lastUp)
+    return{text:'🟡 空方力竭，能量開始回升',badge:'near_cross',energy:'up'};
   if(last<0&&mono==='up')
-    return{text:'🟡 空方能量遞減，強烈關注',badge:'near_cross',energy:'up'};
+    return{text:'🟡 空方能量持續遞減，強烈關注',badge:'near_cross',energy:'up'};
+  if(last<0&&mono==='mixed'&&lastUp)
+    return{text:'🟡 空方能量，最後出現回升，關注',badge:'near_cross',energy:'up'};
+
   if(last>0&&mono==='up')
-    return{text:'🟢 多方能量遞增，持股',badge:'up',energy:'up'};
-  if(last>0&&mono==='down')
-    return{text:'🟡 多方能量遞減，留意出場',badge:'near_death',energy:'down'};
+    return{text:'🟢 多方能量持續遞增，持股',badge:'up',energy:'up'};
+  // 整體遞減但最後兩筆回升 → 動能恢復
+  if(last>0&&mono==='down'&&lastUp)
+    return{text:'🟡 多方能量遞減但出現回升，留意',badge:'near_death',energy:'mixed'};
+  if(last>0&&mono==='down'&&lastDown)
+    return{text:'🟡 多方能量持續遞減，留意出場',badge:'near_death',energy:'down'};
+  if(last>0&&mono==='mixed'&&lastUp)
+    return{text:'🟢 多方能量，最後回升中，持股觀察',badge:'up',energy:'up'};
+  if(last>0&&mono==='mixed'&&lastDown)
+    return{text:'🟡 多方能量中斷，方向不明，觀望',badge:'neutral',energy:'mixed'};
+
   if(last<0&&mono==='down')
-    return{text:'🔴 空方能量遞增，需謹慎',badge:'down',energy:'down'};
+    return{text:'🔴 空方能量持續遞增，需謹慎',badge:'down',energy:'down'};
   if(mono==='mixed'&&last<0&&nearZero)
-    return{text:'⚠️ 能量中斷，訊號不穩，觀望',badge:'neutral',energy:'mixed'};
+    return{text:'⚠️ 能量趨近零軸，等待方向確認',badge:'neutral',energy:'mixed'};
   if(mono==='mixed')
     return{text:'⚠️ 能量中斷，方向不明，觀望',badge:'neutral',energy:'mixed'};
   return{text:`OSC ${last.toFixed(2)}`,badge:'neutral',energy:'mixed'};
 }
 
-function getFinalDesc(wkPos,dayMACDSig){
-  const wkGood=wkPos.badge==='cross';
-  const wkMid=wkPos.badge==='up';
-  const wkBad=wkPos.badge==='death';
+function getFinalDesc(dayKPos,dayMACDSig){
+  const isLow=dayKPos.k!=null&&dayKPos.k<20;
+  const isHigh=dayKPos.k!=null&&dayKPos.k>80;
+  const isNormal=dayKPos.k!=null&&dayKPos.k>=20&&dayKPos.k<=80;
+  const isGolden=dayKPos.badge==='cross';
+  const isDeath=dayKPos.badge==='death';
   const dEnter=dayMACDSig.badge==='cross';
   const dReady=dayMACDSig.badge==='near_cross';
   const dHold=dayMACDSig.badge==='up';
@@ -3218,16 +3242,26 @@ function getFinalDesc(wkPos,dayMACDSig){
   const dExit=dayMACDSig.badge==='death';
   const dMixed=dayMACDSig.badge==='neutral';
 
-  if(wkGood&&dEnter) return{text:'🚀 日KD低檔＋日MACD由綠轉紅，強烈關注時機！',color:'#b91c1c'};
-  if(wkGood&&dReady) return{text:'⚡ 日KD低檔，空方能量遞減中，密切關注日MACD穿越0軸。',color:'#b91c1c'};
-  if(wkGood&&dHold) return{text:'✅ 日KD低檔，多方能量持續增強，可持股觀察。',color:'#b91c1c'};
-  if(wkGood&&dWeak) return{text:'🟡 日KD低檔但日MACD多方能量遞減，留意是否回調。',color:'#854f0b'};
-  if(wkGood&&dMixed) return{text:'⚠️ 週K位置佳但日MACD能量中斷，等待方向穩定再進場。',color:'#854f0b'};
-  if(wkMid&&dEnter) return{text:'✅ 日MACD由綠轉紅，週K中段訊號出現，注意風險控管。',color:'#854f0b'};
-  if(wkMid&&dReady) return{text:'🔔 日KD正常區，日MACD空方力竭中，等待穿越0軸確認。',color:'#854f0b'};
-  if(wkBad&&dEnter) return{text:'⚠️ 日KD超買高檔，即使日MACD轉紅也需謹慎，等回調。',color:'#854f0b'};
-  if(wkBad) return{text:'🔴 週K高檔超買，位置偏高，需謹慎。',color:'#166534'};
-  if(dExit) return{text:'💀 日MACD多方力竭，留意停損或減倉。',color:'#166534'};
+  // 漲停特殊處理
+  if(isGolden&&isLow&&dEnter) return{text:'🚀 超賣低檔黃金交叉＋日MACD由綠轉紅，雙重確認，強烈關注！',color:'#b91c1c'};
+  if(isGolden&&isLow&&dReady) return{text:'⚡ 超賣低檔黃金交叉，日MACD空方力竭中，密切關注穿越0軸。',color:'#b91c1c'};
+  if(isGolden&&isLow&&dHold) return{text:'✅ 超賣低檔黃金交叉，多方能量增強，持續關注。',color:'#b91c1c'};
+  if(isGolden&&isNormal&&dEnter) return{text:'🚀 日KD黃金交叉＋日MACD由綠轉紅，雙重確認，強烈關注！',color:'#b91c1c'};
+  if(isGolden&&isNormal&&dReady) return{text:'⚡ 日KD黃金交叉，日MACD空方力竭中，密切關注穿越0軸。',color:'#b91c1c'};
+  if(isGolden&&isNormal&&dHold) return{text:'✅ 日KD黃金交叉，多方能量增強，持續關注。',color:'#b91c1c'};
+  if(isGolden&&isNormal&&dWeak) return{text:'🟡 日KD黃金交叉但MACD多方能量遞減，留意是否回調。',color:'#854f0b'};
+  if(isGolden&&isHigh) return{text:'⚠️ 日KD高檔黃金交叉，位置偏高，需謹慎評估。',color:'#854f0b'};
+  if(isLow&&dEnter) return{text:'✅ 超賣低檔＋日MACD由綠轉紅，空方力竭訊號。',color:'#b91c1c'};
+  if(isLow&&dReady) return{text:'🔔 超賣低檔，日MACD空方力竭中，等待穿越0軸確認。',color:'#854f0b'};
+  if(isNormal&&dEnter) return{text:'✅ 日MACD由綠轉紅，動能轉多，注意風險控管。',color:'#854f0b'};
+  if(isNormal&&dReady) return{text:'🔔 日MACD空方力竭中，等待穿越0軸確認。',color:'#854f0b'};
+  if(isNormal&&dHold) return{text:'📊 正常區間多方動能持續，持股觀察。',color:'#b91c1c'};
+  if(isDeath&&isHigh) return{text:'💀 高檔死亡交叉，多方力竭，風險偏高謹慎評估。',color:'#b91c1c'};
+  if(isDeath) return{text:'💀 日KD死亡交叉，空方接手，風險偏高謹慎評估。',color:'#166534'};
+  if(isHigh&&dWeak) return{text:'🔴 高檔超買＋多方能量遞減，位置偏高需謹慎。',color:'#166534'};
+  if(isHigh) return{text:'⚠️ 日KD高檔超買，位置偏高需謹慎。',color:'#854f0b'};
+  if(dExit) return{text:'💀 日MACD多方力竭，留意風險控管。',color:'#166534'};
+  if(dMixed) return{text:'📊 能量中斷，方向不明，持續觀察。',color:'var(--text2)'};
   return{text:'📊 訊號尚未明確，持續觀察能量變化。',color:'var(--text2)'};
 }
 
