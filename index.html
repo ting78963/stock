@@ -1338,7 +1338,7 @@ function entryConfirmHtml(a){
 
   if(isTracking){
     // 追蹤期：只顯示突破驗證banner，不顯示三項條件/VCP品質徽章/明日參考數值
-    return`<div class="entry-confirm">
+    return`<div>
       ${goldBanner}
       ${warningBanner}
       ${failedBanner}
@@ -1580,8 +1580,8 @@ ${(()=>{
   }
 })()}</div>
 <div class="ci">${ih(a.cur>(a.ma20d||0)&&a.cur>(a.ma60||0))}<div class="cb"><div class="cn">均線支撐確認</div><div class="cd">日線20MA ${f(a.ma20d,1)}｜60MA ${f(a.ma60,1)}<br>${a.cur>(a.ma20d||0)&&a.cur>(a.ma60||0)?'✓ 均線支撐良好':'✕ 均線支撐待確認'}</div></div></div>
-</div>`}</div>
-${entryConfirmHtml(a)}
+</div>`}${a.vcp.breakoutTrack?entryConfirmHtml(a):''}</div>
+${a.vcp.breakoutTrack?'':entryConfirmHtml(a)}
 ${['contracting','final_contraction','just_broke'].includes(a.vcp.status)?`
 <div class="ec2"><div class="card-head"><div class="card-title">VCP 價位參考</div><div class="ri-btn" data-info="ep" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div>
 <div class="ri-box" data-for="ep" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">PIVOT 突破價位為 VCP 整理型態的突破點。突破後需觀察是否有效放量確認。週20MA 為大趨勢支撐，是最終防線參考。技術參考位僅供參考，非投資建議。</div><div class="eg">
