@@ -1170,31 +1170,35 @@ function vcpStatusHtml(vcp, a){
     if(bt.broken){
       badge='❌ 跌破Pivot，假突破警示';
       badgeBg='var(--rbg)';badgeColor='var(--red)';borderColor='var(--rbr)';
-      note=`第${dayCount}天跌破鎖定Pivot ${f(pivot,1)}元，注意出場`;
+      note=`第${dayCount}天跌破鎖定Pivot ${f(pivot,1)}元，注意出場。訊號轉弱，建議謹慎`;
     } else if(dayCount===1){
       badge='🔴 VCP 突破爆發！可追進';
       badgeBg='var(--red)';badgeColor='#fff';borderColor='var(--red)';
-      note=`突破第1天，Pivot鎖定於 ${f(pivot,1)}元`;
+      note=`突破第1天，Pivot鎖定於 ${f(pivot,1)}元。訊號強烈，可密切關注`;
     } else if(!isDown&&volHigh){
       badge=`✅ 突破第${dayCount}天，Follow-through跟進`;
       badgeBg='var(--rbg)';badgeColor='var(--red)';borderColor='var(--rbr)';
-      note='價量續攻，健康延伸中';
+      note='價量續攻，健康延伸中。動能延續，可持續追蹤';
     } else if(madeNewHigh&&dayCount>=2){
       badge=`🎾 突破第${dayCount}天，網球反彈確認`;
       badgeBg='var(--rbg)';badgeColor='var(--red)';borderColor='var(--rbr)';
-      note='回調後快速創高，健康確認';
+      note='回調後快速創高，健康確認。訊號轉強，值得留意';
     } else if(isDown&&bigMarketDrop){
       badge=`🟡 突破第${dayCount}天，大盤拖累回測`;
       badgeBg='var(--abg)';badgeColor='var(--amber)';borderColor='var(--abr)';
-      note=`大盤重挫，個股同步回調，守住Pivot ${f(pivot,1)}元，屬系統性回測`;
+      note=`大盤重挫，個股同步回調，守住Pivot ${f(pivot,1)}元，屬系統性回測。風險可控，適合觀察等待`;
     } else if(isDown&&volLow){
       badge=`🟡 突破第${dayCount}天，縮量回測`;
       badgeBg='var(--abg)';badgeColor='var(--amber)';borderColor='var(--abr)';
-      note=`量縮價跌，守住Pivot ${f(pivot,1)}元，屬正常洗盤`;
+      note=`量縮價跌，守住Pivot ${f(pivot,1)}元，屬正常洗盤。風險可控，適合觀察等待`;
     } else if(isDown&&volHigh){
       badge=`⚠️ 突破第${dayCount}天，帶量回檔`;
       badgeBg='var(--abg)';badgeColor='var(--amber)';borderColor='var(--abr)';
-      note='賣壓偏重，密切觀察是否跌破Pivot';
+      note='賣壓偏重，密切觀察是否跌破Pivot。需提高警覺';
+    } else if(dayCount>=6&&!madeNewHigh){
+      badge=`🔵 突破第${dayCount}天，盤整過久`;
+      badgeBg='var(--bbg)';badgeColor='var(--blue)';borderColor='var(--bbr)';
+      note='連續多日缺乏方向，動能減弱，建議重新評估是否續抱';
     } else {
       badge=`🟢 突破第${dayCount}天，延伸觀察中`;
       badgeBg='var(--gbg)';badgeColor='var(--green)';borderColor='var(--gbr)';
@@ -1295,10 +1299,9 @@ function vcpStatusHtml(vcp, a){
 }
 
 function entryConfirmHtml(a){
-  // 突破追蹤期內不顯示三項條件卡片（已由VCP突破追蹤卡片取代）
-  if(a.vcp.breakoutTrack)return '';
+  const isTracking = !!a.vcp.breakoutTrack;
   // 三條件進場判斷（拿掉VCP，改為獨立品質徽章）
-  const vcpP = a.vcp.pivot || a.pivot20;
+  const vcpP = isTracking ? a.vcp.breakoutTrack.pivot : (a.vcp.pivot || a.pivot20);
   const vcpPe = vcpP * 1.005;
   let ec2text,ec2icon;
   if(a.ec2vcpStatus==='broke'){ec2text=`✓ 收盤 ${f(a.cur,1)} 突破 VCP pivot ${f(vcpP,1)}，PIVOT 突破確認`;ec2icon=true;}
@@ -1314,8 +1317,8 @@ function entryConfirmHtml(a){
   const hasWarn=items.some(i=>i.ok==='warn');
   const allPass=ec3Count===3;
   const cls=allPass?'ec-ready':ec3Count>=1||hasWarn?'ec-partial':'ec-not';
-  const title=allPass?'✅ 三項條件全部達標':ec3Count>=1||hasWarn?`⏳ 條件達標 ${ec3Count}/3`:'⛔ 條件尚未達標';
-  const verdict=allPass?'三項條件全部達標':ec3Count>=1?'部分條件達標':'條件未達標';
+  const title=isTracking?'📊 條件明細（突破追蹤中，詳見上方追蹤卡片）':allPass?'✅ 三項條件全部達標':ec3Count>=1||hasWarn?`⏳ 條件達標 ${ec3Count}/3`:'⛔ 條件尚未達標';
+  const verdict=isTracking?'':allPass?'三項條件全部達標':ec3Count>=1?'部分條件達標':'條件未達標';
 
   // 有效突破金色橫幅
   const isValidBreak = a.breakValidation==='true';
@@ -1362,7 +1365,7 @@ function entryConfirmHtml(a){
       </div>`;
     }).join('')}</div>
     ${vcpBadge}
-    <div class="ec-verdict" style="${allPass?'background:#f5c842;border:1px solid #e6b800;color:#92400e;animation:goldPulse 1.5s ease-in-out infinite':ec3Count>=1||hasWarn?'background:var(--abg);border:0.5px solid var(--abr);color:var(--amber)':'background:var(--bg2);border:0.5px solid var(--border);color:var(--text3)'}">${verdict}</div>
+    ${!isTracking?`<div class="ec-verdict" style="${allPass?'background:#f5c842;border:1px solid #e6b800;color:#92400e;animation:goldPulse 1.5s ease-in-out infinite':ec3Count>=1||hasWarn?'background:var(--abg);border:0.5px solid var(--abr);color:var(--amber)':'background:var(--bg2);border:0.5px solid var(--border);color:var(--text3)'}">${verdict}</div>`:''}
     ${goldBanner}
     ${warningBanner}
     ${failedBanner}
