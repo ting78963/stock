@@ -2595,6 +2595,24 @@ function showPage(id, tabEl, navId){
 function goHome(){
   const ti=document.getElementById('ti');
   if(ti) ti.value='';
+  const ra=document.getElementById('ra');
+  if(ra){
+    ra.innerHTML=`
+      <div id="stock-default-view">
+        <div id="stock-vcp-alert" style="margin-bottom:12px"></div>
+        <div id="stock-mkt-card" style="margin-bottom:12px">
+          <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">載入市場數值中...</div>
+        </div>
+        <div id="stock-hotvol-card" style="margin-bottom:12px">
+          <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div>
+          <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">📊 點擊查看今日爆量股（成交量前100大）</div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">族群資金前三</div>
+        <div id="stock-group-list">
+          <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">載入中...</div>
+        </div>
+      </div>`;
+  }
   showPage('stock',null,'nav-stock');
   window.scrollTo({top:0,behavior:'smooth'});
 }
