@@ -1259,6 +1259,8 @@ function vcpStatusHtml(vcp, a){
 }
 
 function entryConfirmHtml(a){
+  // 突破追蹤期內不顯示三項條件卡片（已由VCP突破追蹤卡片取代）
+  if(a.vcp.breakoutTrack)return '';
   // 三條件進場判斷（拿掉VCP，改為獨立品質徽章）
   const vcpP = a.vcp.pivot || a.pivot20;
   const vcpPe = vcpP * 1.005;
