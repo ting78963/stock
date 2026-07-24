@@ -785,7 +785,7 @@ async function fetchStock(code){
       const high=parseFloat(row.max||row.close);
       const low=parseFloat(row.min||row.close);
       const open=parseFloat(row.open||row.close);
-      if(!isNaN(close)&&close>0)data.push({close,open:isNaN(open)?close:open,vol:isNaN(vol)?0:vol,high:isNaN(high)?close:high,low:isNaN(low)?close:low});
+      if(!isNaN(close)&&close>0)data.push({close,open:isNaN(open)?close:open,vol:isNaN(vol)?0:vol,high:isNaN(high)?close:high,low:isNaN(low)?close:low,date:row.date});
     }
     // 判斷上市/上櫃
     const otcCodes=['6278','3533','3443','3042','3703','5269','6488','6719','4966','6230','6271','3680','2360','2421','6425'];
@@ -807,7 +807,7 @@ function maOf(arr,n){if(arr.length<n)return null;return arr.slice(-n).reduce((a,
 function sdOf(arr){if(arr.length<2)return 0;const m=arr.reduce((a,b)=>a+b,0)/arr.length;return Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length);}
 function toWeekly(data){const w=[];let wk=[];for(let i=0;i<data.length;i++){wk.push(data[i]);if(wk.length===5||i===data.length-1){w.push(wk[wk.length-1].close);wk=[];}}return w;}
 
-function analyzeVCP(closes,vols){
+function analyzeVCP(closes,vols,stockCode,dates){
   const n=closes.length;
   if(n<30)return{status:'data_insufficient',s1:0,s2:0,s3:0,contracting:false,volDry:false,pivot:closes[n-1],justBroke:false,breakDays:0};
   const s1=sdOf(closes.slice(-60,-40)),s2=sdOf(closes.slice(-40,-20)),s3=sdOf(closes.slice(-20));
@@ -832,7 +832,46 @@ function analyzeVCP(closes,vols){
   else if(s1>s2&&s3>s2*1.2)status='broken_contraction';
   else status='not_formed';
   const contracting=['contracting','final_contraction','just_broke','trending_up'].includes(status);
-  return{status,s1,s2,s3,contracting,volDry,pivot:prev20High,justBroke,breakDays};
+
+  // ===== 突破後Pivot鎖定機制（10個交易日觀察期）=====
+  let breakoutTrack=null;
+  if(stockCode&&dates&&dates.length===n){
+    const LS_KEY='vcp_breakout_track_v1';
+    let trackData={};
+    try{trackData=JSON.parse(localStorage.getItem(LS_KEY)||'{}');}catch(e){trackData={};}
+    const today=dates[n-1];
+    const existing=trackData[stockCode];
+
+    if(justBroke&&validContraction&&breakDays<=2&&(!existing||existing.pivot!==prev20High)){
+      // 新的突破，鎖定pivot
+      trackData[stockCode]={pivot:prev20High,breakoutDate:today,highSinceBreak:cur};
+      breakoutTrack={dayCount:1,pivot:prev20High,isNew:true};
+    } else if(existing){
+      // 計算距離突破日的交易天數
+      const breakIdx=dates.indexOf(existing.breakoutDate);
+      const dayCount=breakIdx>=0?(n-1-breakIdx+1):null;
+      if(dayCount!==null&&dayCount>=1&&dayCount<=10){
+        // 更新突破後最高價
+        if(cur>existing.highSinceBreak){
+          existing.highSinceBreak=cur;
+          trackData[stockCode]=existing;
+        }
+        if(cur<existing.pivot*0.997){
+          // 跌破pivot，結束追蹤
+          delete trackData[stockCode];
+          breakoutTrack={dayCount,pivot:existing.pivot,broken:true};
+        } else {
+          breakoutTrack={dayCount,pivot:existing.pivot,highSinceBreak:existing.highSinceBreak,broken:false};
+        }
+      } else {
+        // 超過10天，清除追蹤
+        delete trackData[stockCode];
+      }
+    }
+    try{localStorage.setItem(LS_KEY,JSON.stringify(trackData));}catch(e){}
+  }
+
+  return{status,s1,s2,s3,contracting,volDry,pivot:prev20High,justBroke,breakDays,breakoutTrack};
 }
 
 function analyze(raw){
@@ -922,7 +961,8 @@ function analyze(raw){
     return'盤整';
   }
   const pat=detectPattern(cl);
-  const vcp=analyzeVCP(cl,vl);
+  const dt=raw.data.map(d=>d.date);
+  const vcp=analyzeVCP(cl,vl,raw.code,dt);
   const pivot20=Math.max(...cl.slice(-20));
   const atHigh=Math.abs(cur-pivot20)<0.02||cur>=pivot20;
   const aboveHigh=cur>pivot20*1.003;
@@ -1078,6 +1118,63 @@ function calcRisk(ma20w){
 function fmtVol(v){return Math.round(v).toLocaleString()+'張';}
 
 function vcpStatusHtml(vcp, a){
+  // ===== 突破後追蹤優先判斷（Minervini網球/雞蛋邏輯）=====
+  if(vcp.breakoutTrack){
+    const bt=vcp.breakoutTrack;
+    const dayCount=bt.dayCount;
+    const pivot=bt.pivot;
+    const cur=a.cur;
+    const isDown=a.dayChg<0;
+    const bigMarketDrop=a.taiexChgPct!=null&&a.taiexChgPct<=-1.5;
+    const volLow=a.volR<1.0;
+    const volHigh=a.volR>=1.5;
+    const madeNewHigh=bt.highSinceBreak&&cur>=bt.highSinceBreak*0.999;
+
+    let badge,badgeBg,badgeColor,borderColor,note;
+    if(bt.broken){
+      badge='❌ 跌破Pivot，假突破警示';
+      badgeBg='var(--rbg)';badgeColor='var(--red)';borderColor='var(--rbr)';
+      note=`第${dayCount}天跌破鎖定Pivot ${f(pivot,1)}元，注意出場`;
+    } else if(dayCount===1){
+      badge='🔴 VCP 突破爆發！可追進';
+      badgeBg='var(--red)';badgeColor='#fff';borderColor='var(--red)';
+      note=`突破第1天，Pivot鎖定於 ${f(pivot,1)}元`;
+    } else if(!isDown&&volHigh){
+      badge=`✅ 突破第${dayCount}天，Follow-through跟進`;
+      badgeBg='var(--rbg)';badgeColor='var(--red)';borderColor='var(--rbr)';
+      note='價量續攻，健康延伸中';
+    } else if(madeNewHigh&&dayCount>=2){
+      badge=`🎾 突破第${dayCount}天，網球反彈確認`;
+      badgeBg='var(--rbg)';badgeColor='var(--red)';borderColor='var(--rbr)';
+      note='回調後快速創高，健康確認';
+    } else if(isDown&&bigMarketDrop){
+      badge=`🟡 突破第${dayCount}天，大盤拖累回測`;
+      badgeBg='var(--abg)';badgeColor='var(--amber)';borderColor='var(--abr)';
+      note=`大盤重挫，個股同步回調，守住Pivot ${f(pivot,1)}元，屬系統性回測`;
+    } else if(isDown&&volLow){
+      badge=`🟡 突破第${dayCount}天，縮量回測`;
+      badgeBg='var(--abg)';badgeColor='var(--amber)';borderColor='var(--abr)';
+      note=`量縮價跌，守住Pivot ${f(pivot,1)}元，屬正常洗盤`;
+    } else if(isDown&&volHigh){
+      badge=`⚠️ 突破第${dayCount}天，帶量回檔`;
+      badgeBg='var(--abg)';badgeColor='var(--amber)';borderColor='var(--abr)';
+      note='賣壓偏重，密切觀察是否跌破Pivot';
+    } else {
+      badge=`🟢 突破第${dayCount}天，延伸觀察中`;
+      badgeBg='var(--gbg)';badgeColor='var(--green)';borderColor='var(--gbr)';
+      note=`守住Pivot ${f(pivot,1)}元，10日觀察期內`;
+    }
+    return`
+    <div style="background:${badgeBg};border:1.5px solid ${borderColor};border-radius:var(--r);padding:12px 14px;margin-bottom:10px;font-size:var(--fs-md);font-weight:700;color:${badgeColor}">${badge}</div>
+    ${note?`<div style="font-size:var(--fs-sm);color:${badgeColor};background:${badgeBg};border-radius:var(--rs);padding:8px 12px;margin-bottom:10px">${note}</div>`:''}
+    <div style="font-size:var(--fs-xs);color:var(--text3);padding:4px 2px">突破後10個交易日觀察期內，追蹤鎖定Pivot ${f(pivot,1)}元，不隨每日高點浮動</div>
+    ${a && a.isLimitUp ? `
+    <div style="background:linear-gradient(135deg,#3d1500,#2a0d00);border:1px solid #ff8c00;border-radius:var(--rs);padding:12px 14px;margin-top:10px;animation:goldPulse 1s ease-in-out infinite">
+      <div style="font-size:var(--fs-sm);font-weight:700;color:#ff8c00;margin-bottom:4px">🔥 漲停爆發！量價強勢</div>
+      <div style="font-size:var(--fs-xs);color:#cc7000;line-height:1.5">今日漲停，明日觀察開盤承接力道<br>開盤不破漲停價 ${f(a.cur,1)} 元 → 量能尚可，次佳時段<br>開盤跌破漲停價 → 謹慎觀察，不追</div>
+    </div>` : ''}
+  `;
+  }
   // 動態配色（台股邏輯：紅=好/進場，綠=不好/結束）
   const stageMap={
     'just_broke':{
