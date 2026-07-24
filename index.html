@@ -784,7 +784,8 @@ async function fetchStock(code){
       const vol=Math.round(parseFloat(row.Trading_Volume||0)/1000);
       const high=parseFloat(row.max||row.close);
       const low=parseFloat(row.min||row.close);
-      if(!isNaN(close)&&close>0)data.push({close,vol:isNaN(vol)?0:vol,high:isNaN(high)?close:high,low:isNaN(low)?close:low});
+      const open=parseFloat(row.open||row.close);
+      if(!isNaN(close)&&close>0)data.push({close,open:isNaN(open)?close:open,vol:isNaN(vol)?0:vol,high:isNaN(high)?close:high,low:isNaN(low)?close:low});
     }
     // 判斷上市/上櫃
     const otcCodes=['6278','3533','3443','3042','3703','5269','6488','6719','4966','6230','6271','3680','2360','2421','6425'];
@@ -999,10 +1000,13 @@ function analyze(raw){
   // ── 真假突破判斷（收盤後直接判斷，不限VCP狀態）──
   let breakValidation = 'none';
   let breakReason = '';
-  // 上影線 = 最高價 - 收盤價；實體 = |收盤 - 開盤|（用prev近似開盤）
-  const shadowLen = curHigh - cur;
-  const bodyLen = Math.abs(cur - prev) || 1;
-  const isLongShadow = shadowLen > bodyLen * 2; // 上影線 > 實體2倍 = 長上影線
+  // 長上影線判斷：上影線 > 實體×2 且 收盤在當日振幅下半部
+  const curOpen = cl.length>=1 ? (raw.data[raw.data.length-1]?.open||cur) : cur;
+  const shadowLen = curHigh - cur; // 上影線
+  const bodyLen = Math.abs(cur - curOpen); // 實體（收盤-開盤）
+  const dayRange = curHigh - curLow; // 當日振幅
+  const closePct = dayRange > 0 ? (cur - curLow) / dayRange : 0.5; // 收盤在振幅的位置
+  const isLongShadow = shadowLen > bodyLen * 2 && closePct < 0.5; // 長上影線且收盤在下半部
   const isVolOk = volR >= 1.5; // 5日均量比
   const vcpPivotRef = vcp.pivot || pivot20;
   const isCloseAbove = cur >= vcpPivotRef * 1.003;
@@ -1022,7 +1026,7 @@ function analyze(raw){
     breakReason = `收盤 ${f(cur,1)} 元突破 VCP pivot ${f(vcpPivotRef,1)} 元，量能充足（${f(volR,1)}x），無長上影線`;
   } else if(isCloseAbove && isLongShadow){
     breakValidation = 'warning';
-    breakReason = `收盤突破 VCP pivot 但有長上影線（上影線${f(shadowLen,1)}元 > 實體${f(bodyLen,1)}元×2），恐為假突破，需觀察次日`;
+    breakReason = `收盤突破 VCP pivot 但有長上影線（上影${f(shadowLen,1)}元 > 實體${f(bodyLen,1)}元×2，收盤位於振幅下半部），恐為假突破，需觀察次日`;
   } else if(isCloseAbove && !isVolOk){
     breakValidation = 'warning';
     breakReason = `收盤突破 VCP pivot 但量能不足（${f(volR,1)}x < 1.5x），突破可信度低`;
@@ -1185,6 +1189,16 @@ function entryConfirmHtml(a){
       <div style="font-size:var(--fs-sm);font-weight:700;color:#fff;margin-bottom:3px">✦ 有效突破確認</div>
       <div style="font-size:var(--fs-sm);color:#fff;line-height:1.5;font-weight:500">${a.breakReason}</div>
     </div>` : '';
+  const warningBanner = a.breakValidation==='warning' ? `
+    <div style="background:var(--abg);border:1.5px solid var(--abr);border-radius:var(--rs);padding:12px 14px;margin-bottom:12px;text-align:center">
+      <div style="font-size:var(--fs-sm);font-weight:700;color:var(--amber);margin-bottom:3px">⚠️ 突破警示，需觀察</div>
+      <div style="font-size:var(--fs-xs);color:var(--text2);line-height:1.5">${a.breakReason}</div>
+    </div>` : '';
+  const failedBanner = a.breakValidation==='failed' ? `
+    <div style="background:var(--rbg);border:1.5px solid var(--red);border-radius:var(--rs);padding:12px 14px;margin-bottom:12px;text-align:center">
+      <div style="font-size:var(--fs-sm);font-weight:700;color:var(--red);margin-bottom:3px">❌ 假突破，跌回Pivot以下</div>
+      <div style="font-size:var(--fs-xs);color:var(--text2);line-height:1.5">${a.breakReason}</div>
+    </div>` : '';
 
   // VCP品質徽章（永遠顯示，符合就亮起，不符合就透明灰色）
   const vcpStatus = a.vcp.status;
@@ -1215,6 +1229,8 @@ function entryConfirmHtml(a){
     ${vcpBadge}
     <div class="ec-verdict" style="${allPass?'background:#f5c842;border:1px solid #e6b800;color:#92400e;animation:goldPulse 1.5s ease-in-out infinite':ec3Count>=1||hasWarn?'background:var(--abg);border:0.5px solid var(--abr);color:var(--amber)':'background:var(--bg2);border:0.5px solid var(--border);color:var(--text3)'}">${verdict}</div>
     ${goldBanner}
+    ${warningBanner}
+    ${failedBanner}
     <div class="entry-point-box">
       <div class="ep-title">📌 明日參考數值</div>
       <div style="font-size:var(--fs-sm);color:var(--text2);margin-bottom:6px">PIVOT 突破價位</div>
@@ -2473,11 +2489,11 @@ const GROUPS=[
   {id:'pcb_hi',      name:'PCB高階',     icon:'🔧', stocks:['8021','5498','8074','8358','3645']},
   {id:'pcb_glass',   name:'PCB玻纖布',   icon:'🪟', stocks:['5475','1815','1802','1303','5340']},
   {id:'glass_sub',   name:'玻璃基板',    icon:'🔲', stocks:['3481','8064','3149','6207']},
-  {id:'robot',       name:'機器人',      icon:'🦾', stocks:['2049','1597','2464','8374','4562']},
+  {id:'robot',       name:'機器人',      icon:'🦾', stocks:['2049','1597','2464','8374','4562','4585']},
   {id:'facility',    name:'廠務工程',    icon:'🏗️', stocks:['2404','6139','5536','6196','3402']},
   {id:'heavy_elec',  name:'重電',        icon:'🔋', stocks:['1519','1513','1503','1514']},
   {id:'lens',        name:'光學鏡頭',    icon:'📷', stocks:['3008','3362','3406','3504','6209']},
-  {id:'led',         name:'LED',         icon:'💡', stocks:['6706','6456','6226','2426','4956']},
+  {id:'led',         name:'LED',         icon:'💡', stocks:['6706','6456','6278','2426','4956']},
   {id:'drone',       name:'無人機',      icon:'🚁', stocks:['2634','8033','2645','5371','3019']},
 ];
 
@@ -2504,14 +2520,14 @@ const GRP_STOCK_MAP={
   '3042':'晶技','2484':'希華','3221':'台嘉碩','8182':'加高','6174':'安碁',
   '2481':'強茂','3675':'德微','5425':'台半','8255':'朋程','6138':'茂達',
   '2351':'順德','6548':'長科','5285':'界霖','8070':'長華','2483':'百容',
-  '8021':'尖點','5498':'凱崴','8074':'鉅橡','8358':'金居','3645':'碩天',
+  '8021':'尖點','5498':'凱崴','8074':'鉅橡','8358':'金居','3645':'達邁',
   '5475':'德宏','1815':'富喬','1802':'台玻','1303':'南亞','5340':'建榮',
   '3481':'群創','8064':'東捷','3149':'正達','6207':'雷科',
-  '2049':'上銀','1597':'直得','2464':'盟立','8374':'羅昇','4562':'達明',
+  '2049':'上銀','1597':'直得','2464':'盟立','8374':'羅昇','4562':'穎漢','4585':'達明',
   '2404':'漢唐','6139':'亞翔','5536':'聖暉','6196':'帆宣','3402':'漢科',
   '1519':'華城','1513':'中興電','1503':'士電','1514':'亞力',
   '3008':'大立光','3362':'先進光','3406':'玉晶光','3504':'揚明光','6209':'今國光',
-  '6706':'晶電','6456':'富采','6226':'台表科','2426':'億光','4956':'亞電',
+  '6706':'惠特','6456':'GIS-KY','6278':'台表科','2426':'鼎元','4956':'光鋐',
   '2634':'漢翔','8033':'雷虎','2645':'長榮航太','5371':'中光電','3019':'亞光',
 };
 
