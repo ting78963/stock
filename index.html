@@ -3755,7 +3755,7 @@ async function loadHotVolStocks(){
     // 檢查快取（同一天不重複抓）
     const today=new Date();
     const dateStr=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
-    const cacheKey='hotvol_cache_v1';
+    const cacheKey='hotvol_cache_v2';
     const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
     if(cached&&cached.date===dateStr){
       renderHotVolCard(el,cached.hotStocks);
