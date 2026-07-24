@@ -833,7 +833,7 @@ function analyzeVCP(closes,vols,stockCode,dates){
   else status='not_formed';
   const contracting=['contracting','final_contraction','just_broke','trending_up'].includes(status);
 
-  // ===== 突破後Pivot鎖定機制（10個交易日觀察期）=====
+  // ===== 突破後Pivot鎖定機制（10個交易日觀察期，含回溯檢測）=====
   let breakoutTrack=null;
   if(stockCode&&dates&&dates.length===n){
     const LS_KEY='vcp_breakout_track_v1';
@@ -866,6 +866,41 @@ function analyzeVCP(closes,vols,stockCode,dates){
       } else {
         // 超過10天，清除追蹤
         delete trackData[stockCode];
+      }
+    } else {
+      // 沒有現存追蹤紀錄，回溯檢測過去10個交易日是否曾發生突破
+      // （處理功能上線前已突破、或錯過建立時機的情況）
+      for(let back=1;back<=10;back++){
+        const idx=n-1-back; // 從昨天往回找
+        if(idx<20)break;
+        const histCloses=closes.slice(0,idx+1);
+        const histPrev20High=Math.max(...histCloses.slice(-21,-1));
+        const histCur=histCloses[histCloses.length-1];
+        const histJustBroke=histCur>histPrev20High*1.003;
+        if(histJustBroke){
+          // 檢查該日往前推是不是連續突破的第1~2天（避免抓到延伸很久之後的某天）
+          let histBreakDays=0;
+          for(let i=idx;i>=Math.max(0,idx-10);i--){
+            if(closes[i]>Math.max(...closes.slice(Math.max(0,i-20),i))*1.003)histBreakDays++;
+            else break;
+          }
+          if(histBreakDays<=2){
+            // 確認當時是否跌破過pivot（若跌破就不追溯，代表已經失敗過）
+            let brokenSince=false;
+            for(let i=idx+1;i<n;i++){
+              if(closes[i]<histPrev20High*0.997){brokenSince=true;break;}
+            }
+            if(!brokenSince){
+              const dayCount=n-1-idx+1;
+              if(dayCount<=10){
+                const highSince=Math.max(...closes.slice(idx));
+                trackData[stockCode]={pivot:histPrev20High,breakoutDate:dates[idx],highSinceBreak:highSince};
+                breakoutTrack={dayCount,pivot:histPrev20High,highSinceBreak:highSince,broken:false,retro:true};
+              }
+            }
+            break; // 找到最近一次突破就停止往回找
+          }
+        }
       }
     }
     try{localStorage.setItem(LS_KEY,JSON.stringify(trackData));}catch(e){}
