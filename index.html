@@ -440,6 +440,8 @@ html.font-xl{font-size:19px}
         <div id="stock-mkt-card" style="margin-bottom:12px">
           <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">載入市場數值中...</div>
         </div>
+        <!-- 今日爆量股 -->
+        <div id="stock-hotvol-card" style="margin-bottom:12px"></div>
         <!-- 族群資金前三 -->
         <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">族群資金前三</div>
         <div id="stock-group-list">
@@ -3718,6 +3720,78 @@ async function loadHomeWatch(){
 }
 
 
+
+async function loadHotVolStocks(){
+  const el=document.getElementById('stock-hotvol-card');
+  if(!el)return;
+  try{
+    // 檢查快取（同一天不重複抓）
+    const today=new Date();
+    const dateStr=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+    const cacheKey='hotvol_cache_v1';
+    const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
+    if(cached&&cached.date===dateStr){
+      renderHotVolCard(el,cached.hotStocks);
+      return;
+    }
+
+    el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div><div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">分析成交量前20大個股中...</div>`;
+
+    // ① 抓TWSE成交量前20名
+    const twseUrl=`https://corsproxy.io/?https://www.twse.com.tw/exchangeReport/MI_INDEX20?response=json&date=${dateStr}`;
+    const twseRes=await fetch(twseUrl);
+    const twseJson=await twseRes.json();
+    if(!twseJson.data||!twseJson.data.length){
+      el.innerHTML='';
+      return;
+    }
+    const top20=twseJson.data.slice(0,20).map(row=>({code:row[1],name:row[2],todayVol:parseInt(String(row[3]).replace(/,/g,''))/1000}));
+
+    // ② 逐一抓每支股票近5日資料算量比（節流，避免請求過快）
+    const hotStocks=[];
+    for(const stock of top20){
+      try{
+        const startD=new Date();startD.setDate(startD.getDate()-15);
+        const sD=`${startD.getFullYear()}-${String(startD.getMonth()+1).padStart(2,'0')}-${String(startD.getDate()).padStart(2,'0')}`;
+        const data=await fmFetchExtra('TaiwanStockPrice',stock.code,sD);
+        if(!data||data.length<5)continue;
+        const sorted=[...data].sort((a,b)=>a.date.localeCompare(b.date));
+        const vols=sorted.map(r=>parseInt(r.Trading_Volume||0)/1000);
+        const last5=vols.slice(-6,-1); // 排除今天，取前5天
+        const avg5=last5.length>0?last5.reduce((a,b)=>a+b,0)/last5.length:0;
+        const volRatio=avg5>0?stock.todayVol/avg5:0;
+        if(volRatio>=1.5){
+          hotStocks.push({...stock,volRatio:Math.round(volRatio*100)/100});
+        }
+        await new Promise(r=>setTimeout(r,150)); // 節流
+      }catch(e){continue;}
+    }
+    hotStocks.sort((a,b)=>b.volRatio-a.volRatio);
+
+    // 存快取
+    try{localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,hotStocks}));}catch(e){}
+
+    renderHotVolCard(el,hotStocks);
+  }catch(e){
+    el.innerHTML='';
+  }
+}
+
+function renderHotVolCard(el,hotStocks){
+  if(!hotStocks||!hotStocks.length){
+    el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">今日前20大成交量股票中，無明顯爆量訊號</div>`;
+    return;
+  }
+  el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股（成交量前20大中，量比≥1.5x）</div>
+  ${hotStocks.map(s=>`<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:#fff8e6;border:1px solid #f5c842;border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">今日成交量：${fmtVol(s.todayVol)}</div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:#b45309">量比 ${s.volRatio}x</div>
+  </div>`).join('')}`;
+}
+
 async function loadStockDefault(){
   // ① 即將突破的自選股
   const vcpEl=document.getElementById('stock-vcp-alert');
@@ -3852,6 +3926,9 @@ async function loadStockDefault(){
       }).join('');
     }catch(e){grpEl.innerHTML='';}
   }
+
+  // ③ 今日爆量股（延遲觸發，避免阻塞其他載入）
+  loadHotVolStocks();
 }
 async function loadHomeGroups(){
   const el=document.getElementById('home-group-list');
