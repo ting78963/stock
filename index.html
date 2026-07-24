@@ -1037,7 +1037,7 @@ function analyze(raw){
   const vl_p=volR>=1.5?true:volR>=1.1?'warn':false;
   const ec1=wk_p===true;
   // ec2：股價接近或突破VCP pivot（收縮期最高點）
-  const vcpPivot = vcp.pivot || pivot20;
+  const vcpPivot = vcp.breakoutTrack ? vcp.breakoutTrack.pivot : (vcp.pivot || pivot20);
   const atVcpPivot = cur >= vcpPivot * 0.97;  // 距pivot 3%以內算貼近
   const aboveVcpPivot = cur > vcpPivot * 1.003; // 突破pivot
   const ec2vcpStatus = aboveVcpPivot ? 'broke' : atVcpPivot ? 'at_high' : 'below';
@@ -1073,7 +1073,7 @@ function analyze(raw){
   const overall=base+bonus; // 不限制100，超過顯示∞
   const verdict=overall>=100?'超級強勢！':overall>=75?'強勢突破候選':overall>=50?'條件部分符合':'目前不符合條件';
   const reqVol=Math.round(avgV20*1.5);
-  // ── 真假突破判斷（收盤後直接判斷，不限VCP狀態）──
+  // ── 真假突破判斷 ──
   let breakValidation = 'none';
   let breakReason = '';
   // 長上影線判斷：上影線 > 實體×2 且 收盤在當日振幅下半部
@@ -1084,33 +1084,50 @@ function analyze(raw){
   const closePct = dayRange > 0 ? (cur - curLow) / dayRange : 0.5; // 收盤在振幅的位置
   const isLongShadow = shadowLen > bodyLen * 2 && closePct < 0.5; // 長上影線且收盤在下半部
   const isVolOk = volR >= 1.5; // 5日均量比
-  const vcpPivotRef = vcp.pivot || pivot20;
+  const vcpPivotRef = vcp.breakoutTrack ? vcp.breakoutTrack.pivot : (vcp.pivot || pivot20);
   const isCloseAbove = cur >= vcpPivotRef * 1.003;
   const isNearHigh = cur >= vcpPivotRef * 0.997;
-  // 突破失敗：前日曾突破，今日跌回pivot以下
-  const prevCloseAbove = prev >= vcpPivotRef * 1.003;
-  const isFailed = prevCloseAbove && cur < vcpPivotRef && volR >= 1.0;
 
-  if(isFailed){
-    breakValidation = 'failed';
-    breakReason = `前日收盤 ${f(prev,1)} 已突破 pivot ${f(vcpPivotRef,1)}，今日跌回 ${f(cur,1)}，疑似假突破，考慮出場`;
-  } else if(isLimitUp && isCloseAbove){
-    breakValidation = 'true';
-    breakReason = `漲停突破 VCP pivot ${f(vcpPivotRef,1)} 元，最強確認訊號，無上影線`;
-  } else if(isCloseAbove && isVolOk && !isLongShadow){
-    breakValidation = 'true';
-    breakReason = `收盤 ${f(cur,1)} 元突破 VCP pivot ${f(vcpPivotRef,1)} 元，量能充足（${f(volR,1)}x），無長上影線`;
-  } else if(isCloseAbove && isLongShadow){
-    breakValidation = 'warning';
-    breakReason = `收盤突破 VCP pivot 但有長上影線（上影${f(shadowLen,1)}元 > 實體${f(bodyLen,1)}元×2，收盤位於振幅下半部），恐為假突破，需觀察次日`;
-  } else if(isCloseAbove && !isVolOk){
-    breakValidation = 'warning';
-    breakReason = `收盤突破 VCP pivot 但量能不足（${f(volR,1)}x < 1.5x），突破可信度低`;
-  } else if(isNearHigh){
-    breakValidation = 'near';
-    breakReason = `收盤 ${f(cur,1)} 元貼近 VCP pivot ${f(vcpPivotRef,1)} 元（差 ${f(vcpPivotRef-cur,1)} 元），等待放量突破確認`;
+  if(vcp.breakoutTrack){
+    // ===== 追蹤期：每天都判斷，只看Pivot位置+上影線，不要求量能倍數 =====
+    if(vcp.breakoutTrack.broken){
+      breakValidation = 'failed';
+      breakReason = `跌破鎖定 Pivot ${f(vcpPivotRef,1)} 元，收盤 ${f(cur,1)}，假突破確認，注意出場`;
+    } else if(isLimitUp){
+      breakValidation = 'true';
+      breakReason = `漲停站穩 Pivot ${f(vcpPivotRef,1)} 元，最強確認訊號，無上影線`;
+    } else if(isLongShadow){
+      breakValidation = 'warning';
+      breakReason = `站穩 Pivot ${f(vcpPivotRef,1)} 元，但今日有長上影線（上影${f(shadowLen,1)}元 > 實體${f(bodyLen,1)}元×2），留意賣壓`;
+    } else {
+      breakValidation = 'true';
+      breakReason = `收盤 ${f(cur,1)} 元站穩 Pivot ${f(vcpPivotRef,1)} 元之上，無長上影線`;
+    }
   } else {
-    breakValidation = 'none';
+    // ===== 非追蹤期：判斷今天是否為首次有效突破（需量能確認）=====
+    const prevCloseAbove = prev >= vcpPivotRef * 1.003;
+    const isFailed = prevCloseAbove && cur < vcpPivotRef && volR >= 1.0;
+    if(isFailed){
+      breakValidation = 'failed';
+      breakReason = `前日收盤 ${f(prev,1)} 已突破 pivot ${f(vcpPivotRef,1)}，今日跌回 ${f(cur,1)}，疑似假突破，考慮出場`;
+    } else if(isLimitUp && isCloseAbove){
+      breakValidation = 'true';
+      breakReason = `漲停突破 VCP pivot ${f(vcpPivotRef,1)} 元，最強確認訊號，無上影線`;
+    } else if(isCloseAbove && isVolOk && !isLongShadow){
+      breakValidation = 'true';
+      breakReason = `收盤 ${f(cur,1)} 元突破 VCP pivot ${f(vcpPivotRef,1)} 元，量能充足（${f(volR,1)}x），無長上影線`;
+    } else if(isCloseAbove && isLongShadow){
+      breakValidation = 'warning';
+      breakReason = `收盤突破 VCP pivot 但有長上影線（上影${f(shadowLen,1)}元 > 實體${f(bodyLen,1)}元×2，收盤位於振幅下半部），恐為假突破，需觀察次日`;
+    } else if(isCloseAbove && !isVolOk){
+      breakValidation = 'warning';
+      breakReason = `收盤突破 VCP pivot 但量能不足（${f(volR,1)}x < 1.5x），突破可信度低`;
+    } else if(isNearHigh){
+      breakValidation = 'near';
+      breakReason = `收盤 ${f(cur,1)} 元貼近 VCP pivot ${f(vcpPivotRef,1)} 元（差 ${f(vcpPivotRef-cur,1)} 元），等待放量突破確認`;
+    } else {
+      breakValidation = 'none';
+    }
   }
 
   return{cur,prev,dayChg,isLimitUp,curHigh,curLow,ma20d,ma100d,ma20w,ma60,ma150,ma200,ma200_4w,ma100w,dayGoldenCross,dayDeathCross,daysCrossed100,daysDropped100,daysDropped20,dy100_p,wkGoldenCross,wkGoldenCrossPrev,wkDeathCross,wkDeathCrossPrev,ma20w_prev,ma100w_w,ma100w_w_prev,closes:cl,wk,ma20dArr,hi52,lo52,fromHi,fromLo,fromLo26,volR,volR20,curVol,avgV5,avgV20,reqVol,rsVal,t7,pat,wk_p,dy_p,pt_p,vl_p,t1,t2,t3,t_100w,t6,vcp,pe,stop,tgt1,tgt2,pivot20,ec1,ec2,ec2status,ec2vcpStatus,ec3,ec4,ecReady,ecPartial,ecCount,overall,verdict,breakValidation,breakReason};
@@ -1300,27 +1317,8 @@ function vcpStatusHtml(vcp, a){
 
 function entryConfirmHtml(a){
   const isTracking = !!a.vcp.breakoutTrack;
-  // 三條件進場判斷（拿掉VCP，改為獨立品質徽章）
-  const vcpP = isTracking ? a.vcp.breakoutTrack.pivot : (a.vcp.pivot || a.pivot20);
-  const vcpPe = vcpP * 1.005;
-  let ec2text,ec2icon;
-  if(a.ec2vcpStatus==='broke'){ec2text=`✓ 收盤 ${f(a.cur,1)} 突破 VCP pivot ${f(vcpP,1)}，PIVOT 突破確認`;ec2icon=true;}
-  else if(a.ec2vcpStatus==='at_high'){ec2text=`收盤 ${f(a.cur,1)} 貼近 VCP pivot ${f(vcpP,1)}（差 ${f(vcpP-a.cur,1)} 元），等待站穩 ${f(vcpPe,1)} 以上`;ec2icon='warn';}
-  else{ec2text=`✕ 現價 ${f(a.cur,1)} 距 PIVOT ${f(vcpP,1)} 差 ${f(vcpP-a.cur,1)} 元，尚未突破`;ec2icon=false;}
 
-  const items=[
-    {ok:a.ec1,name:'週線20MA站上',detail:a.ec1?`✓ 已站上，趨勢偏多`:`✕ 尚未站上，趨勢偏空`},
-    {ok:ec2icon,name:'股價突破近20日高點',detail:ec2text},
-    {ok:a.ec3,name:'成交量 ≥ 20日均量 1.5倍',detail:a.ec3?`✓ 量比 ${f(a.volR20,2)}x（20日均量基準），放量確認`:`✕ 量比 ${f(a.volR20,2)}x，量能不足（需≥1.5x）`},
-  ];
-  const ec3Count=items.filter(i=>i.ok===true).length;
-  const hasWarn=items.some(i=>i.ok==='warn');
-  const allPass=ec3Count===3;
-  const cls=allPass?'ec-ready':ec3Count>=1||hasWarn?'ec-partial':'ec-not';
-  const title=isTracking?'📊 條件明細（突破追蹤中，詳見上方追蹤卡片）':allPass?'✅ 三項條件全部達標':ec3Count>=1||hasWarn?`⏳ 條件達標 ${ec3Count}/3`:'⛔ 條件尚未達標';
-  const verdict=isTracking?'':allPass?'三項條件全部達標':ec3Count>=1?'部分條件達標':'條件未達標';
-
-  // 有效突破金色橫幅
+  // 有效突破/警示/假突破 banner（追蹤期與非追蹤期共用，判斷邏輯已在analyze()裡分流）
   const isValidBreak = a.breakValidation==='true';
   const goldBanner = isValidBreak ? `
     <div style="background:#f5c842;border:1px solid #e6b800;border-radius:var(--rs);padding:12px 14px;margin-bottom:12px;animation:goldPulse 1.5s ease-in-out infinite;text-align:center">
@@ -1337,6 +1335,35 @@ function entryConfirmHtml(a){
       <div style="font-size:var(--fs-sm);font-weight:700;color:var(--red);margin-bottom:3px">❌ 假突破，跌回Pivot以下</div>
       <div style="font-size:var(--fs-xs);color:var(--text2);line-height:1.5">${a.breakReason}</div>
     </div>` : '';
+
+  if(isTracking){
+    // 追蹤期：只顯示突破驗證banner，不顯示三項條件/VCP品質徽章/明日參考數值
+    return`<div class="entry-confirm">
+      ${goldBanner}
+      ${warningBanner}
+      ${failedBanner}
+    </div>`;
+  }
+
+  // 三條件進場判斷（拿掉VCP，改為獨立品質徽章）
+  const vcpP = a.vcp.pivot || a.pivot20;
+  const vcpPe = vcpP * 1.005;
+  let ec2text,ec2icon;
+  if(a.ec2vcpStatus==='broke'){ec2text=`✓ 收盤 ${f(a.cur,1)} 突破 VCP pivot ${f(vcpP,1)}，PIVOT 突破確認`;ec2icon=true;}
+  else if(a.ec2vcpStatus==='at_high'){ec2text=`收盤 ${f(a.cur,1)} 貼近 VCP pivot ${f(vcpP,1)}（差 ${f(vcpP-a.cur,1)} 元），等待站穩 ${f(vcpPe,1)} 以上`;ec2icon='warn';}
+  else{ec2text=`✕ 現價 ${f(a.cur,1)} 距 PIVOT ${f(vcpP,1)} 差 ${f(vcpP-a.cur,1)} 元，尚未突破`;ec2icon=false;}
+
+  const items=[
+    {ok:a.ec1,name:'週線20MA站上',detail:a.ec1?`✓ 已站上，趨勢偏多`:`✕ 尚未站上，趨勢偏空`},
+    {ok:ec2icon,name:'股價突破近20日高點',detail:ec2text},
+    {ok:a.ec3,name:'成交量 ≥ 20日均量 1.5倍',detail:a.ec3?`✓ 量比 ${f(a.volR20,2)}x（20日均量基準），放量確認`:`✕ 量比 ${f(a.volR20,2)}x，量能不足（需≥1.5x）`},
+  ];
+  const ec3Count=items.filter(i=>i.ok===true).length;
+  const hasWarn=items.some(i=>i.ok==='warn');
+  const allPass=ec3Count===3;
+  const cls=allPass?'ec-ready':ec3Count>=1||hasWarn?'ec-partial':'ec-not';
+  const title=allPass?'✅ 三項條件全部達標':ec3Count>=1||hasWarn?`⏳ 條件達標 ${ec3Count}/3`:'⛔ 條件尚未達標';
+  const verdict=allPass?'三項條件全部達標':ec3Count>=1?'部分條件達標':'條件未達標';
 
   // VCP品質徽章（永遠顯示，符合就亮起，不符合就透明灰色）
   const vcpStatus = a.vcp.status;
@@ -1365,7 +1392,7 @@ function entryConfirmHtml(a){
       </div>`;
     }).join('')}</div>
     ${vcpBadge}
-    ${!isTracking?`<div class="ec-verdict" style="${allPass?'background:#f5c842;border:1px solid #e6b800;color:#92400e;animation:goldPulse 1.5s ease-in-out infinite':ec3Count>=1||hasWarn?'background:var(--abg);border:0.5px solid var(--abr);color:var(--amber)':'background:var(--bg2);border:0.5px solid var(--border);color:var(--text3)'}">${verdict}</div>`:''}
+    <div class="ec-verdict" style="${allPass?'background:#f5c842;border:1px solid #e6b800;color:#92400e;animation:goldPulse 1.5s ease-in-out infinite':ec3Count>=1||hasWarn?'background:var(--abg);border:0.5px solid var(--abr);color:var(--amber)':'background:var(--bg2);border:0.5px solid var(--border);color:var(--text3)'}">${verdict}</div>
     ${goldBanner}
     ${warningBanner}
     ${failedBanner}
