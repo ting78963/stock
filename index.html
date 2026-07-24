@@ -897,8 +897,9 @@ function analyzeVCP(closes,vols,stockCode,dates){
                 trackData[stockCode]={pivot:histPrev20High,breakoutDate:dates[idx],highSinceBreak:highSince};
                 breakoutTrack={dayCount,pivot:histPrev20High,highSinceBreak:highSince,broken:false,retro:true};
               }
+              break; // 找到有效突破就停止往回找
             }
-            break; // 找到最近一次突破就停止往回找
+            // 若此候選已失敗（跌破過），繼續往前找更早的真正突破日
           }
         }
       }
