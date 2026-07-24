@@ -1543,7 +1543,7 @@ ${(()=>{
 
 
 <div class="card"><div class="card-head"><div class="card-title">VCP波動收縮系統</div><div class="ri-btn" data-info="vcp" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div>
-<div class="ri-box" data-for="vcp" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">VCP（Volatility Contraction Pattern）是 Mark Minervini 的核心型態。股價在上漲後進行一系列幅度越來越小的整理，成交量遞減，最終在低量中突破創新高。這是機構悄悄吸籌的訊號。</div>${vcpStatusHtml(a.vcp, a)}<div class="cl" style="margin-top:12px">
+<div class="ri-box" data-for="vcp" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">VCP（Volatility Contraction Pattern）是 Mark Minervini 的核心型態。股價在上漲後進行一系列幅度越來越小的整理，成交量遞減，最終在低量中突破創新高。這是機構悄悄吸籌的訊號。</div>${vcpStatusHtml(a.vcp, a)}${a.vcp.breakoutTrack?'':`<div class="cl" style="margin-top:12px">
 <div class="ci">${(()=>{
   const vs=a.vcp.status;
   if(vs==='just_broke'||vs==='trending_up'){
@@ -1580,7 +1580,7 @@ ${(()=>{
   }
 })()}</div>
 <div class="ci">${ih(a.cur>(a.ma20d||0)&&a.cur>(a.ma60||0))}<div class="cb"><div class="cn">均線支撐確認</div><div class="cd">日線20MA ${f(a.ma20d,1)}｜60MA ${f(a.ma60,1)}<br>${a.cur>(a.ma20d||0)&&a.cur>(a.ma60||0)?'✓ 均線支撐良好':'✕ 均線支撐待確認'}</div></div></div>
-</div></div>
+</div>`}</div>
 ${entryConfirmHtml(a)}
 ${['contracting','final_contraction','just_broke'].includes(a.vcp.status)?`
 <div class="ec2"><div class="card-head"><div class="card-title">VCP 價位參考</div><div class="ri-btn" data-info="ep" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div>
