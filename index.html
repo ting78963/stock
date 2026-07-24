@@ -443,7 +443,7 @@ html.font-xl{font-size:19px}
         <!-- 今日爆量股 -->
         <div id="stock-hotvol-card" style="margin-bottom:12px">
           <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div>
-          <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">📊 點擊查看今日爆量股（成交量前100大）</div>
+          <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">📊 點擊查看今日爆量股（成交量前200大）</div>
         </div>
         <!-- 族群資金前三 -->
         <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">族群資金前三</div>
@@ -2605,7 +2605,7 @@ function goHome(){
         </div>
         <div id="stock-hotvol-card" style="margin-bottom:12px">
           <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div>
-          <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">📊 點擊查看今日爆量股（成交量前100大）</div>
+          <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">📊 點擊查看今日爆量股（成交量前200大）</div>
         </div>
         <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">族群資金前三</div>
         <div id="stock-group-list">
@@ -2619,7 +2619,7 @@ function goHome(){
   try{
     const today=new Date();
     const dateStr=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
-    const cached=JSON.parse(localStorage.getItem('hotvol_cache_v3')||'null');
+    const cached=JSON.parse(localStorage.getItem('hotvol_cache_v4')||'null');
     if(cached&&cached.date===dateStr){
       const hvEl=document.getElementById('stock-hotvol-card');
       if(hvEl) renderHotVolCard(hvEl,cached.hotStocks);
@@ -3765,7 +3765,7 @@ async function loadHotVolStocks(){
     // 檢查快取（同一天不重複抓）
     const today=new Date();
     const dateStr=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
-    const cacheKey='hotvol_cache_v3';
+    const cacheKey='hotvol_cache_v4';
     const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
     if(cached&&cached.date===dateStr){
       renderHotVolCard(el,cached.hotStocks);
@@ -3774,7 +3774,7 @@ async function loadHotVolStocks(){
 
     el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div>
       <div style="padding:16px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs)">
-        <div id="hotvol-progress-text" style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:8px">分析成交量前100大個股中... 0/100</div>
+        <div id="hotvol-progress-text" style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:8px">分析成交量前200大個股中... 0/200</div>
         <div style="width:100%;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
           <div id="hotvol-progress-bar" style="width:0%;height:100%;background:var(--wine);transition:width 0.2s"></div>
         </div>
@@ -3793,7 +3793,7 @@ async function loadHotVolStocks(){
           todayVol:parseFloat(String(row.TradeVolume||'0').replace(/,/g,''))/1000
         })).filter(r=>r.todayVol>0);
         parsed.sort((a,b)=>b.todayVol-a.todayVol);
-        top100=parsed.slice(0,100);
+        top100=parsed.slice(0,200);
       }
     }catch(e1){
       console.error('STOCK_DAY_ALL failed, fallback to MI_INDEX20:',e1);
@@ -3826,7 +3826,7 @@ async function loadHotVolStocks(){
         doneCount++;
         const progText=document.getElementById('hotvol-progress-text');
         const progBar=document.getElementById('hotvol-progress-bar');
-        if(progText) progText.textContent=`分析成交量前100大個股中... ${doneCount}/${totalCount}`;
+        if(progText) progText.textContent=`分析成交量前200大個股中... ${doneCount}/${totalCount}`;
         if(progBar) progBar.style.width=`${Math.round(doneCount/totalCount*100)}%`;
         if(!data||data.length<5)continue;
         const sorted=[...data].sort((a,b)=>a.date.localeCompare(b.date));
@@ -3859,10 +3859,10 @@ async function loadHotVolStocks(){
 
 function renderHotVolCard(el,hotStocks){
   if(!hotStocks||!hotStocks.length){
-    el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">今日前100大成交量股票中，無「爆量上漲」訊號</div>`;
+    el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">今日前200大成交量股票中，無「爆量上漲」訊號</div>`;
     return;
   }
-  el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股（成交量前100大中，量比≥1.5x且股價上漲）</div>
+  el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股（成交量前200大中，量比≥1.5x且股價上漲）</div>
   ${hotStocks.map(s=>`<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:#fff8e6;border:1px solid #f5c842;border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
     <div>
       <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}　<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
@@ -3877,7 +3877,7 @@ async function loadStockDefault(){
   try{
     const today=new Date();
     const dateStr=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
-    const cached=JSON.parse(localStorage.getItem('hotvol_cache_v3')||'null');
+    const cached=JSON.parse(localStorage.getItem('hotvol_cache_v4')||'null');
     if(cached&&cached.date===dateStr){
       const hvEl=document.getElementById('stock-hotvol-card');
       if(hvEl) renderHotVolCard(hvEl,cached.hotStocks);
