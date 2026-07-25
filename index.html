@@ -487,8 +487,11 @@ html.font-xl{font-size:19px}
     <div id="ra">
       <!-- 預設狀態 -->
       <div id="stock-default-view">
-        <!-- 即將突破的自選股 -->
-        <div id="stock-vcp-alert" style="margin-bottom:12px"></div>
+        <!-- 自選股VCP狀態（即將突破/突破爆發） -->
+        <div id="stock-vcp-alert" style="margin-bottom:12px">
+          <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">⭐ 自選股狀態</div>
+          <div onclick="loadWatchVcpStatus()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 點擊更新自選股VCP狀態</div>
+        </div>
         <!-- 明日參考數值 -->
         <div id="stock-mkt-card" style="margin-bottom:12px">
           <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">載入市場數值中...</div>
@@ -496,7 +499,7 @@ html.font-xl{font-size:19px}
         <!-- 今日爆量股 -->
         <div id="stock-hotvol-card" style="margin-bottom:12px">
           <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div>
-          <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">📊 點擊查看今日爆量股（成交量前200大）</div>
+          <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 點擊查看今日爆量股（成交量前200大）</div>
         </div>
         <!-- 族群資金前三 -->
         <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">族群資金前三</div>
@@ -2693,13 +2696,16 @@ function goHome(){
   if(ra){
     ra.innerHTML=`
       <div id="stock-default-view">
-        <div id="stock-vcp-alert" style="margin-bottom:12px"></div>
+        <div id="stock-vcp-alert" style="margin-bottom:12px">
+          <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">⭐ 自選股狀態</div>
+          <div onclick="loadWatchVcpStatus()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 點擊更新自選股VCP狀態</div>
+        </div>
         <div id="stock-mkt-card" style="margin-bottom:12px">
           <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">載入市場數值中...</div>
         </div>
         <div id="stock-hotvol-card" style="margin-bottom:12px">
           <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div>
-          <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">📊 點擊查看今日爆量股（成交量前200大）</div>
+          <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 點擊查看今日爆量股（成交量前200大）</div>
         </div>
         <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">族群資金前三</div>
         <div id="stock-group-list">
@@ -2717,6 +2723,15 @@ function goHome(){
     if(cached&&cached.date===dateStr){
       const hvEl=document.getElementById('stock-hotvol-card');
       if(hvEl) renderHotVolCard(hvEl,cached.hotStocks);
+    }
+  }catch(e){}
+  // 檢查自選股VCP狀態是否已有今日快取
+  try{
+    const today2=new Date();
+    const dateStr2=`${today2.getFullYear()}${String(today2.getMonth()+1).padStart(2,'0')}${String(today2.getDate()).padStart(2,'0')}`;
+    const cachedDate=localStorage.getItem('watchvcp_cache_date_v1');
+    if(cachedDate===dateStr2){
+      renderWatchVcpCard();
     }
   }catch(e){}
 }
@@ -4053,6 +4068,83 @@ function renderHotVolCard(el,hotStocks){
   </div>`).join('')}`;
 }
 
+async function loadWatchVcpStatus(){
+  const vcpEl=document.getElementById('stock-vcp-alert');
+  if(!vcpEl)return;
+  const wl=LS.get('watch')||[];
+  if(!wl.length){
+    vcpEl.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">⭐ 自選股狀態</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">尚未加入任何自選股</div>`;
+    return;
+  }
+  vcpEl.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">⭐ 自選股狀態</div>
+    <div style="padding:16px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs)">
+      <div id="watchvcp-progress-text" style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:8px">掃描自選股中... 0/${wl.length}</div>
+      <div style="width:100%;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+        <div id="watchvcp-progress-bar" style="width:0%;height:100%;background:var(--wine);transition:width 0.2s"></div>
+      </div>
+    </div>`;
+
+  let doneCount=0;
+  for(const w of wl){
+    try{
+      const raw=await fetchStock(w.sym);
+      if(raw){
+        const a=analyze(raw);
+        const wlNow=LS.get('watch');
+        const idx=wlNow.findIndex(x=>x.sym===w.sym);
+        const pivotRef=a.vcp.breakoutTrack?a.vcp.breakoutTrack.pivot:(a.vcp.pivot||a.pivot20);
+        const isNearBreak = pivotRef>0 && a.vcp.status!=='broken_contraction' && a.cur >= pivotRef*0.975 && a.cur < pivotRef;
+        if(idx>=0){ wlNow[idx].vcpStatus=a.vcp.status; wlNow[idx].isNearBreak=isNearBreak; LS.set('watch',wlNow); }
+      }
+    }catch(e){}
+    doneCount++;
+    const pt=document.getElementById('watchvcp-progress-text');
+    const pb=document.getElementById('watchvcp-progress-bar');
+    if(pt) pt.textContent=`掃描自選股中... ${doneCount}/${wl.length}`;
+    if(pb) pb.style.width=`${Math.round(doneCount/wl.length*100)}%`;
+    await new Promise(r=>setTimeout(r,150));
+  }
+
+  // 存快取
+  try{
+    const today=new Date();
+    const dateStr=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+    localStorage.setItem('watchvcp_cache_date_v1',dateStr);
+  }catch(e){}
+
+  renderWatchVcpCard();
+}
+
+function renderWatchVcpCard(){
+  const vcpEl=document.getElementById('stock-vcp-alert');
+  if(!vcpEl)return;
+  const wl=LS.get('watch')||[];
+  const brokeList=wl.filter(w=>w.vcpStatus==='just_broke');
+  const nearList=wl.filter(w=>w.vcpStatus!=='just_broke' && (w.vcpStatus==='final_contraction' || w.isNearBreak));
+  if(!brokeList.length && !nearList.length){
+    vcpEl.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">⭐ 自選股狀態</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">目前自選股無即將突破或突破訊號</div>`;
+    return;
+  }
+  let html='';
+  if(brokeList.length){
+    html+=`
+    <div style="font-size:11px;font-weight:600;color:var(--red);letter-spacing:.08em;margin-bottom:8px">🚀 自選股突破爆發</div>
+    ${brokeList.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:var(--rbg);border:0.5px solid var(--rbr);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:14px;font-weight:500;color:var(--text)">${w.sym} ${w.name||''}</div>
+        <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--red);color:#fff;font-weight:600">🚀 突破爆發</span>
+      </div>`).join('')}`;
+  }
+  if(nearList.length){
+    html+=`
+    <div style="font-size:11px;font-weight:600;color:var(--amber);letter-spacing:.08em;margin-bottom:8px;margin-top:${brokeList.length?'12px':'0'}">◈ 自選股即將突破</div>
+    ${nearList.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:14px;font-weight:500;color:var(--text)">${w.sym} ${w.name||''}</div>
+        <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--abg);color:var(--amber);border:0.5px solid var(--abr);font-weight:600">◈ 即將突破</span>
+      </div>`).join('')}`;
+  }
+  vcpEl.innerHTML=html;
+}
+
 async function loadStockDefault(){
   // 今日爆量股：檢查是否已有快取，有則直接顯示
   try{
@@ -4064,35 +4156,15 @@ async function loadStockDefault(){
       if(hvEl) renderHotVolCard(hvEl,cached.hotStocks);
     }
   }catch(e){}
-  // ① 即將突破的自選股（分成「即將突破」與「突破爆發」兩區塊）
-  const vcpEl=document.getElementById('stock-vcp-alert');
-  if(vcpEl){
-    const wl=LS.get('watch')||[];
-    const brokeList=wl.filter(w=>w.vcpStatus==='just_broke');
-    const nearList=wl.filter(w=>w.vcpStatus!=='just_broke' && (w.vcpStatus==='final_contraction' || w.isNearBreak));
-    if(brokeList.length || nearList.length){
-      let html='';
-      if(brokeList.length){
-        html+=`
-        <div style="font-size:11px;font-weight:600;color:var(--red);letter-spacing:.08em;margin-bottom:8px">🚀 自選股突破爆發</div>
-        ${brokeList.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:var(--rbg);border:0.5px solid var(--rbr);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
-            <div style="font-size:14px;font-weight:500;color:var(--text)">${w.sym} ${w.name||''}</div>
-            <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--red);color:#fff;font-weight:600">🚀 突破爆發</span>
-          </div>`).join('')}`;
-      }
-      if(nearList.length){
-        html+=`
-        <div style="font-size:11px;font-weight:600;color:var(--amber);letter-spacing:.08em;margin-bottom:8px;margin-top:${brokeList.length?'12px':'0'}">◈ 自選股即將突破</div>
-        ${nearList.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
-            <div style="font-size:14px;font-weight:500;color:var(--text)">${w.sym} ${w.name||''}</div>
-            <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--abg);color:var(--amber);border:0.5px solid var(--abr);font-weight:600">◈ 即將突破</span>
-          </div>`).join('')}`;
-      }
-      vcpEl.innerHTML=html;
-    } else {
-      vcpEl.innerHTML='';
+  // ① 自選股VCP狀態：檢查今天是否已掃描過，有則直接顯示結果
+  try{
+    const today=new Date();
+    const dateStr=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+    const cachedDate=localStorage.getItem('watchvcp_cache_date_v1');
+    if(cachedDate===dateStr){
+      renderWatchVcpCard();
     }
-  }
+  }catch(e){}
 
   // ② 明日參考數值（從快取抓TAIEX和匯率）
   const mktEl=document.getElementById('stock-mkt-card');
