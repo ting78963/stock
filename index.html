@@ -298,26 +298,44 @@ html.font-xl{font-size:19px}
 <!-- 說明中心 -->
 <div class="app-page" id="page-home">
   <div style="padding:14px 16px">
-    <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px">說明中心</div>
-    <div style="font-size:13px;color:var(--text3);margin-bottom:16px">操作系統完整說明</div>
+    <div style="font-size:20px;font-weight:600;color:var(--text);margin-bottom:4px">說明中心</div>
+    <div style="font-size:14px;color:var(--text3);margin-bottom:16px">操作系統完整說明</div>
 
     <!-- 操作系統總覽 -->
     <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">🚀 選股到進場完整流程</div>
-      <div style="font-size:12px;color:var(--text2);line-height:2">
+      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">🚀 選股到進場完整流程</div>
+      <div style="font-size:14px;color:var(--text2);line-height:2.1">
         <div>① 🔥 火箭指標高分 → 基本面強的好公司</div>
         <div>② 📊 外資投信連續買超 → 主力正在進場</div>
         <div>③ 📈 均線系統多頭排列 → 大方向確認</div>
-        <div>④ 📉 日KD低檔（&lt;50）→ 多頭剛啟動，空間大</div>
-        <div>⑤ ⚡ 日MACD由綠轉紅 → 進場時機到</div>
+        <div>④ 📉 日KD超賣區（&lt;20）向上 → 空間大，強烈關注</div>
+        <div>⑤ ⚡ 日MACD由綠轉紅 → 動能轉強時機到</div>
         <div>⑥ 💎 有VCP型態 → 最佳進場，優先選擇</div>
+        <div>⑦ 📋 五天綜合判斷（柱量圖下方）→ 籌碼量能動能KD一次看</div>
+      </div>
+    </div>
+
+    <!-- 個股綜合評分說明 -->
+    <div class="home-card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">🎯 個股綜合評分怎麼算</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.9">
+        <div style="margin-bottom:6px"><b>四大項目（共100+分，可超過100）：</b></div>
+        <div>週均線系統 28分 → 多空方向判斷，最重要</div>
+        <div>日均線系統 25分 → 短期進場時機</div>
+        <div>量能 19分 → 5日均量比，量比價先行</div>
+        <div>型態 18分 → 空方／盤整／上升</div>
+        <div style="margin-top:8px;margin-bottom:6px"><b>加分條件（最高+24分）：</b></div>
+        <div>週100MA上揚、距26週低點+25%、相對大盤強度</div>
+        <div style="margin-top:8px;font-weight:500;color:var(--wine)">≥100分 → ♾️ 超級強勢！所有條件同時符合</div>
+        <div style="margin-top:4px">75-99分強勢候選　50-74分部分符合　&lt;50不符合</div>
+        <div style="margin-top:8px;color:var(--text3)">※ VCP型態不計分，型態出現直接參考進場，不用等分數</div>
       </div>
     </div>
 
     <!-- 族群資金說明 -->
     <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">📊 族群資金怎麼看</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.9">
+      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">📊 族群資金怎麼看</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.9">
         <div style="margin-bottom:6px"><b>量比：</b>今日成交量 ÷ 10日均量</div>
         <div>≥ 1.5x 異常放量，需特別重視</div>
         <div>1.0-1.5x 普通量，訊號參考</div>
@@ -332,8 +350,8 @@ html.font-xl{font-size:19px}
 
     <!-- 柱量圖說明 -->
     <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">📊 柱量圖判讀（外資／投信／量價）</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.9">
+      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">📊 柱量圖判讀（外資／投信／量價）</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.9">
         <div style="margin-bottom:6px"><b>量價柱：</b>高度=成交量大小，顏色=漲跌方向</div>
         <div>放量上漲（柱高+紅）→ 主力積極買進，最強訊號</div>
         <div>縮量上漲（柱矮+紅）→ 惜售，賣壓不重</div>
@@ -346,55 +364,90 @@ html.font-xl{font-size:19px}
       </div>
     </div>
 
+    <!-- 五天綜合判斷說明 -->
+    <div class="home-card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">📋 五天綜合判斷（柱量圖下方）</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.9">
+        <div style="margin-bottom:6px">交叉比對近5天四項指標，給出一句話總結：</div>
+        <div>籌碼：外資投信近5天買賣方向</div>
+        <div>量能：近5天量比趨勢（遞增／萎縮／持平）</div>
+        <div>動能：日MACD近5天能量方向</div>
+        <div>KD：日K位置與方向</div>
+        <div style="margin-top:8px;font-weight:500;color:var(--wine)">四項多數同向偏多 → 可持續關注</div>
+        <div style="font-weight:500;color:var(--green)">四項多數同向偏空 → 建議謹慎評估</div>
+        <div style="margin-top:6px;color:var(--text3)">※ 籌碼賣超但量能放大，恐為出貨訊號，需特別留意</div>
+      </div>
+    </div>
+
     <!-- 技術指標說明 -->
     <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">📉 週K位置 / 日MACD能量</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:6px"><b>週K位置：</b>判斷在多頭的哪個階段</div>
-        <div>週K &lt; 50 且向上 → 低檔啟動，空間大，最佳</div>
-        <div>週K 50-80 → 中段，空間縮小</div>
-        <div>週K &gt; 80 → 高檔超買，不追，等回調</div>
-        <div>K往D靠近 → 空方力竭，轉折準備中</div>
+      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">📉 日KD位置 / 日MACD能量</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.9">
+        <div style="margin-bottom:6px"><b>日KD位置：</b>判斷超買超賣區間</div>
+        <div>日K &lt; 20 → 超賣低檔，空間大</div>
+        <div>日K 20-80 → 正常區間</div>
+        <div>日K &gt; 80 → 超買高檔，需謹慎</div>
+        <div>⚡黃金交叉／💀死亡交叉 → 金色／紅色特別標示</div>
         <div style="margin-top:8px;margin-bottom:6px"><b>日MACD能量（5天）：</b>看能量方向</div>
         <div>負值持續遞減 → 空方衰竭，強烈關注</div>
-        <div>由負轉正（穿越0軸）→ 進場確認</div>
+        <div>由負轉正（穿越0軸）→ 動能轉強確認</div>
         <div>正值持續遞增 → 多方增強，持股</div>
-        <div>能量中斷 → 訊號不穩，觀望</div>
-        <div style="margin-top:8px;font-weight:500;color:var(--wine)">最佳進場：日KD低檔 + 日MACD由綠轉紅</div>
+        <div>整體遞減但末端回升 → 空方力竭，能量回升</div>
+        <div style="margin-top:8px;font-weight:500;color:var(--wine)">最佳訊號：日KD低檔黃金交叉 + 日MACD由綠轉紅</div>
       </div>
     </div>
 
     <!-- VCP說明 -->
     <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">💎 VCP型態說明</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.9">
+      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">💎 VCP型態與突破追蹤</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.9">
         <div>VCP（波動收縮型態）是 Minervini 的核心進場型態</div>
         <div style="margin-top:6px">整理過程中波動幅度持續縮小，代表籌碼在集中</div>
-        <div style="margin-top:6px">◈ 即將突破 → 密切關注，強烈關注</div>
-        <div>🚀 突破爆發 → 放量突破，最強進場訊號</div>
-        <div style="margin-top:6px;color:var(--text3)">※ 有VCP時不需等KD/MACD，直接用型態進場</div>
+        <div>◈ 即將突破 → 密切關注　🚀 突破爆發 → 最強進場訊號</div>
+        <div style="margin-top:8px;margin-bottom:6px"><b>突破後10天追蹤（Pivot鎖定不浮動）：</b></div>
+        <div>Follow-through跟進 → 價量續攻，健康延伸</div>
+        <div>🎾 網球反彈確認 → 回調後創高，健康</div>
+        <div>縮量回測 → 守住Pivot，正常洗盤</div>
+        <div>帶量回檔 → 賣壓偏重，密切觀察</div>
+        <div>盤整過久（6天以上未創高）→ 動能減弱，重新評估</div>
+        <div>跌破Pivot → ❌ 假突破警示，隔天恢復VCP判斷</div>
+        <div style="margin-top:8px;color:var(--text3)">※ 有VCP時不需等分數，直接用型態進場</div>
+      </div>
+    </div>
+
+    <!-- 突破驗證說明 -->
+    <div class="home-card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">✦ 突破驗證（真突破／假突破）</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.9">
+        <div>✦ 有效突破：站穩Pivot之上，無長上影線</div>
+        <div>⚠️ 突破警示：有長上影線或量能不足，需觀察</div>
+        <div>❌ 假突破：跌破Pivot，考慮出場</div>
+        <div style="margin-top:8px;margin-bottom:6px"><b>長上影線定義：</b></div>
+        <div>上影線 &gt; 實體×2　且　收盤落在當日振幅下半部</div>
+        <div style="margin-top:6px">漲停 → 直接視為最強確認，無上影線疑慮</div>
       </div>
     </div>
 
     <!-- 火箭指標說明 -->
     <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">🔥 火箭指標（基本面分數）</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:6px">評分項目（共100分）：</div>
-        <div>月營收 MoM（25分）→ 環比成長最重要</div>
-        <div>月營收 YoY（20分）→ 年增率確認趨勢</div>
-        <div>稅後淨利 YoY（20分）→ 獲利加速</div>
-        <div>合約負債 YoY（15分）→ 未來訂單能見度</div>
-        <div>自由現金流（10分）→ 財務健康</div>
-        <div>EBITDA（5分）→ 本業獲利</div>
-        <div>毛利率（3分）、ROE（1分）、負債比（1分）</div>
-        <div style="margin-top:8px;font-weight:500;color:var(--wine)">≥ 75分 → 強勢突破候選　∞ → 超級強勢！所有條件符合</div>
-        <div style="color:var(--text3)">※ 法人最看重MoM、YoY、合約負債連續成長</div>
+      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">🔥 火箭指標（基本面分數）</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.9">
+        <div style="margin-bottom:6px">評分項目（共100分，十項）：</div>
+        <div>月營收 MoM（15分）→ 環比成長，波段最重要</div>
+        <div>月營收 YoY（15分）→ 年增率確認趨勢</div>
+        <div>營收-毛利率同步性（15分）→ 成長品質是否健康</div>
+        <div>合約負債 YoY（12分）→ 未來訂單能見度</div>
+        <div>毛利率（12分）→ 水準+趨勢綜合評分</div>
+        <div>稅後淨利 YoY（10分）→ 獲利加速</div>
+        <div>自由現金流（6分）、ROE（6分，3年均+趨勢）</div>
+        <div>EBITDA（5分）、負債比（4分）</div>
+        <div style="margin-top:8px;font-weight:500;color:var(--wine)">80分以上基本面強勁　60-79分良好　60分以下偏弱</div>
+        <div style="margin-top:6px;color:var(--text3)">※ 營收成長但毛利率下滑 = 薄利多銷警訊，成長品質待觀察</div>
       </div>
     </div>
 
     <!-- 免責聲明 -->
-    <div style="font-size:11px;color:var(--text3);text-align:center;padding:12px 0 8px;line-height:1.6">
+    <div style="font-size:12px;color:var(--text3);text-align:center;padding:12px 0 8px;line-height:1.6">
       ⚠️ 本APP所有資料僅供參考，不構成投資建議。<br>投資有風險，請自行判斷評估。
     </div>
 
@@ -1961,14 +2014,16 @@ async function renderExtraData(stockCode, a) {
 
     // ── 3. 火箭指標（波段版100分制）──
     const _RI={
-      'ROE':'ROE（股東權益報酬率）= 稅後淨利 ÷ 股東權益，年化計算。≥15% 優質，≥20% 卓越。',
+      'ROE':'ROE（股東權益報酬率）= 稅後淨利 ÷ 股東權益，年化計算。改用近12季（約3年）平均值評分，避免單季爆衝誤導，同時看是否持續改善。',
       '月營收 YoY':'月營收年增率 = 本月營收 ÷ 去年同月 - 1。最即時業績指標，同時顯示累計年增率。',
+      '月營收 MoM':'月營收環比 = 本月營收 ÷ 上月營收 - 1。反映短期動能是否加速，波段交易者重點觀察項目。',
+      '營收-毛利率同步性':'交叉比對營收成長與毛利率變化，判斷成長品質是否健康。營收成長+毛利率同步改善=真成長；營收成長但毛利率下滑=薄利多銷警訊。',
       '稅後淨利 YoY':'稅後淨利年增率，跟去年同季比。獲利成長動能最直接反映股價，虧轉盈是買點訊號。',
-      '毛利率':'毛利率 = 毛利 ÷ 營收，反映定價能力與護城河。持續上升代表競爭力增強。',
+      '毛利率':'毛利率 = 毛利 ÷ 營收，反映定價能力與護城河。評分同時考慮水準高低與趨勢變化。',
       'EBITDA':'EBITDA = 營業利益 + 折舊 + 攤銷，排除非現金費用的真實獲利能力。',
       '自由現金流':'自由現金流 = 營業現金流 - 資本支出。真實現金，盈餘可造假但現金流難造假。',
       '合約負債 YoY':'合約負債（預收款）年增率，反映未來訂單能見度。持續增加代表客戶提前下單。',
-      '負債比':'負債比 = 總負債 ÷ 總資產。<40% 健全，>60% 偏高需留意景氣風險。'
+      '負債比':'負債比 = 總負債 ÷ 總資產。<30% 健全，30-45%正常，45-60%需留意，>60%偏高風險。'
     };
     let rocketItems = [];
 
@@ -2323,7 +2378,7 @@ async function renderExtraData(stockCode, a) {
             <div class="ri-btn" data-info="rocket" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div>
           </div>
         </div>
-        <div class="ri-box" data-for="rocket" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">火箭指標評估公司基本面強度，共8項指標100分制。80分以上基本面強勁，大跌可抱；60-79分良好；60分以下偏弱。波段交易者以月營收YoY、稅後淨利YoY為重點觀察項目。<div style="height:0.5px;background:var(--border2);margin:8px 0"></div>${Object.entries(_RI).map(([k,v])=>`<div style="margin-bottom:6px"><b style="color:var(--text)">${k}</b>｜${v}</div>`).join('')}</div>
+        <div class="ri-box" data-for="rocket" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">火箭指標評估公司基本面強度，共10項指標100分制。80分以上基本面強勁，大跌可抱；60-79分良好；60分以下偏弱。波段交易者以月營收MoM、YoY、營收-毛利率同步性為重點觀察項目。<div style="height:0.5px;background:var(--border2);margin:8px 0"></div>${Object.entries(_RI).map(([k,v])=>`<div style="margin-bottom:6px"><b style="color:var(--text)">${k}</b>｜${v}</div>`).join('')}</div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${
           rocketItems.length===0
