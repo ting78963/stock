@@ -4094,7 +4094,9 @@ async function loadWatchVcpStatus(){
         const idx=wlNow.findIndex(x=>x.sym===w.sym);
         const pivotRef=a.vcp.breakoutTrack?a.vcp.breakoutTrack.pivot:(a.vcp.pivot||a.pivot20);
         const isNearBreak = pivotRef>0 && a.vcp.status!=='broken_contraction' && a.cur >= pivotRef*0.975 && a.cur < pivotRef;
-        if(idx>=0){ wlNow[idx].vcpStatus=a.vcp.status; wlNow[idx].isNearBreak=isNearBreak; LS.set('watch',wlNow); }
+        const isTracking = !!a.vcp.breakoutTrack && !a.vcp.breakoutTrack.broken;
+        const trackDayCount = a.vcp.breakoutTrack ? a.vcp.breakoutTrack.dayCount : null;
+        if(idx>=0){ wlNow[idx].vcpStatus=a.vcp.status; wlNow[idx].isNearBreak=isNearBreak; wlNow[idx].isTracking=isTracking; wlNow[idx].trackDayCount=trackDayCount; LS.set('watch',wlNow); }
       }
     }catch(e){}
     doneCount++;
@@ -4119,10 +4121,17 @@ function renderWatchVcpCard(){
   const vcpEl=document.getElementById('stock-vcp-alert');
   if(!vcpEl)return;
   const wl=LS.get('watch')||[];
-  const brokeList=wl.filter(w=>w.vcpStatus==='just_broke');
-  const nearList=wl.filter(w=>w.vcpStatus!=='just_broke' && (w.vcpStatus==='final_contraction' || w.isNearBreak));
-  if(!brokeList.length && !nearList.length){
-    vcpEl.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">⭐ 自選股狀態</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">目前自選股無即將突破或突破訊號</div>`;
+  // ① 突破爆發：VCP狀態=just_broke 且尚未進入追蹤期（剛突破第1天）
+  const brokeList=wl.filter(w=>w.vcpStatus==='just_broke' && !w.isTracking);
+  // ② 追蹤中：已進入10天追蹤期且未跌破
+  const trackingList=wl.filter(w=>w.isTracking);
+  // ③ 即將突破：收縮末段 或 距pivot 2.5%內（且不在追蹤中、不是突破爆發）
+  const nearList=wl.filter(w=>!w.isTracking && w.vcpStatus!=='just_broke' && (w.vcpStatus==='final_contraction' || w.isNearBreak));
+  // ④ 收縮整理中：波動收縮但還沒到末段
+  const contractingList=wl.filter(w=>!w.isTracking && w.vcpStatus==='contracting' && !w.isNearBreak);
+
+  if(!brokeList.length && !trackingList.length && !nearList.length && !contractingList.length){
+    vcpEl.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">⭐ 自選股狀態</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">目前自選股無VCP相關訊號</div>`;
     return;
   }
   let html='';
@@ -4134,12 +4143,28 @@ function renderWatchVcpCard(){
         <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--red);color:#fff;font-weight:600">🚀 突破爆發</span>
       </div>`).join('')}`;
   }
+  if(trackingList.length){
+    html+=`
+    <div style="font-size:11px;font-weight:600;color:#e05d38;letter-spacing:.08em;margin-bottom:8px;margin-top:${brokeList.length?'12px':'0'}">📊 自選股追蹤中</div>
+    ${trackingList.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:#fff3ee;border:0.5px solid #f5c0a8;border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:14px;font-weight:500;color:var(--text)">${w.sym} ${w.name||''}</div>
+        <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#e05d38;color:#fff;font-weight:600">📊 突破第${w.trackDayCount||''}天</span>
+      </div>`).join('')}`;
+  }
   if(nearList.length){
     html+=`
-    <div style="font-size:11px;font-weight:600;color:var(--amber);letter-spacing:.08em;margin-bottom:8px;margin-top:${brokeList.length?'12px':'0'}">◈ 自選股即將突破</div>
+    <div style="font-size:11px;font-weight:600;color:var(--amber);letter-spacing:.08em;margin-bottom:8px;margin-top:${(brokeList.length||trackingList.length)?'12px':'0'}">◈ 自選股即將突破</div>
     ${nearList.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
         <div style="font-size:14px;font-weight:500;color:var(--text)">${w.sym} ${w.name||''}</div>
         <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--abg);color:var(--amber);border:0.5px solid var(--abr);font-weight:600">◈ 即將突破</span>
+      </div>`).join('')}`;
+  }
+  if(contractingList.length){
+    html+=`
+    <div style="font-size:11px;font-weight:600;color:var(--green);letter-spacing:.08em;margin-bottom:8px;margin-top:${(brokeList.length||trackingList.length||nearList.length)?'12px':'0'}">🟢 自選股收縮整理中</div>
+    ${contractingList.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:var(--gbg);border:0.5px solid var(--gbr);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:14px;font-weight:500;color:var(--text)">${w.sym} ${w.name||''}</div>
+        <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--gbg);color:var(--green);border:0.5px solid var(--gbr);font-weight:600">🟢 整理中</span>
       </div>`).join('')}`;
   }
   vcpEl.innerHTML=html;
