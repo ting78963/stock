@@ -1972,7 +1972,8 @@ async function renderExtraData(stockCode, a) {
     };
     let rocketItems = [];
 
-    // ① 月營收 YoY + 年營收 YoY（20分）
+    // ① 月營收 YoY + 年營收 YoY（15分）
+    let monthYoyGlobal=null; // 供營收-毛利率同步性卡片使用
     if(revData.length >= 2) {
       const sorted = [...revData].sort((a,b)=>a.date.localeCompare(b.date));
       const last = sorted[sorted.length-1];
@@ -1983,6 +1984,7 @@ async function renderExtraData(stockCode, a) {
       const lastYearSameMonth = sorted.find(r=>parseInt(r.revenue_month||0)===curMonth && parseInt(r.revenue_year||0)===curYear-1);
       const prevRev = lastYearSameMonth ? parseFloat(lastYearSameMonth.revenue||0) : 0;
       const monthYoy = prevRev>0 ? (curRev-prevRev)/prevRev*100 : null;
+      monthYoyGlobal = monthYoy;
       // 前月YoY
       const prev1 = sorted[sorted.length-2];
       const prev1Month = prev1 ? parseInt(prev1.revenue_month||0) : 0;
@@ -2009,10 +2011,10 @@ async function renderExtraData(stockCode, a) {
         if(yoyC>0) growStreak++;
         else break;
       }
-      const score = monthYoy===null?0:monthYoy>=30?20:monthYoy>=15?16:monthYoy>=5?12:monthYoy>=0?7:2;
+      const score = monthYoy===null?0:monthYoy>=30?15:monthYoy>=15?12:monthYoy>=5?9:monthYoy>=0?5:1;
       const curLabel = curYear&&curMonth ? `${curYear}-${String(curMonth).padStart(2,'0')}` : last.date;
       rocketItems.push({
-        label:'月營收 YoY', maxScore:20,
+        label:'月營收 YoY', maxScore:15,
         curLabel, curVal: monthYoy!==null ? `${monthYoy>=0?'+':''}${monthYoy.toFixed(1)}%` : `${(curRev/1e8).toFixed(1)}億`,
         prevVal: prev1Yoy!==null ? `前月：${prev1Yoy>=0?'+':''}${prev1Yoy.toFixed(1)}%` : '',
         extra: annualYoy!==null ? `年增：${annualYoy>=0?'+':''}${annualYoy.toFixed(1)}%` : '',
@@ -2033,9 +2035,9 @@ async function renderExtraData(stockCode, a) {
           if(p>0&&c>p) momStreak++;
           else break;
         }
-        const momScore=mom===null?0:mom>=20?25:mom>=10?20:mom>=5?15:mom>=0?8:2;
+        const momScore=mom===null?0:mom>=20?15:mom>=10?12:mom>=5?9:mom>=0?5:1;
         rocketItems.push({
-          label:'月營收 MoM', maxScore:25,
+          label:'月營收 MoM', maxScore:15,
           curLabel, curVal:mom!==null?`${mom>=0?'+':''}${mom.toFixed(1)}%`:`${(momRev/1e8).toFixed(1)}億`,
           prevVal:`前月：${(momPrev/1e8).toFixed(1)}億`,
           extra:'',
@@ -2059,9 +2061,9 @@ async function renderExtraData(stockCode, a) {
         if(prevVal<0&&curVal>0) chgText='虧轉盈 ✓';
         else if(prevVal>0&&curVal<0) chgText='盈轉虧 ✗';
         else if(prevVal!==0){ const chg=(curVal-prevVal)/Math.abs(prevVal)*100; chgText=`較前季 ${chg>=0?'+':''}${chg.toFixed(0)}%`; }
-        const score = curVal<=0?0:yoy===null?(curVal>0?12:0):yoy>=50?20:yoy>=25?16:yoy>=0?10:3;
+        const score = curVal<=0?0:yoy===null?(curVal>0?6:0):yoy>=50?10:yoy>=25?8:yoy>=0?5:2;
         rocketItems.push({
-          label:'稅後淨利 YoY', maxScore:20,
+          label:'稅後淨利 YoY', maxScore:10,
           curLabel:pat[pat.length-1].date, curVal:`${(curVal/1e8).toFixed(1)}億`,
           prevVal:`前季：${(prevVal/1e8).toFixed(1)}億`,
           extra: yoy!==null?`年增：${yoy>=0?'+':''}${yoy.toFixed(0)}%`:'',
@@ -2070,7 +2072,8 @@ async function renderExtraData(stockCode, a) {
       }
     }
 
-    // ③ 毛利率趨勢（15分）
+    // ③ 毛利率趨勢（12分）
+    let gpCurPctGlobal=null, gpDiffGlobal=null; // 供營收-毛利率同步性卡片使用
     if(finData.length) {
       const gpItems = finData.filter(r=>r.type==='GrossProfit').sort((a,b)=>a.date.localeCompare(b.date));
       const revItems = finData.filter(r=>r.type==='Revenue').sort((a,b)=>a.date.localeCompare(b.date));
@@ -2085,9 +2088,13 @@ async function renderExtraData(stockCode, a) {
           const gpCurPct = gpCur/revCur*100;
           const gpPrevPct = gpPrev/revPrev*100;
           const diff = gpCurPct-gpPrevPct;
-          const score = gpCurPct>=50?3:gpCurPct>=35?2:gpCurPct>=20?1:0;
+          gpCurPctGlobal=gpCurPct; gpDiffGlobal=diff;
+          // 級距（水準0-8）+ 趨勢加分（0-4）
+          const levelScore = gpCurPct>=50?8:gpCurPct>=35?6:gpCurPct>=20?4:gpCurPct>=10?2:0;
+          const trendScore = diff>=3?4:diff>=1?3:diff>=0?2:diff>=-3?1:0;
+          const score = Math.min(12, levelScore+trendScore);
           rocketItems.push({
-            label:'毛利率', maxScore:3,
+            label:'毛利率', maxScore:12,
             curLabel:curDate, curVal:`${gpCurPct.toFixed(1)}%`,
             prevVal:`前季：${gpPrevPct.toFixed(1)}%`,
             extra:'',
@@ -2099,7 +2106,34 @@ async function renderExtraData(stockCode, a) {
       }
     }
 
-    // ④ EBITDA（13分）= 營業利益 + 折舊 + 攤銷
+    // ④ 營收-毛利率同步性（15分，新增）— 法人核心：判斷成長品質是否健康
+    if(monthYoyGlobal!==null && gpDiffGlobal!==null){
+      let syncStatus, syncScore, syncSub;
+      if(monthYoyGlobal>0 && gpDiffGlobal>=0){
+        syncStatus='成長'; syncScore=15;
+        syncSub='✓ 成長品質佳，營收與毛利率同步走升，非削價衝量';
+      } else if(monthYoyGlobal>0 && gpDiffGlobal<0){
+        syncStatus='衰退'; syncScore=3;
+        syncSub='⚠️ 成長品質待觀察，恐為薄利多銷或競爭加劇';
+      } else if(monthYoyGlobal<=0 && gpDiffGlobal>=0){
+        syncStatus='持平'; syncScore=8;
+        syncSub='－ 營收雖緩，但毛利率仍守穩，體質尚稱健康';
+      } else {
+        syncStatus='衰退'; syncScore=1;
+        syncSub='⚠️ 營收與毛利率同步走弱，需留意基本面轉差';
+      }
+      rocketItems.push({
+        label:'營收-毛利率同步性', maxScore:15,
+        curLabel:'', curVal:syncStatus,
+        prevVal:`營收年增：${monthYoyGlobal>=0?'+':''}${monthYoyGlobal.toFixed(1)}%`,
+        extra:`毛利率變化：${gpDiffGlobal>=0?'+':''}${gpDiffGlobal.toFixed(1)}個百分點`,
+        trendUp:syncStatus==='成長',
+        sub:syncSub,
+        ok:syncStatus==='成長', score:syncScore
+      });
+    }
+
+    // ⑤ EBITDA（5分）= 營業利益 + 折舊 + 攤銷
     if(finData.length && cashData.length) {
       const oiItems = finData.filter(r=>r.type==='OperatingIncome').sort((a,b)=>a.date.localeCompare(b.date));
       const depItems = cashData.filter(r=>r.type==='Depreciation').sort((a,b)=>a.date.localeCompare(b.date));
@@ -2139,9 +2173,9 @@ async function renderExtraData(stockCode, a) {
         const prevOcf = ocfItems.length>=2 ? parseFloat(ocfItems[ocfItems.length-2].value||0) : 0;
         const prevCapex = capexItems.length>=2 ? Math.abs(parseFloat(capexItems[capexItems.length-2].value||0)) : 0;
         const prevFcf = prevOcf - prevCapex;
-        const score = fcf<=0?0:fcf>=prevFcf?10:fcf>0?6:1;
+        const score = fcf<=0?0:fcf>=prevFcf?6:fcf>0?4:1;
         rocketItems.splice(4,0,{
-          label:'自由現金流', maxScore:10,
+          label:'自由現金流', maxScore:6,
           curLabel:ocfItems[ocfItems.length-1].date,
           curVal:`${fcf>=0?'+':''}${(fcf/1e8).toFixed(1)}億`,
           prevVal:`前季：${prevFcf>=0?'+':''}${(prevFcf/1e8).toFixed(1)}億`,
@@ -2153,7 +2187,7 @@ async function renderExtraData(stockCode, a) {
       }
     }
 
-    // ⑥ ROE（10分）- 年化
+    // ⑥ ROE（6分）- 年化，改用3年平均+趨勢
     if(finData.length && balData.length) {
       const niItems = finData.filter(r=>r.type==='IncomeAfterTaxes').sort((a,b)=>a.date.localeCompare(b.date));
       const eqItems = balData.filter(r=>r.type==='EquityAttributableToOwnersOfParent').sort((a,b)=>a.date.localeCompare(b.date));
@@ -2163,21 +2197,26 @@ async function renderExtraData(stockCode, a) {
           const equity = eq ? parseFloat(eq.value||0) : 0;
           return equity>0 ? (parseFloat(ni)*4/equity*100) : null;
         };
-        const roe3 = niItems.slice(-3).map(r=>({roe:calcROE(r.value,r.date),date:r.date})).filter(r=>r.roe!==null);
-        if(roe3.length>=1) {
-          const cur = roe3[roe3.length-1].roe;
-          const prev = roe3.length>=2 ? roe3[roe3.length-2].roe : cur;
-          const avg = roe3.reduce((s,r)=>s+r.roe,0)/roe3.length;
-          const score = cur>=25?1:cur>=15?1:cur>=10?1:0;
+        // 改抓近12季（約3年）算平均，避免單季爆衝誤導
+        const roeHist = niItems.slice(-12).map(r=>({roe:calcROE(r.value,r.date),date:r.date})).filter(r=>r.roe!==null);
+        if(roeHist.length>=1) {
+          const cur = roeHist[roeHist.length-1].roe;
+          const prev = roeHist.length>=2 ? roeHist[roeHist.length-2].roe : cur;
+          const avg3y = roeHist.reduce((s,r)=>s+r.roe,0)/roeHist.length;
+          const isImproving = cur>=avg3y;
+          // 級距（水準0-4）+ 趨勢加分（0-2）
+          const levelScore = avg3y>=20?4:avg3y>=15?3:avg3y>=10?2:avg3y>=5?1:0;
+          const trendScore = isImproving?2:cur>=avg3y*0.9?1:0;
+          const score = Math.min(6, levelScore+trendScore);
           rocketItems.unshift({
-            label:'ROE', maxScore:1,
+            label:'ROE', maxScore:6,
             curLabel:niItems[niItems.length-1].date,
             curVal:`${cur.toFixed(1)}%`,
-            prevVal:roe3.length>=2?`前季：${prev.toFixed(1)}%`:'',
-            extra:`3季均：${avg.toFixed(1)}%`,
-            trendUp:cur>=prev,
-            sub:cur>=15?'股東報酬優質':cur>=10?'股東報酬尚可':'股東報酬偏低',
-            ok:cur>=15, score
+            prevVal:roeHist.length>=2?`前季：${prev.toFixed(1)}%`:'',
+            extra:`${roeHist.length}季均：${avg3y.toFixed(1)}%`,
+            trendUp:isImproving,
+            sub:avg3y>=15?(isImproving?'股東報酬優質且改善中':'股東報酬優質但趨緩'):avg3y>=10?(isImproving?'股東報酬尚可，轉強中':'股東報酬尚可'):'股東報酬偏低',
+            ok:avg3y>=10, score
           });
         }
       }
@@ -2191,9 +2230,9 @@ async function renderExtraData(stockCode, a) {
         const prev = parseFloat(clItems[clItems.length-2].value||0);
         const sameQtrLastYear = clItems.length>=5 ? parseFloat(clItems[clItems.length-5].value||0) : null;
         const yoy = sameQtrLastYear!==null&&sameQtrLastYear>0 ? (cur-sameQtrLastYear)/sameQtrLastYear*100 : null;
-        const score = cur<=0?0:yoy===null?(cur>=prev?10:3):yoy>=100?15:yoy>=50?13:yoy>=30?10:yoy>=10?7:yoy>=0?4:1;
+        const score = cur<=0?0:yoy===null?(cur>=prev?8:2):yoy>=100?12:yoy>=50?10:yoy>=30?8:yoy>=10?6:yoy>=0?3:1;
         rocketItems.push({
-          label:'合約負債 YoY', maxScore:15,
+          label:'合約負債 YoY', maxScore:12,
           curLabel:clItems[clItems.length-1].date,
           curVal:`${(cur/1e8).toFixed(1)}億`,
           prevVal:`前季：${(prev/1e8).toFixed(1)}億`,
@@ -2217,9 +2256,9 @@ async function renderExtraData(stockCode, a) {
           const prevLiab = liabItems.length>=2 ? parseFloat(liabItems[liabItems.length-2].value||0) : curLiab;
           const prevAsset = assetItems.length>=2 ? parseFloat(assetItems[assetItems.length-2].value||0) : curAsset;
           const prevRatio = prevAsset>0 ? prevLiab/prevAsset*100 : ratio;
-          const score = ratio<30?1:ratio<45?1:ratio<60?0:0;
+          const score = ratio<30?4:ratio<45?3:ratio<60?1:0;
           rocketItems.push({
-            label:'負債比', maxScore:1,
+            label:'負債比', maxScore:4,
             curLabel:liabItems[liabItems.length-1].date,
             curVal:`${ratio.toFixed(1)}%`,
             prevVal:`前季：${prevRatio.toFixed(1)}%`,
@@ -2359,13 +2398,22 @@ async function renderExtraData(stockCode, a) {
     }
     const fStrk=calcStreakLocal(instDays.map(d=>d.f));
     const tStrk=calcStreakLocal(instDays.map(d=>d.t));
-    const instHtml = instDays.length>0 ? renderInstChart(instDays,fStrk,tStrk) : '';
-    // 日線 OHLC 資料（供KD高低價計算）
+    // 日線 OHLC 資料（供KD高低價計算，提前到這裡供五天綜合判斷使用）
     const dayOHLC=(priceData||[]).sort((a,b)=>a.date.localeCompare(b.date)).map(r=>({
       close:parseFloat(r.close)||0,
       high:parseFloat(r.max||r.high||r.close)||0,
       low:parseFloat(r.min||r.low||r.close)||0
     }));
+    let fiveDaySummary=null;
+    if(dayOHLC.length>30){
+      const dKDraw=calcKD(dayOHLC,9);
+      const dMACDraw=calcMACD(dayOHLC,12,26,9);
+      const dKHist=dKDraw.hist.slice(-5).map(x=>x.k);
+      const dDHist=dKDraw.hist.slice(-5).map(x=>x.d);
+      const dMHist=(dMACDraw.histArr5||dMACDraw.histArr||[]).slice(-5);
+      fiveDaySummary=build5DaySummary(instDays,fStrk,tStrk,dKHist,dDHist,dMHist);
+    }
+    const instHtml = instDays.length>0 ? renderInstChart(instDays,fStrk,tStrk,fiveDaySummary) : '';
     // 週線 OHLC（每5個交易日一組，避免UTC時區偏移問題）
     const wkOHLC=(()=>{
       const sorted=(priceData||[]).sort((a,b)=>a.date.localeCompare(b.date));
@@ -3522,7 +3570,83 @@ function renderKDMACD(dayData, wkData, fStreak, tStreak){
     </div>
   </div>`;
 }
-function renderInstChart(days,fStreak,tStreak){
+function build5DaySummary(instDays,fStreak,tStreak,dKHist,dDHist,dMHist){
+  // 取最近5天資料
+  const last5=instDays.slice(-5);
+  if(last5.length<3) return null;
+
+  // ① 籌碼：外資+投信近5天方向
+  const fSum=last5.reduce((s,d)=>s+(d.f||0),0);
+  const tSum=last5.reduce((s,d)=>s+(d.t||0),0);
+  const chipBoth = fSum>0&&tSum>0;
+  const chipBothSell = fSum<0&&tSum<0;
+  let chipText,chipIcon;
+  if(fStreak.dir>0&&tStreak.dir>0&&fStreak.streak>=2&&tStreak.streak>=2){
+    chipText=`外資投信同步買超 ${fStreak.streak}天`;chipIcon='✓';
+  } else if(fStreak.dir<0&&tStreak.dir<0&&fStreak.streak>=2&&tStreak.streak>=2){
+    chipText=`外資投信同步賣超 ${fStreak.streak}天`;chipIcon='✕';
+  } else if(chipBoth){
+    chipText='外資投信近5天合計買超';chipIcon='✓';
+  } else if(chipBothSell){
+    chipText='外資投信近5天合計賣超';chipIcon='✕';
+  } else {
+    chipText='外資投信方向分歧';chipIcon='△';
+  }
+
+  // ② 量能：近5天量比趨勢
+  const volRatios=last5.map(d=>d.volRatio||1);
+  const volTrendUp=volRatios.length>=2&&volRatios[volRatios.length-1]>volRatios[0];
+  const avgVolR=volRatios.reduce((a,b)=>a+b,0)/volRatios.length;
+  let volText,volIcon;
+  if(avgVolR>=1.3&&volTrendUp){volText='五天量能遞增';volIcon='✓';}
+  else if(avgVolR>=1.3){volText='五天量能偏高';volIcon='✓';}
+  else if(avgVolR<0.8){volText='五天量能萎縮';volIcon='△';}
+  else {volText='五天量能持平';volIcon='－';}
+
+  // ③ 動能：日MACD近5天方向
+  let macdText,macdIcon;
+  if(dMHist&&dMHist.length>=2){
+    const mLast=dMHist[dMHist.length-1],mPrev=dMHist[dMHist.length-2];
+    const mMono=isMonotone(dMHist);
+    if(mLast>0&&mMono==='up'){macdText='MACD動能持續擴大';macdIcon='✓';}
+    else if(mLast>0&&mLast<mPrev){macdText='MACD動能轉弱';macdIcon='△';}
+    else if(mLast<0&&mLast>mPrev){macdText='MACD空方力竭中';macdIcon='✓';}
+    else if(mLast<0&&mMono==='down'){macdText='MACD空方持續增強';macdIcon='✕';}
+    else {macdText='MACD動能中性';macdIcon='－';}
+  } else {macdText='MACD資料不足';macdIcon='－';}
+
+  // ④ KD：日K位置與方向
+  let kdText,kdIcon;
+  if(dKHist&&dKHist.length>=2){
+    const kLast=dKHist[dKHist.length-1],kPrev=dKHist[dKHist.length-2];
+    const dLast=dDHist[dDHist.length-1];
+    if(kLast<20&&kLast>kPrev){kdText='日KD超賣區向上';kdIcon='✓';}
+    else if(kLast>80&&kLast<kPrev){kdText='日KD超買區向下';kdIcon='✕';}
+    else if(kLast>=dLast&&kLast>kPrev){kdText='日KD正常區偏多';kdIcon='✓';}
+    else if(kLast<dLast&&kLast<kPrev){kdText='日KD正常區偏空';kdIcon='△';}
+    else {kdText='日KD區間震盪';kdIcon='－';}
+  } else {kdText='KD資料不足';kdIcon='－';}
+
+  // 總結：四項交叉比對
+  const goodCount=[chipIcon,volIcon,macdIcon,kdIcon].filter(i=>i==='✓').length;
+  const badCount=[chipIcon,volIcon,macdIcon,kdIcon].filter(i=>i==='✕').length;
+  let summary,summaryColor;
+  if(goodCount>=3){
+    summary='四項指標多數同向偏多，籌碼量能動能一致，可持續關注';summaryColor='var(--red)';
+  } else if(badCount>=3){
+    summary='四項指標多數同向偏空，賣壓浮現，建議謹慎評估風險';summaryColor='var(--green)';
+  } else if(goodCount>=2&&badCount===0){
+    summary='多數指標偏多，訊號尚可，留意後續是否持續加強';summaryColor='var(--red)';
+  } else if(chipBothSell&&volIcon==='✓'){
+    summary='籌碼賣超但量能放大，恐為出貨訊號，需提高警覺';summaryColor='var(--green)';
+  } else {
+    summary='指標訊號分歧，方向未明，建議持續觀察不躁進';summaryColor='var(--text2)';
+  }
+
+  return{chipText,chipIcon,volText,volIcon,macdText,macdIcon,kdText,kdIcon,summary,summaryColor};
+}
+
+function renderInstChart(days,fStreak,tStreak,fiveDaySummary){
   const KEYS=['f','t','vol'];
   const NAMES={f:'外資',t:'投信',vol:'量價'};
   const POS={f:'#b91c1c',t:'#7f1d1d'};
@@ -3575,6 +3699,17 @@ function renderInstChart(days,fStreak,tStreak){
     <div id="instDetailPanel" style="display:none;background:var(--bg3);border-radius:var(--rs);padding:12px;margin:8px 0"></div>
     <div style="height:0.5px;background:var(--border2);margin:10px 0"></div>
     ${signalHtml}
+    ${fiveDaySummary?`
+    <div style="height:0.5px;background:var(--border2);margin:10px 0"></div>
+    <div style="font-size:10px;color:var(--text3);letter-spacing:.05em;margin-bottom:8px">五天綜合判斷</div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><span style="width:14px;text-align:center">${fiveDaySummary.chipIcon}</span>籌碼：${fiveDaySummary.chipText}</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><span style="width:14px;text-align:center">${fiveDaySummary.volIcon}</span>量能：${fiveDaySummary.volText}</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><span style="width:14px;text-align:center">${fiveDaySummary.macdIcon}</span>動能：${fiveDaySummary.macdText}</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><span style="width:14px;text-align:center">${fiveDaySummary.kdIcon}</span>KD：${fiveDaySummary.kdText}</div>
+    </div>
+    <div style="padding:8px 10px;background:var(--bg3);border-radius:var(--rs);font-size:12px;color:${fiveDaySummary.summaryColor};font-weight:500">→ ${fiveDaySummary.summary}</div>
+    `:''}
   </div>`;
 }
 
