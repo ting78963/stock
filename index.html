@@ -1596,7 +1596,7 @@ ${(()=>{
 <div class="card"><div class="card-head"><div class="card-title">四大法寶 — 型態與量能</div><div class="ri-btn" data-info="volume" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3);flex-shrink:0">ⓘ</div></div>
 <div class="ri-box" data-for="volume" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">成交量是主力動向的指標。量比 ≥1.5x 為明顯爆量，代表主力積極介入；1.1-1.5x 為放量觀察；<1.1x 代表量能低迷。VCP突破時需要有效放量才算成立。</div><div class="cl">
 <div class="ci">${ih(a.pt_p)}<div class="cb"><div class="cn">③ 型態判斷</div><div class="cd">偵測型態：${a.pat}<br>${a.pat==='W底'?'✓ W底型態，偏多':a.pat==='M頭'?'✕ M頭型態，偏空避開':'△ 盤整中，等待突破方向'}</div></div></div>
-<div class="ci">${ih(a.vl_p)}<div class="cb"><div class="cn">④ 成交量 — 有無大人</div><div class="cd">量比 ${f(a.volR,2)}x（今日 <span style="color:var(--red)">${fmtVol(a.curVol)}</span> vs 5日均量 ${fmtVol(a.avgV5)}）<br>${a.vl_p===true?'✓ 明顯爆量（≥1.5x），主力進駐':a.vl_p==='warn'?'△ 量能放大（1.1~1.5x），持續觀察':'✕ 量能低迷，主力未介入'}</div></div></div>
+<div class="ci">${a.volR>=1.5?`<div class="ico ip">✓</div>`:a.volR>=1.1?`<div class="ico iw">△</div>`:a.volR>=0.9?`<div class="ico in">－</div>`:`<div class="ico if2">✕</div>`}<div class="cb"><div class="cn">④ 成交量 — 有無大人</div><div class="cd">量比 ${f(a.volR,2)}x（今日 <span style="color:var(--red)">${fmtVol(a.curVol)}</span> vs 5日均量 ${fmtVol(a.avgV5)}）<br>${a.volR>=1.5?'✓ 爆量（≥1.5x），主力進駐':a.volR>=1.1?'△ 溫和放大（1.1~1.5x），持續觀察':a.volR>=0.9?'－ 量能持平，觀察後續變化':'✕ 量縮，觀望氣氛濃厚'}</div></div></div>
 </div></div>
 
 
