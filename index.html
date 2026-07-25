@@ -697,7 +697,10 @@ async function scanWatchAlert(){
       // 儲存VCP狀態回localStorage供清單顯示
       const wlNow=LS.get('watch');
       const idx=wlNow.findIndex(x=>x.sym===w.sym);
-      if(idx>=0){ wlNow[idx].vcpStatus=a.vcp.status; LS.set('watch',wlNow); }
+      // 判斷是否距Pivot 2.5%以內（不管型態階段，只要價格夠近就標記即將突破）
+      const pivotRef=a.vcp.breakoutTrack?a.vcp.breakoutTrack.pivot:(a.vcp.pivot||a.pivot20);
+      const isNearBreak = pivotRef>0 && a.vcp.status!=='broken_contraction' && a.cur >= pivotRef*0.975 && a.cur < pivotRef;
+      if(idx>=0){ wlNow[idx].vcpStatus=a.vcp.status; wlNow[idx].isNearBreak=isNearBreak; LS.set('watch',wlNow); }
 
       // 原有：VCP進場警示
       if(['final_contraction','just_broke'].includes(a.vcp.status)&&a.overall>=70){
@@ -4061,23 +4064,31 @@ async function loadStockDefault(){
       if(hvEl) renderHotVolCard(hvEl,cached.hotStocks);
     }
   }catch(e){}
-  // ① 即將突破的自選股
+  // ① 即將突破的自選股（分成「即將突破」與「突破爆發」兩區塊）
   const vcpEl=document.getElementById('stock-vcp-alert');
   if(vcpEl){
     const wl=LS.get('watch')||[];
-    const alerts=wl.filter(w=>['final_contraction','just_broke'].includes(w.vcpStatus));
-    if(alerts.length){
-      vcpEl.innerHTML=`
-        <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">⭐ 自選股即將突破</div>
-        ${alerts.map(w=>{
-          const badge=w.vcpStatus==='just_broke'
-            ?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--rbg);color:var(--red);border:0.5px solid var(--rbr);font-weight:600">🚀 突破爆發</span>`
-            :`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--abg);color:var(--amber);border:0.5px solid var(--abr);font-weight:600">◈ 即將突破</span>`;
-          return`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+    const brokeList=wl.filter(w=>w.vcpStatus==='just_broke');
+    const nearList=wl.filter(w=>w.vcpStatus!=='just_broke' && (w.vcpStatus==='final_contraction' || w.isNearBreak));
+    if(brokeList.length || nearList.length){
+      let html='';
+      if(brokeList.length){
+        html+=`
+        <div style="font-size:11px;font-weight:600;color:var(--red);letter-spacing:.08em;margin-bottom:8px">🚀 自選股突破爆發</div>
+        ${brokeList.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:var(--rbg);border:0.5px solid var(--rbr);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
             <div style="font-size:14px;font-weight:500;color:var(--text)">${w.sym} ${w.name||''}</div>
-            ${badge}
-          </div>`;
-        }).join('')}`;
+            <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--red);color:#fff;font-weight:600">🚀 突破爆發</span>
+          </div>`).join('')}`;
+      }
+      if(nearList.length){
+        html+=`
+        <div style="font-size:11px;font-weight:600;color:var(--amber);letter-spacing:.08em;margin-bottom:8px;margin-top:${brokeList.length?'12px':'0'}">◈ 自選股即將突破</div>
+        ${nearList.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:14px;font-weight:500;color:var(--text)">${w.sym} ${w.name||''}</div>
+            <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--abg);color:var(--amber);border:0.5px solid var(--abr);font-weight:600">◈ 即將突破</span>
+          </div>`).join('')}`;
+      }
+      vcpEl.innerHTML=html;
     } else {
       vcpEl.innerHTML='';
     }
