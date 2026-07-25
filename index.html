@@ -2559,7 +2559,7 @@ function rW(){
   }).join('');
 }
 function rmW(sym){LS.set('watch',LS.get('watch').filter(w=>w.sym!==sym));rW();}
-function gs(sym){document.getElementById('ti').value=sym;go('search');doSearch();}
+function gs(sym){document.getElementById('ti').value=sym;showPage('stock',null,'nav-stock');setTimeout(()=>doSearch(),50);}
 function clrW(){if(confirm('確定清除自選清單？')){LS.set('watch',[]);rW();}}
 function sH(raw,a){let h=LS.get('hist');h.unshift({sym:raw.code,name:raw.name,score:a.overall,verdict:a.verdict,price:a.cur,time:new Date().toISOString()});if(h.length>50)h=h.slice(0,50);LS.set('hist',h);}
 function rH(){const h=LS.get('hist'),area=document.getElementById('ha');if(!h.length){area.innerHTML=`<div class="empty"><div class="eico">🕐</div>尚無查詢紀錄<br>搜尋股票後自動記錄</div>`;return;}area.innerHTML=h.map(item=>{const c=sc(item.score),dt=new Date(item.time);const ts=`${dt.getMonth()+1}/${dt.getDate()} ${dt.getHours()}:${String(dt.getMinutes()).padStart(2,'0')}`;return`<div class="li" onclick="gs('${item.sym}')"><div class="ll"><div class="lsy">${item.sym}</div><div class="lna">${item.name}</div><div class="lti">${ts}｜${item.verdict}｜收${item.price?.toFixed(1)||'—'}</div></div><div class="lr"><div class="spill" class="${item.score>=70?'spill gold-score':'spill'}" style="${item.score<70?'background:'+c+'18;color:'+c:''}">${item.score}</div></div></div>`;}).join('');}
