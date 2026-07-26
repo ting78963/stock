@@ -3426,9 +3426,9 @@ function getSignalDesc(wkKD,wkMACD,dayKD,dayMACD,fStreak,tStreak){
 
   // 空方訊號
   if(wkDeath&&mGreen&&dayDeath&&dayMACDGreen)
-    return{text:'🔴 週日KD死亡交叉＋週日MACD同步轉綠，空方強勢，嚴格停損或觀望。',color:'#166534',level:-5};
+    return{text:'🟢 週日KD死亡交叉＋週日MACD同步轉綠，空方強勢，嚴格停損或觀望。',color:'#166534',level:-5};
   if(wkDeath&&dayDeath)
-    return{text:'🔴 週日KD雙死亡交叉，空方強勢，風險偏高，謹慎評估。',color:'#166534',level:-4};
+    return{text:'🟢 週日KD雙死亡交叉，空方強勢，風險偏高，謹慎評估。',color:'#166534',level:-4};
   if(wkDeath&&mGreen)
     return{text:'⚠️ 週線偏空動能走弱，等待止跌訊號再觀察。',color:'#166534',level:-2};
 
@@ -3484,10 +3484,10 @@ function getDayKPosition(dayKHist, dayDHist){
   if(isGolden) return{text:'⚡ 黃金交叉',badge:'cross',k,d};
   if(isDeath&&k>80) return{text:'💀 高檔死亡交叉',badge:'death',k,d};
   if(isDeath) return{text:'💀 死亡交叉',badge:'death',k,d};
-  if(k<20&&trend==='up') return{text:'🟢 超賣低檔，強烈關注',badge:'cross',k,d};
+  if(k<20&&trend==='up') return{text:'🔴 超賣低檔，強烈關注',badge:'cross',k,d};
   if(k<20&&gapNarrowing) return{text:'🟡 超賣區，空方力竭中',badge:'near_cross',k,d};
   if(k<20) return{text:'超賣低檔',badge:'near_cross',k,d};
-  if(k>80&&trend==='down') return{text:'🔴 超買高檔，需謹慎',badge:'death',k,d};
+  if(k>80&&trend==='down') return{text:'🟢 超買高檔，需謹慎',badge:'death',k,d};
   if(k>80&&gapNarrowing) return{text:'🟡 高檔多方力竭中',badge:'near_death',k,d};
   if(k>80) return{text:'高檔超買',badge:'near_death',k,d};
   if(k>=20&&k<80&&trend==='up'&&k>=(d||0)) return{text:'正常區間偏多',badge:'up',k,d};
@@ -3520,19 +3520,19 @@ function getDayMACDSignal(histArr5){
     return{text:'🟡 空方能量，最後出現回升，關注',badge:'near_cross',energy:'up'};
 
   if(last>0&&mono==='up')
-    return{text:'🟢 多方能量持續遞增，持股',badge:'up',energy:'up'};
+    return{text:'🔴 多方能量持續遞增，持股',badge:'up',energy:'up'};
   // 整體遞減但最後兩筆回升 → 動能恢復
   if(last>0&&mono==='down'&&lastUp)
     return{text:'🟡 多方能量遞減但出現回升，留意',badge:'near_death',energy:'mixed'};
   if(last>0&&mono==='down'&&lastDown)
     return{text:'🟡 多方能量持續遞減，留意出場',badge:'near_death',energy:'down'};
   if(last>0&&mono==='mixed'&&lastUp)
-    return{text:'🟢 多方能量，最後回升中，持股觀察',badge:'up',energy:'up'};
+    return{text:'🔴 多方能量，最後回升中，持股觀察',badge:'up',energy:'up'};
   if(last>0&&mono==='mixed'&&lastDown)
     return{text:'🟡 多方能量中斷，方向不明，觀望',badge:'neutral',energy:'mixed'};
 
   if(last<0&&mono==='down')
-    return{text:'🔴 空方能量持續遞增，需謹慎',badge:'down',energy:'down'};
+    return{text:'🟢 空方能量持續遞增，需謹慎',badge:'down',energy:'down'};
   if(mono==='mixed'&&last<0&&nearZero)
     return{text:'⚠️ 能量趨近零軸，等待方向確認',badge:'neutral',energy:'mixed'};
   if(mono==='mixed')
@@ -3567,9 +3567,9 @@ function getFinalDesc(dayKPos,dayMACDSig){
   if(isNormal&&dEnter) return{text:'✅ 日MACD由綠轉紅，動能轉多，注意風險控管。',color:'#854f0b'};
   if(isNormal&&dReady) return{text:'🔔 日MACD空方力竭中，等待穿越0軸確認。',color:'#854f0b'};
   if(isNormal&&dHold) return{text:'📊 正常區間多方動能持續，持股觀察。',color:'#b91c1c'};
-  if(isDeath&&isHigh) return{text:'💀 高檔死亡交叉，多方力竭，風險偏高謹慎評估。',color:'#b91c1c'};
+  if(isDeath&&isHigh) return{text:'💀 高檔死亡交叉，多方力竭，風險偏高謹慎評估。',color:'#166534'};
   if(isDeath) return{text:'💀 日KD死亡交叉，空方接手，風險偏高謹慎評估。',color:'#166534'};
-  if(isHigh&&dWeak) return{text:'🔴 高檔超買＋多方能量遞減，位置偏高需謹慎。',color:'#166534'};
+  if(isHigh&&dWeak) return{text:'🟢 高檔超買＋多方能量遞減，位置偏高需謹慎。',color:'#166534'};
   if(isHigh) return{text:'⚠️ 日KD高檔超買，位置偏高需謹慎。',color:'#854f0b'};
   if(dExit) return{text:'💀 日MACD多方力竭，留意風險控管。',color:'#166534'};
   if(dMixed) return{text:'📊 能量中斷，方向不明，持續觀察。',color:'var(--text2)'};
