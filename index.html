@@ -4068,7 +4068,10 @@ function renderHotVolCard(el,hotStocks){
       <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}　<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
       <div style="font-size:11px;color:var(--text3);margin-top:2px">今日成交量：${fmtVol(s.todayVol)}</div>
     </div>
-    <div style="font-size:14px;font-weight:700;color:#b45309">量比 ${s.volRatio}x</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-size:14px;font-weight:700;color:#b45309">量比 ${s.volRatio}x</div>
+      <div onclick="event.stopPropagation();tW('${s.code}','${s.name}',0,'');this.textContent=LS.get('watch').some(w=>w.sym==='${s.code}')?'★':'☆';" style="font-size:20px;color:#b45309;cursor:pointer;line-height:1">${(typeof LS!=='undefined'&&LS.get('watch').some(w=>w.sym===s.code))?'★':'☆'}</div>
+    </div>
   </div>`).join('')}`;
 }
 
