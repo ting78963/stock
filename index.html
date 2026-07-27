@@ -3938,23 +3938,26 @@ async function loadHomeWatch(){
 
 
 
-async function loadHotVolStocks(){
+async function loadHotVolStocks(forceRefresh){
   const el=document.getElementById('stock-hotvol-card');
   if(!el)return;
   try{
-    // 檢查快取（同一天不重複抓）
+    // 檢查快取（同一天不重複抓，除非強制重新整理）
     const today=new Date();
     const dateStr=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
     const cacheKey='hotvol_cache_v4';
     const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
-    if(cached&&cached.date===dateStr){
-      renderHotVolCard(el,cached.hotStocks);
+    if(!forceRefresh && cached&&cached.date===dateStr){
+      renderHotVolCard(el,cached.hotStocks,cached.fetchTimeStr);
       return;
     }
 
+    // 13:30後為「收盤驗證模式」：重新掃描全部，只保留最終仍符合的股票
+    const isAfterClose = today.getHours()>13 || (today.getHours()===13 && today.getMinutes()>=30);
+
     el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div>
       <div style="padding:16px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs)">
-        <div id="hotvol-progress-text" style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:8px">分析成交量前200大個股中... 0/200</div>
+        <div id="hotvol-progress-text" style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:8px">${isAfterClose?'收盤驗證中...':'抓取成交量排行中...'}</div>
         <div style="width:100%;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
           <div id="hotvol-progress-bar" style="width:0%;height:100%;background:var(--wine);transition:width 0.2s"></div>
         </div>
@@ -3994,11 +3997,18 @@ async function loadHotVolStocks(){
       return;
     }
 
-    // ② 逐一抓每支股票近5日資料算量比+漲跌（節流，避免請求過快）
-    const hotStocks=[];
-    const totalCount=top100.length;
+    // 讀取今天已經確認過的股票（累積清單）
+    const prevCached=JSON.parse(localStorage.getItem(cacheKey)||'null');
+    const alreadyConfirmed = (prevCached&&prevCached.date===dateStr) ? (prevCached.hotStocks||[]) : [];
+    const confirmedCodes = new Set(alreadyConfirmed.map(s=>s.code));
+    // 盤中：排除已確認的，只分析新面孔；收盤驗證：全部重新分析
+    const newCandidates = isAfterClose ? top100 : top100.filter(s=>!confirmedCodes.has(s.code));
+
+    // ② 逐一抓每支股票近5日資料算量比+漲跌（節流避免請求過快）
+    const hotStocks = isAfterClose ? [] : [...alreadyConfirmed]; // 收盤驗證模式從空清單重新建立，盤中模式從已確認清單累加
+    const totalCount=newCandidates.length;
     let doneCount=0;
-    for(const stock of top100){
+    for(const stock of newCandidates){
       try{
         const startD=new Date();startD.setDate(startD.getDate()-15);
         const sD=`${startD.getFullYear()}-${String(startD.getMonth()+1).padStart(2,'0')}-${String(startD.getDate()).padStart(2,'0')}`;
@@ -4006,8 +4016,8 @@ async function loadHotVolStocks(){
         doneCount++;
         const progText=document.getElementById('hotvol-progress-text');
         const progBar=document.getElementById('hotvol-progress-bar');
-        if(progText) progText.textContent=`分析成交量前200大個股中... ${doneCount}/${totalCount}`;
-        if(progBar) progBar.style.width=`${Math.round(doneCount/totalCount*100)}%`;
+        if(progText) progText.textContent=isAfterClose?`收盤驗證中... ${doneCount}/${totalCount}`:`分析新增個股中... ${doneCount}/${totalCount}（已確認 ${alreadyConfirmed.length} 支跳過）`;
+        if(progBar) progBar.style.width=`${totalCount>0?Math.round(doneCount/totalCount*100):100}%`;
         if(!data||data.length<5)continue;
         const sorted=[...data].sort((a,b)=>a.date.localeCompare(b.date));
         const vols=sorted.map(r=>parseInt(r.Trading_Volume||0)/1000);
@@ -4027,26 +4037,35 @@ async function loadHotVolStocks(){
     }
     hotStocks.sort((a,b)=>b.volRatio-a.volRatio);
 
-    // 存快取
-    try{localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,hotStocks}));}catch(e){}
+    // 存快取（含抓取時間戳記）
+    const fetchTimeStr=`${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
+    try{localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,hotStocks,fetchTimeStr}));}catch(e){}
 
-    renderHotVolCard(el,hotStocks);
+    renderHotVolCard(el,hotStocks,fetchTimeStr);
   }catch(e){
     console.error('loadHotVolStocks error:',e);
     el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">載入失敗：${e.message||'未知錯誤'}</div>`;
   }
 }
 
-function renderHotVolCard(el,hotStocks){
+function renderHotVolCard(el,hotStocks,fetchTimeStr){
+  const now=new Date();
+  const isMarketHours = now.getHours()>=9 && (now.getHours()<13 || (now.getHours()===13 && now.getMinutes()<30));
+  const timeLabel = fetchTimeStr ? `${isMarketHours?'📡 盤中即時（僅記錄曾達標股票）':'✅ 收盤驗證完成（最終確認名單）'}　更新於 ${fetchTimeStr}` : '';
+  const header=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <div style="font-size:11px;font-weight:600;color:var(--wine)">🔥 今日爆量股</div>
+    <div onclick="loadHotVolStocks(true)" style="font-size:11px;color:var(--wine);display:flex;align-items:center;gap:3px;cursor:pointer">↺ 重新整理</div>
+  </div>
+  ${timeLabel?`<div style="font-size:10px;color:var(--text3);margin-bottom:8px">${timeLabel}</div>`:''}`;
   if(!hotStocks||!hotStocks.length){
-    el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">今日前200大成交量股票中，無「爆量上漲」訊號</div>`;
+    el.innerHTML=`${header}<div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">目前前200大成交量股票中，無「爆量上漲」訊號</div>`;
     return;
   }
-  el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股（成交量前200大中，量比≥1.5x且股價上漲）</div>
+  el.innerHTML=`${header}
   ${hotStocks.map(s=>`<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:#fff8e6;border:1px solid #f5c842;border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
     <div>
       <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}　<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
-      <div style="font-size:11px;color:var(--text3);margin-top:2px">今日成交量：${fmtVol(s.todayVol)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">目前成交量：${fmtVol(s.todayVol)}</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
       <div style="font-size:14px;font-weight:700;color:#b45309">量比 ${s.volRatio}x</div>
