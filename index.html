@@ -4068,63 +4068,8 @@ function renderHotVolCard(el,hotStocks){
       <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}　<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
       <div style="font-size:11px;color:var(--text3);margin-top:2px">今日成交量：${fmtVol(s.todayVol)}</div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px">
-      <div style="font-size:14px;font-weight:700;color:#b45309">量比 ${s.volRatio}x</div>
-      <div onclick="event.stopPropagation();tW('${s.code}','${s.name}',0,'');this.textContent=LS.get('watch').some(w=>w.sym==='${s.code}')?'★':'☆';" style="font-size:20px;color:#b45309;cursor:pointer;line-height:1">${(typeof LS!=='undefined'&&LS.get('watch').some(w=>w.sym===s.code))?'★':'☆'}</div>
-    </div>
+    <div style="font-size:14px;font-weight:700;color:#b45309">量比 ${s.volRatio}x</div>
   </div>`).join('')}`;
-}
-
-async function computeFiveDaySummaryFor(code, priceData){
-  try{
-    const startDate=getStartDate90();
-    const instData=await fmFetchExtra('TaiwanStockInstitutionalInvestorsBuySell', code, startDate);
-    const instMap={};
-    (instData||[]).forEach(r=>{
-      const d=r.date; if(!instMap[d]) instMap[d]={f:0,g:0,t:0,dealer:0,totalVol:0};
-      const net=(parseInt(r.buy||0)-parseInt(r.sell||0))/1000;
-      const n=r.name||'';
-      if((n==='Foreign_Investor'||n.includes('外資'))&&!n.includes('自營')) instMap[d].f+=net;
-      else if(n==='Investment_Trust'||n.includes('投信')) instMap[d].t+=net;
-      else if(n.includes('自營')) instMap[d].dealer+=net;
-    });
-    (priceData||[]).forEach(r=>{
-      if(instMap[r.date]) instMap[r.date].totalVol=parseInt(r.Trading_Volume||0)/1000;
-    });
-    const instDays=Object.keys(instMap).sort().slice(-10).map(date=>{
-      const m=instMap[date];
-      const totalVol=m.totalVol||0;
-      const priceRow=(priceData||[]).find(r=>r.date===date);
-      const changePct=priceRow?((parseFloat(priceRow.spread||0)/parseFloat(priceRow.close||1))*100):0;
-      const dates5=Object.keys(instMap).sort().slice(-6,-1);
-      const avg5=dates5.length>0?dates5.reduce((s,d)=>s+(instMap[d]?.totalVol||0),0)/dates5.length:0;
-      const volRatio=avg5>0?totalVol/avg5:1;
-      return{date:date.slice(5),f:m.f||0,g:0,t:m.t||0,dealer:m.dealer||0,totalVol,changePct,volRatio:Math.round(volRatio*100)/100};
-    });
-    function calcStreakLocal(arr){
-      if(!arr||!arr.length) return{streak:0,dir:0};
-      const last=arr[arr.length-1];
-      const dir=last>0?1:last<0?-1:0;
-      if(!dir) return{streak:0,dir:0};
-      let streak=0;
-      for(let i=arr.length-1;i>=0;i--){ if(dir===1&&arr[i]>0)streak++; else if(dir===-1&&arr[i]<0)streak++; else break; }
-      return{streak,dir};
-    }
-    const fStrk=calcStreakLocal(instDays.map(d=>d.f));
-    const tStrk=calcStreakLocal(instDays.map(d=>d.t));
-    const dayOHLC=(priceData||[]).sort((a,b)=>a.date.localeCompare(b.date)).map(r=>({
-      close:parseFloat(r.close)||0,
-      high:parseFloat(r.max||r.high||r.close)||0,
-      low:parseFloat(r.min||r.low||r.close)||0
-    }));
-    if(dayOHLC.length<=30 || instDays.length<3) return null;
-    const dKDraw=calcKD(dayOHLC,9);
-    const dMACDraw=calcMACD(dayOHLC,12,26,9);
-    const dKHist=dKDraw.hist.slice(-5).map(x=>x.k);
-    const dDHist=dKDraw.hist.slice(-5).map(x=>x.d);
-    const dMHist=(dMACDraw.histArr5||dMACDraw.histArr||[]).slice(-5);
-    return build5DaySummary(instDays,fStrk,tStrk,dKHist,dDHist,dMHist);
-  }catch(e){return null;}
 }
 
 async function loadWatchVcpStatus(){
@@ -4155,53 +4100,7 @@ async function loadWatchVcpStatus(){
         const isNearBreak = pivotRef>0 && a.vcp.status!=='broken_contraction' && a.cur >= pivotRef*0.975 && a.cur < pivotRef;
         const isTracking = !!a.vcp.breakoutTrack && !a.vcp.breakoutTrack.broken;
         const trackDayCount = a.vcp.breakoutTrack ? a.vcp.breakoutTrack.dayCount : null;
-
-        // 五天綜合判斷（只在有型態訊號時才抓，節省請求）
-        let summaryLevel='neutral'; // positive/neutral/negative
-        const hasVcpSignal = isTracking || a.vcp.status==='just_broke' || a.vcp.status==='final_contraction' || a.vcp.status==='contracting' || isNearBreak;
-        if(hasVcpSignal){
-          const fds=await computeFiveDaySummaryFor(w.sym, raw.data);
-          if(fds){
-            const goodCount=[fds.chipIcon,fds.volIcon,fds.macdIcon,fds.kdIcon].filter(i=>i==='✓').length;
-            const badCount=[fds.chipIcon,fds.volIcon,fds.macdIcon,fds.kdIcon].filter(i=>i==='✕').length;
-            if(badCount>=1) summaryLevel='negative';
-            else if(goodCount>=2) summaryLevel='positive';
-            else summaryLevel='neutral';
-          }
-        }
-
-        // 五層分類邏輯
-        let tier;
-        if(trackDayCount===1){
-          tier='super'; // 突破第1天，無條件超級強勢
-        } else if(!isTracking && a.vcp.status!=='final_contraction' && a.vcp.status!=='contracting' && !isNearBreak){
-          tier='gone'; // 沒有任何VCP型態
-        } else if(isTracking){
-          // 追蹤中的細分：判斷是否為VCP警示型態（帶量回檔/盤整過久）
-          const bt=a.vcp.breakoutTrack;
-          const isDownDay=a.dayChg<0;
-          const volHighNow=a.volR>=1.5;
-          const madeNewHighNow=bt.highSinceBreak&&a.cur>=bt.highSinceBreak*0.999;
-          const isWarnVcp = (isDownDay&&volHighNow) || (trackDayCount>=6&&!madeNewHighNow);
-          if(isWarnVcp || summaryLevel==='negative'){
-            tier='warn';
-          } else if(summaryLevel==='positive'){
-            tier='super';
-          } else {
-            tier='hold';
-          }
-        } else {
-          tier='brewing'; // 即將突破/收縮整理中
-        }
-
-        if(idx>=0){
-          wlNow[idx].vcpStatus=a.vcp.status;
-          wlNow[idx].isNearBreak=isNearBreak;
-          wlNow[idx].isTracking=isTracking;
-          wlNow[idx].trackDayCount=trackDayCount;
-          wlNow[idx].tier=tier;
-          LS.set('watch',wlNow);
-        }
+        if(idx>=0){ wlNow[idx].vcpStatus=a.vcp.status; wlNow[idx].isNearBreak=isNearBreak; wlNow[idx].isTracking=isTracking; wlNow[idx].trackDayCount=trackDayCount; LS.set('watch',wlNow); }
       }
     }catch(e){console.error('watchvcp scan error:',w.sym,e);}
     doneCount++;
@@ -4225,41 +4124,61 @@ function renderWatchVcpCard(){
   const vcpEl=document.getElementById('stock-vcp-alert');
   if(!vcpEl)return;
   const wl=LS.get('watch')||[];
-  const superList=wl.filter(w=>w.tier==='super');
-  const holdList=wl.filter(w=>w.tier==='hold');
-  const warnList=wl.filter(w=>w.tier==='warn');
-  const brewList=wl.filter(w=>w.tier==='brewing');
-  const goneList=wl.filter(w=>w.tier==='gone');
+  const brokeList=wl.filter(w=>w.vcpStatus==='just_broke' && !w.isTracking);
+  const trackingList=wl.filter(w=>w.isTracking);
+  const nearList=wl.filter(w=>!w.isTracking && w.vcpStatus!=='just_broke' && (w.vcpStatus==='final_contraction' || w.isNearBreak));
+  const contractingList=wl.filter(w=>!w.isTracking && w.vcpStatus==='contracting' && !w.isNearBreak);
 
   const header=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <div style="font-size:13px;font-weight:600;color:var(--wine)">⭐ 自選股狀態</div>
     <div onclick="loadWatchVcpStatus()" style="font-size:11px;color:var(--wine);display:flex;align-items:center;gap:3px;cursor:pointer">↺ 更新</div>
   </div>`;
 
-  if(!superList.length && !holdList.length && !warnList.length && !brewList.length && !goneList.length){
-    vcpEl.innerHTML=`<div style="background:var(--bg2);border-radius:12px;border:0.5px solid var(--border);padding:14px 16px">${header}<div style="text-align:center;color:var(--text3);font-size:12px;padding:8px 0">尚未掃描或無自選股資料</div></div>`;
+  if(!brokeList.length && !trackingList.length && !nearList.length && !contractingList.length){
+    vcpEl.innerHTML=`<div style="background:var(--bg2);border-radius:12px;border:0.5px solid var(--border);padding:14px 16px">${header}<div style="text-align:center;color:var(--text3);font-size:12px;padding:8px 0">目前自選股無VCP相關訊號</div></div>`;
     return;
   }
-
-  const dayLabel=w=>w.trackDayCount?`　突破第${w.trackDayCount}天`:'';
-  const renderGroup=(title,color,bg,list)=>{
-    if(!list.length) return '';
-    return `
-    <div style="font-size:11px;font-weight:600;color:${color};margin-bottom:6px">${title}</div>
+  let body='';
+  if(brokeList.length){
+    body+=`
+    <div style="font-size:11px;font-weight:600;color:var(--red);margin-bottom:6px">🚀 突破爆發</div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
-    ${list.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:${bg};border-radius:8px;padding:8px 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
-        <span style="font-size:13px;color:var(--text)">${w.sym} ${w.name||''}${dayLabel(w)}</span>
+    ${brokeList.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:var(--rbg);border-radius:8px;padding:8px 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:13px;color:var(--text)">${w.sym} ${w.name||''}</span>
+        <span style="font-size:11px;color:var(--red);font-weight:600">突破爆發</span>
       </div>`).join('')}
     </div>`;
-  };
-
-  let body='';
-  body+=renderGroup('🔥 超級強勢，優先關注股票','var(--red)','var(--rbg)',superList);
-  body+=renderGroup('🔴 動能延續，持續觀察','#e05d38','#fff3ee',holdList);
-  body+=renderGroup('⚠️ 賣壓浮現，謹慎追蹤','var(--amber)','var(--abg)',warnList);
-  body+=renderGroup('⚡ 型態醞釀，即將突破','var(--green)','var(--gbg)',brewList);
-  body+=renderGroup('🗑️ 型態消失，建議檢視','var(--text3)','var(--bg2)',goneList);
-
+  }
+  if(trackingList.length){
+    body+=`
+    <div style="font-size:11px;font-weight:600;color:#e05d38;margin-bottom:6px">📊 追蹤中</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+    ${trackingList.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:#fff3ee;border-radius:8px;padding:8px 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:13px;color:var(--text)">${w.sym} ${w.name||''}</span>
+        <span style="font-size:11px;color:#e05d38;font-weight:600">突破第${w.trackDayCount||''}天</span>
+      </div>`).join('')}
+    </div>`;
+  }
+  if(nearList.length){
+    body+=`
+    <div style="font-size:11px;font-weight:600;color:var(--amber);margin-bottom:6px">◈ 即將突破</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+    ${nearList.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:var(--abg);border-radius:8px;padding:8px 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:13px;color:var(--text)">${w.sym} ${w.name||''}</span>
+        <span style="font-size:11px;color:var(--amber);font-weight:600">即將突破</span>
+      </div>`).join('')}
+    </div>`;
+  }
+  if(contractingList.length){
+    body+=`
+    <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:6px">🟢 收縮整理中</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+    ${contractingList.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:var(--gbg);border-radius:8px;padding:8px 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:13px;color:var(--text)">${w.sym} ${w.name||''}</span>
+        <span style="font-size:11px;color:var(--green);font-weight:600">整理中</span>
+      </div>`).join('')}
+    </div>`;
+  }
   vcpEl.innerHTML=`<div style="background:var(--bg2);border-radius:12px;border:0.5px solid var(--border);padding:14px 16px">${header}${body}</div>`;
 }
 
