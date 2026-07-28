@@ -4015,7 +4015,7 @@ async function loadHotVolStocks(forceRefresh){
           code:row.Code,
           name:row.Name,
           todayVol:parseFloat(String(row.TradeVolume||'0').replace(/,/g,''))/1000
-        })).filter(r=>r.todayVol>0 && !/^00/.test(r.code)); // 排除00開頭的ETF
+        })).filter(r=>r.todayVol>0 && !/^00/.test(r.code) && /^\d{4}$/.test(r.code)); // 排除00開頭ETF與特別股(非4碼純數字)
         parsed.sort((a,b)=>b.todayVol-a.todayVol);
         top100=parsed.slice(0,200);
       }
@@ -4030,7 +4030,7 @@ async function loadHotVolStocks(forceRefresh){
       const fbRes=await fetch(fallbackUrl);
       const fbJson=await fbRes.json();
       if(fbJson.data&&fbJson.data.length){
-        top100=fbJson.data.slice(0,20).map(row=>({code:row[1],name:row[2],todayVol:parseInt(String(row[3]).replace(/,/g,''))/1000})).filter(r=>!/^00/.test(r.code));
+        top100=fbJson.data.slice(0,20).map(row=>({code:row[1],name:row[2],todayVol:parseInt(String(row[3]).replace(/,/g,''))/1000})).filter(r=>!/^00/.test(r.code) && /^\d{4}$/.test(r.code));
       }
     }
     if(!top100.length){
