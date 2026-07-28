@@ -4035,7 +4035,24 @@ async function loadHotVolStocks(forceRefresh){
         const chgPct=prevClose>0?((todayClose-prevClose)/prevClose*100):0;
         const isUp=chgPct>0;
         if(volRatio>=1.5&&isUp){
-          hotStocks.push({...stock,volRatio:Math.round(volRatio*100)/100,chgPct:Math.round(chgPct*100)/100});
+          // 對符合爆量條件的股票，額外做VCP分析
+          let vcpInfo=null;
+          try{
+            const closes=sorted.map(r=>parseFloat(r.close)||0);
+            const vols2=sorted.map(r=>parseInt(r.Trading_Volume||0)/1000);
+            const dates=sorted.map(r=>r.date);
+            const vcp=analyzeVCP(closes,vols2,stock.code,dates);
+            if(vcp.breakoutTrack && !vcp.breakoutTrack.broken){
+              vcpInfo={type:'tracking',dayCount:vcp.breakoutTrack.dayCount};
+            } else if(vcp.status==='just_broke'){
+              vcpInfo={type:'broke'};
+            } else if(vcp.status==='final_contraction'){
+              vcpInfo={type:'near'};
+            } else if(vcp.status==='contracting'){
+              vcpInfo={type:'contracting'};
+            }
+          }catch(e2){}
+          hotStocks.push({...stock,volRatio:Math.round(volRatio*100)/100,chgPct:Math.round(chgPct*100)/100,vcpInfo});
         }
         await new Promise(r=>setTimeout(r,150)); // 節流
       }catch(e){continue;}
@@ -4067,16 +4084,23 @@ function renderHotVolCard(el,hotStocks,fetchTimeStr){
     return;
   }
   el.innerHTML=`${header}
-  ${hotStocks.map(s=>`<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:#fff8e6;border:1px solid #f5c842;border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+  ${hotStocks.map(s=>{
+    const vcpBadge = !s.vcpInfo ? '' :
+      s.vcpInfo.type==='tracking' ? `<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#e05d38;color:#fff;font-weight:600;margin-left:6px">📊 突破第${s.vcpInfo.dayCount}天</span>` :
+      s.vcpInfo.type==='broke' ? `<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--red);color:#fff;font-weight:600;margin-left:6px">🚀 突破第1天</span>` :
+      s.vcpInfo.type==='near' ? `<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--abg);color:var(--amber);border:0.5px solid var(--abr);font-weight:600;margin-left:6px">⚡ 即將突破</span>` :
+      s.vcpInfo.type==='contracting' ? `<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--gbg);color:var(--green);border:0.5px solid var(--gbr);font-weight:600;margin-left:6px">🟢 收縮中</span>` : '';
+    return`<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:#fff8e6;border:1px solid #f5c842;border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
     <div>
-      <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}　<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
+      <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}　<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span>${vcpBadge}</div>
       <div style="font-size:11px;color:var(--text3);margin-top:2px">目前成交量：${fmtVol(s.todayVol)}</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
       <div style="font-size:14px;font-weight:700;color:#b45309">量比 ${s.volRatio}x</div>
       <div onclick="event.stopPropagation();tW('${s.code}','${s.name}',0,'');this.textContent=LS.get('watch').some(w=>w.sym==='${s.code}')?'★':'☆';" style="font-size:20px;color:#b45309;cursor:pointer;line-height:1">${(typeof LS!=='undefined'&&LS.get('watch').some(w=>w.sym===s.code))?'★':'☆'}</div>
     </div>
-  </div>`).join('')}`;
+  </div>`;
+  }).join('')}`;
 }
 
 async function computeFiveDaySummaryFor(code, priceData){
