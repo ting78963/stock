@@ -3460,16 +3460,19 @@ function getDayKPosition(dayKHist, dayDHist){
   const isGolden=prevK&&prevD&&prevK<=prevD&&lastK>lastD;
   const isDeath=prevK&&prevD&&prevK>=prevD&&lastK<lastD;
 
+  // 高檔鈍化判斷：K>80已維持3天以上且K仍≥D，視為強勢延續，不因差距縮小就警示
+  const highPlateau = dayKHist.length>=3 && dayKHist.slice(-3).every(v=>v>80) && k>=(d||0);
+
   if(isGolden&&k<20) return{text:'⚡ 低檔黃金交叉',badge:'cross',k,d};
   if(isGolden) return{text:'⚡ 黃金交叉',badge:'cross',k,d};
-  if(isDeath&&k>80) return{text:'💀 高檔死亡交叉',badge:'death',k,d};
+  if(isDeath&&k>80) return{text:'💀 高檔鈍化結束，死亡交叉，注意離場',badge:'death',k,d};
   if(isDeath) return{text:'💀 死亡交叉',badge:'death',k,d};
   if(k<20&&trend==='up') return{text:'🔴 超賣低檔，強烈關注',badge:'cross',k,d};
   if(k<20&&gapNarrowing) return{text:'🟡 超賣區，空方力竭中',badge:'near_cross',k,d};
   if(k<20) return{text:'超賣低檔',badge:'near_cross',k,d};
-  if(k>80&&trend==='down') return{text:'🟢 超買高檔，需謹慎',badge:'death',k,d};
-  if(k>80&&gapNarrowing) return{text:'🟡 高檔多方力竭中',badge:'near_death',k,d};
-  if(k>80) return{text:'高檔超買',badge:'near_death',k,d};
+  if(k>80&&highPlateau) return{text:'🔴 高檔鈍化，強勢延續',badge:'up',k,d};
+  if(k>80&&!isDeath&&k<(d||0)) return{text:'🟢 超買高檔，需謹慎',badge:'death',k,d};
+  if(k>80) return{text:'高檔超買，觀察是否鈍化',badge:'near_death',k,d};
   if(k>=20&&k<80&&trend==='up'&&k>=(d||0)) return{text:'正常區間偏多',badge:'up',k,d};
   if(k>=20&&k<80&&trend==='down'&&k<(d||100)) return{text:'正常區間偏空',badge:'down',k,d};
   if(gapNarrowing&&k<(d||100)) return{text:'空方力竭，K往D靠近',badge:'near_cross',k,d};
@@ -3665,8 +3668,10 @@ function build5DaySummary(instDays,fStreak,tStreak,dKHist,dDHist,dMHist){
   if(dKHist&&dKHist.length>=2){
     const kLast=dKHist[dKHist.length-1],kPrev=dKHist[dKHist.length-2];
     const dLast=dDHist[dDHist.length-1];
+    const highPlateau5d = dKHist.length>=3 && dKHist.slice(-3).every(v=>v>80) && kLast>=dLast;
     if(kLast<20&&kLast>kPrev){kdText='日KD超賣區向上';kdIcon='✓';}
-    else if(kLast>80&&kLast<kPrev){kdText='日KD超買區向下';kdIcon='✕';}
+    else if(highPlateau5d){kdText='日KD高檔鈍化，強勢延續';kdIcon='✓';}
+    else if(kLast>80&&kLast<dLast){kdText='日KD高檔轉弱（已死叉）';kdIcon='✕';}
     else if(kLast>=dLast&&kLast>kPrev){kdText='日KD正常區偏多';kdIcon='✓';}
     else if(kLast<dLast&&kLast<kPrev){kdText='日KD正常區偏空';kdIcon='△';}
     else {kdText='日KD區間震盪';kdIcon='－';}
