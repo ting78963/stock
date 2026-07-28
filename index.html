@@ -1694,6 +1694,14 @@ async function doSearch(){
   finally{btn.disabled=false;}
 }
 
+function autoAddFromHotVol(sym,name,vcpLabel){
+  let wl=LS.get('watch');
+  const exists=wl.findIndex(w=>w.sym===sym);
+  if(exists>=0) return; // 已存在，不重複加入
+  wl.unshift({sym,name,score:0,vcpStatus:'',added:new Date().toISOString(),source:'auto',vcpLabel:vcpLabel||''});
+  LS.set('watch',wl);
+}
+
 function tW(sym,name,score,vcpStatus){
   let wl=LS.get('watch');
   const i=wl.findIndex(w=>w.sym===sym);
@@ -2634,7 +2642,7 @@ function confirmAddPos(){
 
 
 function rW(){
-  const wl=LS.get('watch'),area=document.getElementById('wa');
+  let wl=LS.get('watch'),area=document.getElementById('wa');
   if(!wl.length){area.innerHTML=`<div class="empty"><div class="eico">⭐</div>尚未加入任何股票<br>分析後點「加入自選清單」</div>`;return;}
   // 修正名稱：如果名稱跟代號一樣，從 STOCK_MAP 補
   let updated=false;
@@ -2644,14 +2652,42 @@ function rW(){
       if(n&&n!==w.sym){w.name=n;updated=true;}
     }
   });
+  // 每日轉正機制：昨天以前source='auto'的項目，今天自動轉正（移除source標記）
+  const today=new Date();
+  const todayStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  wl.forEach(w=>{
+    if(w.source==='auto'&&w.added){
+      const addedDate=new Date(w.added);
+      const addedStr=`${addedDate.getFullYear()}-${String(addedDate.getMonth()+1).padStart(2,'0')}-${String(addedDate.getDate()).padStart(2,'0')}`;
+      if(addedStr!==todayStr){ delete w.source; delete w.vcpLabel; updated=true; }
+    }
+  });
   if(updated)LS.set('watch',wl);
-  area.innerHTML=wl.map(w=>{
+
+  const pendingList=wl.filter(w=>w.source==='auto');
+  const confirmedList=wl.filter(w=>w.source!=='auto');
+
+  const renderItem=(w,isPending)=>{
     const c=sc(w.score);
     const displayName=w.name&&w.name!==w.sym?w.name:w.sym;
-    const vcpBadge=w.vcpStatus==='final_contraction'?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff3eb;color:#f97316;border:0.5px solid #f9731640;font-weight:600;margin-left:6px">◈ 即將突破</span>`:w.vcpStatus==='just_broke'?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--rbg);color:var(--red);border:0.5px solid var(--rbr);font-weight:600;margin-left:6px">🚀 突破爆發</span>`:'';
+    const vcpBadge=isPending&&w.vcpLabel?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#e05d38;color:#fff;font-weight:600;margin-left:6px">📊 ${w.vcpLabel}</span>`:
+      w.vcpStatus==='final_contraction'?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff3eb;color:#f97316;border:0.5px solid #f9731640;font-weight:600;margin-left:6px">◈ 即將突破</span>`:
+      w.vcpStatus==='just_broke'?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--rbg);color:var(--red);border:0.5px solid var(--rbr);font-weight:600;margin-left:6px">🚀 突破爆發</span>`:'';
     const scoreStyle=w.score>=70?'background:#f5c842;color:#fff;font-weight:700;border:none':`background:${c}18;color:${c};border:0.5px solid ${c}40`;
     return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}${vcpBadge}</div><div class="lna">${displayName}</div></div><div class="lr"><div class="spill" style="${scoreStyle}">${w.score}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
-  }).join('');
+  };
+
+  let html='';
+  if(pendingList.length){
+    html+=`<div style="font-size:11px;font-weight:600;color:#e05d38;letter-spacing:.08em;margin-bottom:8px;padding:0 2px">⭐ 今日新增（爆量+VCP自動偵測，隔天自動轉正）</div>`;
+    html+=pendingList.map(w=>renderItem(w,true)).join('');
+    if(confirmedList.length) html+=`<div style="height:0.5px;background:var(--border);margin:14px 0"></div>`;
+  }
+  if(confirmedList.length){
+    if(pendingList.length) html+=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px;padding:0 2px">自選股</div>`;
+    html+=confirmedList.map(w=>renderItem(w,false)).join('');
+  }
+  area.innerHTML=html;
 }
 function rmW(sym){LS.set('watch',LS.get('watch').filter(w=>w.sym!==sym));rW();}
 function gs(sym){document.getElementById('ti').value=sym;showPage('stock',null,'nav-stock');setTimeout(()=>doSearch(),50);}
@@ -3979,7 +4015,7 @@ async function loadHotVolStocks(forceRefresh){
           code:row.Code,
           name:row.Name,
           todayVol:parseFloat(String(row.TradeVolume||'0').replace(/,/g,''))/1000
-        })).filter(r=>r.todayVol>0);
+        })).filter(r=>r.todayVol>0 && !/^00/.test(r.code)); // 排除00開頭的ETF
         parsed.sort((a,b)=>b.todayVol-a.todayVol);
         top100=parsed.slice(0,200);
       }
@@ -3994,7 +4030,7 @@ async function loadHotVolStocks(forceRefresh){
       const fbRes=await fetch(fallbackUrl);
       const fbJson=await fbRes.json();
       if(fbJson.data&&fbJson.data.length){
-        top100=fbJson.data.slice(0,20).map(row=>({code:row[1],name:row[2],todayVol:parseInt(String(row[3]).replace(/,/g,''))/1000}));
+        top100=fbJson.data.slice(0,20).map(row=>({code:row[1],name:row[2],todayVol:parseInt(String(row[3]).replace(/,/g,''))/1000})).filter(r=>!/^00/.test(r.code));
       }
     }
     if(!top100.length){
@@ -4052,6 +4088,11 @@ async function loadHotVolStocks(forceRefresh){
               vcpInfo={type:'contracting'};
             }
           }catch(e2){}
+          // 同時符合VCP型態，自動加入自選清單（今日新增區）
+          if(vcpInfo && typeof autoAddFromHotVol==='function'){
+            const labelMap={tracking:`突破第${vcpInfo.dayCount}天`,broke:'突破第1天',near:'即將突破',contracting:'收縮中'};
+            autoAddFromHotVol(stock.code,stock.name,labelMap[vcpInfo.type]||'');
+          }
           hotStocks.push({...stock,volRatio:Math.round(volRatio*100)/100,chgPct:Math.round(chgPct*100)/100,vcpInfo});
         }
         await new Promise(r=>setTimeout(r,150)); // 節流
