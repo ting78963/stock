@@ -4064,7 +4064,9 @@ async function loadHotVolStocks(forceRefresh){
         const vols=sorted.map(r=>parseInt(r.Trading_Volume||0)/1000);
         const last5=vols.slice(-6,-1); // 排除今天，取前5天
         const avg5=last5.length>0?last5.reduce((a,b)=>a+b,0)/last5.length:0;
-        const volRatio=avg5>0?stock.todayVol/avg5:0;
+        // 統一用FinMind自己最新一筆資料的成交量與收盤價，避免跟TWSE資料日期不同步
+        const latestVol=vols[vols.length-1]||0;
+        const volRatio=avg5>0?latestVol/avg5:0;
         // 今日漲跌：今日收盤 vs 昨日收盤
         const todayClose=parseFloat(sorted[sorted.length-1]?.close||0);
         const prevClose=parseFloat(sorted[sorted.length-2]?.close||0);
@@ -4093,7 +4095,7 @@ async function loadHotVolStocks(forceRefresh){
             const labelMap={tracking:`突破第${vcpInfo.dayCount}天`,broke:'突破第1天',near:'即將突破',contracting:'收縮中'};
             autoAddFromHotVol(stock.code,stock.name,labelMap[vcpInfo.type]||'');
           }
-          hotStocks.push({...stock,volRatio:Math.round(volRatio*100)/100,chgPct:Math.round(chgPct*100)/100,vcpInfo});
+          hotStocks.push({...stock,todayVol:latestVol,volRatio:Math.round(volRatio*100)/100,chgPct:Math.round(chgPct*100)/100,vcpInfo});
         }
         await new Promise(r=>setTimeout(r,150)); // 節流
       }catch(e){continue;}
