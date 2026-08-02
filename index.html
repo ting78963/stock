@@ -4196,10 +4196,13 @@ async function loadHotVolStocksClose(forceRefresh){
     }
 
     // ② 篩選：排除ETF/特別股/興櫃/金融/觀光餐旅/貿易百貨/建材營造，只留上漲的股票
-    const upStocks = allStocks.filter(s=>{
+    const filtered = allStocks.filter(s=>{
       if(shouldExcludeStock(s.code)) return false;
       return s.chgPct>0;
     });
+    // 排除完的乾淨名單，依成交量排序，取前200名（確保拿到的200支都是真正有效的股票）
+    filtered.sort((a,b)=>b.todayVol-a.todayVol);
+    const upStocks = filtered.slice(0,200);
 
     // ③ 逐一抓每支股票近5日資料算量比（節流）
     const vcpSignalStocks=[];
