@@ -567,13 +567,15 @@ const LS={
 
 // ── 全市場股票清單（從FinMind載入）──
 let STOCK_MAP = {}; // {代號: 名稱}
+let STOCK_TYPE_MAP = {}; // {代號: 'twse'/'tpex'/'emerging'}
 
 async function loadStockList() {
   // 先從 localStorage 取快取
   try {
-    const cached = JSON.parse(localStorage.getItem('stock_list_cache'));
+    const cached = JSON.parse(localStorage.getItem('stock_list_cache_v2'));
     if(cached && cached.date === new Date().toISOString().slice(0,10) && cached.data) {
       STOCK_MAP = cached.data;
+      STOCK_TYPE_MAP = cached.typeData || {};
       return;
     }
   } catch(e){}
@@ -586,12 +588,14 @@ async function loadStockList() {
       d.data.forEach(s=>{
         if(s.stock_id && s.stock_name) {
           STOCK_MAP[s.stock_id] = s.stock_name;
+          if(s.type) STOCK_TYPE_MAP[s.stock_id] = s.type;
         }
       });
       // 存入 localStorage
-      localStorage.setItem('stock_list_cache', JSON.stringify({
+      localStorage.setItem('stock_list_cache_v2', JSON.stringify({
         date: new Date().toISOString().slice(0,10),
-        data: STOCK_MAP
+        data: STOCK_MAP,
+        typeData: STOCK_TYPE_MAP
       }));
     }
   } catch(e){}
@@ -4016,16 +4020,22 @@ async function loadHotVolStocks(forceRefresh){
       </div>`;
 
     // ① 抓即時快照（全市場，一次呼叫）
+    if(Object.keys(STOCK_MAP).length===0) await loadStockList();
     const snapshot = await fetchRealtimeSnapshot();
     if(!snapshot.length){
       el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">即時快照無資料，稍後再試</div>`;
       return;
     }
 
-    // ② 篩選：排除ETF/特別股，只留上漲的股票
+    // ② 篩選：排除ETF/特別股/金融股/興櫃，只留上漲的股票
     const upStocks = snapshot.filter(r=>{
       const code=r.stock_id;
-      return code && !/^00/.test(code) && /^\d{4}$/.test(code) && (r.change_rate||0)>0;
+      if(!code || /^00/.test(code) || !/^\d{4}$/.test(code)) return false;
+      const num=parseInt(code);
+      if(num>=2801 && num<=2891) return false; // 排除金融保險類股
+      if(STOCK_TYPE_MAP[code]==='emerging') return false; // 排除興櫃
+      if(!STOCK_MAP[code]) return false; // 對照表查不到名稱的，一併排除（多半是興櫃或已下市）
+      return (r.change_rate||0)>0;
     });
 
     // ③ 逐一抓每支股票近5日資料算量比（節流）
@@ -4277,9 +4287,9 @@ async function loadWatchVcpStatus(){
           const lastRow=raw.data[raw.data.length-1];
           const rtVolZhang=(rt.total_volume||0)/1000;
           if(lastRow.date===todayStr){
-            lastRow.close=rt.close; lastRow.max=rt.high; lastRow.min=rt.low; lastRow.Trading_Volume=rtVolZhang*1000;
+            lastRow.close=rt.close; lastRow.high=rt.high; lastRow.low=rt.low; lastRow.vol=rtVolZhang;
           } else {
-            raw.data.push({date:todayStr,close:rt.close,open:rt.open,max:rt.high,min:rt.low,Trading_Volume:rtVolZhang*1000});
+            raw.data.push({date:todayStr,close:rt.close,open:rt.open,high:rt.high,low:rt.low,vol:rtVolZhang});
           }
         }
         const a=analyze(raw);
