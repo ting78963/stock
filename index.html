@@ -568,14 +568,16 @@ const LS={
 // ── 全市場股票清單（從FinMind載入）──
 let STOCK_MAP = {}; // {代號: 名稱}
 let STOCK_TYPE_MAP = {}; // {代號: 'twse'/'tpex'/'emerging'}
+let STOCK_INDUSTRY_MAP = {}; // {代號: '半導體業'/'觀光餐旅'/...}
 
 async function loadStockList() {
   // 先從 localStorage 取快取
   try {
-    const cached = JSON.parse(localStorage.getItem('stock_list_cache_v2'));
+    const cached = JSON.parse(localStorage.getItem('stock_list_cache_v3'));
     if(cached && cached.date === new Date().toISOString().slice(0,10) && cached.data) {
       STOCK_MAP = cached.data;
       STOCK_TYPE_MAP = cached.typeData || {};
+      STOCK_INDUSTRY_MAP = cached.industryData || {};
       return;
     }
   } catch(e){}
@@ -589,13 +591,15 @@ async function loadStockList() {
         if(s.stock_id && s.stock_name) {
           STOCK_MAP[s.stock_id] = s.stock_name;
           if(s.type) STOCK_TYPE_MAP[s.stock_id] = s.type;
+          if(s.industry_category) STOCK_INDUSTRY_MAP[s.stock_id] = s.industry_category;
         }
       });
       // 存入 localStorage
-      localStorage.setItem('stock_list_cache_v2', JSON.stringify({
+      localStorage.setItem('stock_list_cache_v3', JSON.stringify({
         date: new Date().toISOString().slice(0,10),
         data: STOCK_MAP,
-        typeData: STOCK_TYPE_MAP
+        typeData: STOCK_TYPE_MAP,
+        industryData: STOCK_INDUSTRY_MAP
       }));
     }
   } catch(e){}
@@ -603,6 +607,17 @@ async function loadStockList() {
 
 function getStockName(code) {
   return STOCK_MAP[code] || code;
+}
+
+// 判斷是否應排除（ETF/特別股/興櫃/金融保險/觀光餐旅/貿易百貨/建材營造）
+function shouldExcludeStock(code){
+  if(!code || /^00/.test(code) || !/^\d{4}$/.test(code)) return true;
+  if(STOCK_TYPE_MAP[code]==='emerging') return true;
+  if(!STOCK_MAP[code]) return true;
+  const industry=STOCK_INDUSTRY_MAP[code]||'';
+  const excludedKeywords=['金融保險','觀光餐旅','貿易百貨','建材營造','食品工業','造紙工業','文化創意'];
+  if(excludedKeywords.some(k=>industry.includes(k))) return true;
+  return false;
 }
 
 function findStockByName(name) {
@@ -4027,14 +4042,9 @@ async function loadHotVolStocks(forceRefresh){
       return;
     }
 
-    // ② 篩選：排除ETF/特別股/金融股/興櫃，只留上漲的股票
+    // ② 篩選：排除ETF/特別股/興櫃/金融/觀光餐旅/貿易百貨/建材營造，只留上漲的股票
     const upStocks = snapshot.filter(r=>{
-      const code=r.stock_id;
-      if(!code || /^00/.test(code) || !/^\d{4}$/.test(code)) return false;
-      const num=parseInt(code);
-      if(num>=2801 && num<=2891) return false; // 排除金融保險類股
-      if(STOCK_TYPE_MAP[code]==='emerging') return false; // 排除興櫃
-      if(!STOCK_MAP[code]) return false; // 對照表查不到名稱的，一併排除（多半是興櫃或已下市）
+      if(shouldExcludeStock(r.stock_id)) return false;
       return (r.change_rate||0)>0;
     });
 
