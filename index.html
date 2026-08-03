@@ -4100,7 +4100,7 @@ async function loadHotVolStocks(forceRefresh){
         const vols=sorted.map(r=>parseInt(r.Trading_Volume||0)/1000);
         const last5=vols.slice(-5); // 近5個交易日均量（歷史資料不含今天）
         const avg5=last5.length>0?last5.reduce((a,b)=>a+b,0)/last5.length:0;
-        const todayVolZhang=(stock.total_volume||0)/1000; // 即時累積量，股轉張
+        const todayVolZhang=stock.total_volume||0; // 即時快照的total_volume本身就是「張」為單位，不需要再除以1000
         const volRatio=avg5>0?todayVolZhang/avg5:0;
         if(volRatio<1.5)continue;
 
