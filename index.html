@@ -622,7 +622,7 @@ function shouldExcludeStock(code){
   if(STOCK_TYPE_MAP[code]==='emerging') return true;
   if(!STOCK_MAP[code]) return true;
   const industry=STOCK_INDUSTRY_MAP[code]||'';
-  const excludedKeywords=['金融保險','觀光餐旅','貿易百貨','建材營造','食品工業','造紙工業','文化創意'];
+  const excludedKeywords=['金融保險','觀光餐旅','貿易百貨','建材營造','食品工業','造紙工業','文化創意','生技醫療','航運'];
   if(excludedKeywords.some(k=>industry.includes(k))) return true;
   return false;
 }
