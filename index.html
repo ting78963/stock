@@ -852,12 +852,30 @@ async function fmFetch(dataset,stockId,startDate){
 }
 
 async function fetchRealtimeSnapshot(){
-  // 即時快照：data_id留空拿全市場（Sponsor限定）
+  const now=new Date();
+  const dateStr=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  const isTradingHours = now.getHours()>=9 && (now.getHours()<13 || (now.getHours()===13 && now.getMinutes()<30));
+  const cacheKey='realtime_snapshot_cache_v1';
+
+  // 非交易時間：優先使用今天的快取，不重新呼叫API
+  if(!isTradingHours){
+    try{
+      const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
+      if(cached && cached.date===dateStr && cached.data && cached.data.length>0){
+        return cached.data;
+      }
+    }catch(e){}
+  }
+
+  // 交易時間內，或非交易時間但還沒有今天的快取（例如第一次收盤後查詢）
   try{
     const url=`https://api.finmindtrade.com/api/v4/taiwan_stock_tick_snapshot?token=${FM_TOKEN}`;
     const r=await fetch(url);
     const d=await r.json();
-    if(d.status===200&&d.data&&d.data.length>0)return d.data;
+    if(d.status===200&&d.data&&d.data.length>0){
+      try{localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,data:d.data}));}catch(e){}
+      return d.data;
+    }
     return [];
   }catch(e){console.error('fetchRealtimeSnapshot error:',e);return [];}
 }
@@ -4067,7 +4085,7 @@ async function loadHotVolStocks(forceRefresh){
     let doneCount=0;
     for(const stock of upStocks){
       try{
-        const startD=new Date();startD.setDate(startD.getDate()-15);
+        const startD=new Date();startD.setMonth(startD.getMonth()-5); // 需至少60個交易日供VCP三段標準差計算，抓5個月確保足夠
         const sD=`${startD.getFullYear()}-${String(startD.getMonth()+1).padStart(2,'0')}-${String(startD.getDate()).padStart(2,'0')}`;
         const data=await fmFetchExtra('TaiwanStockPrice',stock.stock_id,sD);
         doneCount++;
@@ -4088,11 +4106,15 @@ async function loadHotVolStocks(forceRefresh){
         let vcpInfo=null;
         try{
           const closes=sorted.map(r=>parseFloat(r.close)||0);
-          closes.push(stock.close); // 加入今天即時價格
           const vols2=sorted.map(r=>parseInt(r.Trading_Volume||0)/1000);
-          vols2.push(todayVolZhang);
           const dates=sorted.map(r=>r.date);
-          dates.push(`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`);
+          const todayDateStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+          const snapshotIsToday = stock.date && stock.date.slice(0,10)===todayDateStr;
+          if(snapshotIsToday){
+            closes.push(stock.close); // 加入今天即時價格（只有快照真的是今天才注入）
+            vols2.push(todayVolZhang);
+            dates.push(todayDateStr);
+          }
           const vcp=analyzeVCP(closes,vols2,stock.stock_id,dates);
           if(vcp.breakoutTrack && !vcp.breakoutTrack.broken){
             vcpInfo={type:'tracking',dayCount:vcp.breakoutTrack.dayCount};
@@ -4211,7 +4233,7 @@ async function loadHotVolStocksClose(forceRefresh){
     let doneCount=0;
     for(const stock of upStocks){
       try{
-        const startD=new Date();startD.setDate(startD.getDate()-15);
+        const startD=new Date();startD.setMonth(startD.getMonth()-5); // 需至少60個交易日供VCP三段標準差計算，抓5個月確保足夠
         const sD=`${startD.getFullYear()}-${String(startD.getMonth()+1).padStart(2,'0')}-${String(startD.getDate()).padStart(2,'0')}`;
         const data=await fmFetchExtra('TaiwanStockPrice',stock.code,sD);
         doneCount++;
@@ -4428,13 +4450,13 @@ async function loadWatchVcpStatus(){
   }
   vcpEl.innerHTML=`<div style="background:var(--bg2);border-radius:12px;border:0.5px solid var(--border);padding:14px 16px">
     <div style="font-size:13px;font-weight:600;color:var(--wine);margin-bottom:12px">⭐ 自選股狀態</div>
-    <div id="watchvcp-progress-text" style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:8px">抓取即時快照中...</div>
+    <div id="watchvcp-progress-text" style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:8px">掃描自選股中... 0/${wl.length}</div>
     <div style="width:100%;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
       <div id="watchvcp-progress-bar" style="width:0%;height:100%;background:var(--wine);transition:width 0.2s"></div>
     </div>
   </div>`;
 
-  // 先抓一次即時快照，建立代號對照表，讓每支自選股都能用「當下」價量覆蓋歷史資料的最後一天
+  // 先抓一次即時快照，供後續「即將突破/收縮整理中」股票的盤中驗證使用（有快取，收盤後不重複呼叫）
   const snapshotArr = await fetchRealtimeSnapshot();
   const snapshotMap = {};
   snapshotArr.forEach(r=>{ if(r.stock_id) snapshotMap[r.stock_id]=r; });
@@ -4444,18 +4466,6 @@ async function loadWatchVcpStatus(){
     try{
       const raw=await fetchStock(w.sym);
       if(raw){
-        // 用即時快照覆蓋/新增「今天」這筆資料，讓VCP分析反映當下即時狀態
-        const rt=snapshotMap[w.sym];
-        if(rt && raw.data && raw.data.length){
-          const todayStr=`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
-          const lastRow=raw.data[raw.data.length-1];
-          const rtVolZhang=(rt.total_volume||0)/1000;
-          if(lastRow.date===todayStr){
-            lastRow.close=rt.close; lastRow.high=rt.high; lastRow.low=rt.low; lastRow.vol=rtVolZhang;
-          } else {
-            raw.data.push({date:todayStr,close:rt.close,open:rt.open,high:rt.high,low:rt.low,vol:rtVolZhang});
-          }
-        }
         const a=analyze(raw);
         const wlNow=LS.get('watch');
         const idx=wlNow.findIndex(x=>x.sym===w.sym);
@@ -4502,12 +4512,23 @@ async function loadWatchVcpStatus(){
           tier='brewing'; // 即將突破/收縮整理中
         }
 
+        // 只針對「即將突破/收縮整理中」的股票，額外用即時快照驗證是否已經在盤中站上pivot
+        let liveBrokeToday=false;
+        if(tier==='brewing' && pivotRef>0){
+          const rt=snapshotMap[w.sym];
+          if(rt && rt.close>=pivotRef){
+            tier='super';
+            liveBrokeToday=true;
+          }
+        }
+
         if(idx>=0){
           wlNow[idx].vcpStatus=a.vcp.status;
           wlNow[idx].isNearBreak=isNearBreak;
           wlNow[idx].isTracking=isTracking;
           wlNow[idx].trackDayCount=trackDayCount;
           wlNow[idx].tier=tier;
+          wlNow[idx].liveBrokeToday=liveBrokeToday;
           LS.set('watch',wlNow);
         }
       }
