@@ -4067,6 +4067,7 @@ async function loadHotVolStocks(forceRefresh){
     // ① 抓即時快照（全市場，一次呼叫）
     if(Object.keys(STOCK_MAP).length===0) await loadStockList();
     const snapshot = await fetchRealtimeSnapshot();
+    console.log('[爆量股偵錯] 即時快照筆數:', snapshot.length);
     if(!snapshot.length){
       el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">即時快照無資料，稍後再試</div>`;
       return;
@@ -4077,6 +4078,7 @@ async function loadHotVolStocks(forceRefresh){
       if(shouldExcludeStock(r.stock_id)) return false;
       return (r.change_rate||0)>0;
     });
+    console.log('[爆量股偵錯] 排除+上漲後剩:', upStocks.length, '筆範例:', snapshot.slice(0,3));
 
     // ③ 逐一抓每支股票近5日資料算量比（節流）
     const vcpSignalStocks=[];
@@ -4154,6 +4156,7 @@ async function loadHotVolStocks(forceRefresh){
     }
     vcpSignalStocks.sort((a,b)=>b.volRatio-a.volRatio);
     noVcpStocks.sort((a,b)=>b.volRatio-a.volRatio);
+    console.log('[爆量股偵錯] 最終結果 - VCP訊號:', vcpSignalStocks.length, '無型態:', noVcpStocks.length);
 
     const fetchTimeStr=`${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
     try{localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,vcpSignalStocks,noVcpStocks,fetchTimeStr}));}catch(e){}
