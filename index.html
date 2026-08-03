@@ -4561,9 +4561,14 @@ function renderWatchVcpCard(){
   const vcpEl=document.getElementById('stock-vcp-alert');
   if(!vcpEl)return;
   const wl=LS.get('watch')||[];
-  const superList=wl.filter(w=>w.tier==='super');
-  const holdList=wl.filter(w=>w.tier==='hold');
-  const warnList=wl.filter(w=>w.tier==='warn');
+  // 依突破天數排序（第1天在最上面，沒有天數的排最後）
+  const byDayCount=(a,b)=>{
+    const da=a.trackDayCount||999, db=b.trackDayCount||999;
+    return da-db;
+  };
+  const superList=wl.filter(w=>w.tier==='super').sort(byDayCount);
+  const holdList=wl.filter(w=>w.tier==='hold').sort(byDayCount);
+  const warnList=wl.filter(w=>w.tier==='warn').sort(byDayCount);
   const brewList=wl.filter(w=>w.tier==='brewing');
   const goneList=wl.filter(w=>w.tier==='gone');
 
@@ -4594,7 +4599,21 @@ function renderWatchVcpCard(){
   body+=renderGroup('🔴 動能延續，持續觀察','#e05d38','#fff3ee',holdList);
   body+=renderGroup('⚠️ 賣壓浮現，謹慎追蹤','var(--amber)','var(--abg)',warnList);
   body+=renderGroup('⚡ 型態醞釀，即將突破','var(--green)','var(--gbg)',brewList);
-  body+=renderGroup('🗑️ 型態消失，建議檢視','var(--text3)','var(--bg2)',goneList);
+
+  // 型態消失：摺疊顯示，展開後每支有垃圾桶按鈕可直接移除
+  if(goneList.length){
+    body+=`
+    <div onclick="document.getElementById('gone-list-body').style.display=document.getElementById('gone-list-body').style.display==='none'?'flex':'none';this.querySelector('.gone-arrow').textContent=this.querySelector('.gone-arrow').textContent==='▾'?'▴':'▾';" style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:6px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+      <span>🗑️ 型態消失，建議檢視（${goneList.length}）</span>
+      <span class="gone-arrow" style="font-size:12px">▾</span>
+    </div>
+    <div id="gone-list-body" style="display:none;flex-direction:column;gap:6px;margin-bottom:12px">
+    ${goneList.map(w=>`<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <span onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="font-size:13px;color:var(--text);flex:1">${w.sym} ${w.name||''}</span>
+        <span onclick="event.stopPropagation();rmW('${w.sym}');renderWatchVcpCard();" style="font-size:16px;color:var(--text3);cursor:pointer;padding:0 4px">🗑️</span>
+      </div>`).join('')}
+    </div>`;
+  }
 
   vcpEl.innerHTML=`<div style="background:var(--bg2);border-radius:12px;border:0.5px solid var(--border);padding:14px 16px">${header}${body}</div>`;
 }
