@@ -4117,9 +4117,11 @@ async function loadHotVolStocks(forceRefresh){
           }
           const vcp=analyzeVCP(closes,vols2,stock.stock_id,dates);
           if(vcp.breakoutTrack && !vcp.breakoutTrack.broken){
-            vcpInfo={type:'tracking',dayCount:vcp.breakoutTrack.dayCount};
-          } else if(vcp.status==='just_broke'){
-            vcpInfo={type:'broke'};
+            if(vcp.breakoutTrack.dayCount===1){
+              vcpInfo={type:'broke'}; // 第一天，歸類為突破爆發
+            } else {
+              vcpInfo={type:'tracking',dayCount:vcp.breakoutTrack.dayCount}; // 第二天以後才是追蹤中
+            }
           } else if(vcp.status==='final_contraction'){
             vcpInfo={type:'near'};
           } else if(vcp.status==='contracting'){
@@ -4133,6 +4135,7 @@ async function loadHotVolStocks(forceRefresh){
           todayVol:todayVolZhang,
           volRatio:Math.round(volRatio*100)/100,
           chgPct:Math.round((stock.change_rate||0)*100)/100,
+          price:stock.close||0,
           priceTier:priceTierLabel(stock.close||0),
           vcpInfo
         };
@@ -4256,9 +4259,11 @@ async function loadHotVolStocksClose(forceRefresh){
           const dates=sorted.map(r=>r.date);
           const vcp=analyzeVCP(closes,vols2,stock.code,dates);
           if(vcp.breakoutTrack && !vcp.breakoutTrack.broken){
-            vcpInfo={type:'tracking',dayCount:vcp.breakoutTrack.dayCount};
-          } else if(vcp.status==='just_broke'){
-            vcpInfo={type:'broke'};
+            if(vcp.breakoutTrack.dayCount===1){
+              vcpInfo={type:'broke'}; // 第一天，歸類為突破爆發
+            } else {
+              vcpInfo={type:'tracking',dayCount:vcp.breakoutTrack.dayCount}; // 第二天以後才是追蹤中
+            }
           } else if(vcp.status==='final_contraction'){
             vcpInfo={type:'near'};
           } else if(vcp.status==='contracting'){
@@ -4272,6 +4277,7 @@ async function loadHotVolStocksClose(forceRefresh){
           todayVol:stock.todayVol,
           volRatio:Math.round(volRatio*100)/100,
           chgPct:Math.round(stock.chgPct*100)/100,
+          price:stock.close,
           priceTier:priceTierLabel(stock.close),
           vcpInfo
         };
@@ -4312,14 +4318,15 @@ function priceTierLabel(price){
 }
 
 function stockBadgeHtml(s,tier){
-  return `<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:#fff8e6;border:1px solid #f5c842;border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+  return `<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:var(--rbg);border:1px solid var(--rbr);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
     <div>
-      <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}　<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
+      <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:2px">${s.price?`$${s.price}　`:''}<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
       <div style="font-size:11px;color:var(--text3);margin-top:2px">目前成交量：${fmtVol(s.todayVol)}</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
-      <div style="font-size:14px;font-weight:700;color:#b45309">量比 ${s.volRatio}x</div>
-      <div onclick="event.stopPropagation();tW('${s.code}','${s.name}',0,'');this.textContent=LS.get('watch').some(w=>w.sym==='${s.code}')?'★':'☆';" style="font-size:20px;color:#b45309;cursor:pointer;line-height:1">${(typeof LS!=='undefined'&&LS.get('watch').some(w=>w.sym===s.code))?'★':'☆'}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--red)">量比 ${s.volRatio}x</div>
+      <div onclick="event.stopPropagation();tW('${s.code}','${s.name}',0,'');this.textContent=LS.get('watch').some(w=>w.sym==='${s.code}')?'★':'☆';" style="font-size:20px;color:var(--red);cursor:pointer;line-height:1">${(typeof LS!=='undefined'&&LS.get('watch').some(w=>w.sym===s.code))?'★':'☆'}</div>
     </div>
   </div>`;
 }
