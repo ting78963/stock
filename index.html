@@ -4318,7 +4318,7 @@ function priceTierLabel(price){
 }
 
 function stockBadgeHtml(s,tier){
-  return `<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:var(--rbg);border:1px solid var(--rbr);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+  return `<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
     <div>
       <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}</div>
       <div style="font-size:13px;color:var(--text2);margin-top:2px">${s.price?`$${s.price}　`:''}<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
