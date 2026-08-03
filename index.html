@@ -499,12 +499,23 @@ html.font-xl{font-size:19px}
           <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">載入市場數值中...</div>
         </div>
         <!-- VCP訊號 + 今日爆量股（盤中，即時快照） -->
+        <div style="display:flex;align-items:center;gap:10px;margin:8px 0 14px">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.1em">盤中區塊</div>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
         <div id="stock-vcpsignal-card" style="margin-bottom:12px"></div>
         <div id="stock-hotvol-card" style="margin-bottom:12px">
           <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股（盤中）</div>
           <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 盤中查詢（即時快照）</div>
         </div>
 
+        <!-- 分隔線：盤中/盤後 -->
+        <div style="display:flex;align-items:center;gap:10px;margin:20px 0 14px">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.1em">盤後區塊</div>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
         <!-- VCP訊號 + 今日爆量股（盤後，TWSE收盤資料） -->
         <div id="stock-vcpsignal-card-close" style="margin-bottom:12px"></div>
         <div id="stock-hotvol-card-close" style="margin-bottom:12px">
@@ -2795,10 +2806,20 @@ function goHome(){
         <div id="stock-mkt-card" style="margin-bottom:12px">
           <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">載入市場數值中...</div>
         </div>
+        <div style="display:flex;align-items:center;gap:10px;margin:8px 0 14px">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.1em">盤中區塊</div>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
         <div id="stock-vcpsignal-card" style="margin-bottom:12px"></div>
         <div id="stock-hotvol-card" style="margin-bottom:12px">
           <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股（盤中）</div>
           <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 盤中查詢（即時快照）</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin:20px 0 14px">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.1em">盤後區塊</div>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
         </div>
         <div id="stock-vcpsignal-card-close" style="margin-bottom:12px"></div>
         <div id="stock-hotvol-card-close" style="margin-bottom:12px">
