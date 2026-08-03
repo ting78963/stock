@@ -4074,11 +4074,14 @@ async function loadHotVolStocks(forceRefresh){
     }
 
     // ② 篩選：排除ETF/特別股/興櫃/金融/觀光餐旅/貿易百貨/建材營造，只留上漲的股票
+    // 再加上金額≥5000萬、張數≥2000張的流動性門檻（用即時快照本身欄位，不額外耗費請求）
     const upStocks = snapshot.filter(r=>{
       if(shouldExcludeStock(r.stock_id)) return false;
-      return (r.change_rate||0)>0;
+      if((r.change_rate||0)<=0) return false;
+      if((r.total_amount||0)<50000000) return false; // 金額≥5000萬
+      if((r.total_volume||0)<2000) return false; // 張數≥2000張
+      return true;
     });
-    console.log('[爆量股偵錯] 排除+上漲後剩:', upStocks.length, '筆範例:', snapshot.slice(0,3));
 
     // ③ 逐一抓每支股票近5日資料算量比（節流）
     const vcpSignalStocks=[];
@@ -4156,7 +4159,6 @@ async function loadHotVolStocks(forceRefresh){
     }
     vcpSignalStocks.sort((a,b)=>b.volRatio-a.volRatio);
     noVcpStocks.sort((a,b)=>b.volRatio-a.volRatio);
-    console.log('[爆量股偵錯] 最終結果 - VCP訊號:', vcpSignalStocks.length, '無型態:', noVcpStocks.length);
 
     const fetchTimeStr=`${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
     try{localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,vcpSignalStocks,noVcpStocks,fetchTimeStr}));}catch(e){}
@@ -4210,6 +4212,7 @@ async function loadHotVolStocksClose(forceRefresh){
             code:row.Code,
             name:row.Name,
             todayVol:parseFloat(String(row.TradeVolume||'0').replace(/,/g,''))/1000,
+            todayAmount:parseFloat(String(row.TradeValue||'0').replace(/,/g,'')),
             close,
             chgPct
           };
@@ -4224,9 +4227,13 @@ async function loadHotVolStocksClose(forceRefresh){
     }
 
     // ② 篩選：排除ETF/特別股/興櫃/金融/觀光餐旅/貿易百貨/建材營造，只留上漲的股票
+    // 再加上金額≥5000萬、張數≥2000張的流動性門檻
     const filtered = allStocks.filter(s=>{
       if(shouldExcludeStock(s.code)) return false;
-      return s.chgPct>0;
+      if(s.chgPct<=0) return false;
+      if((s.todayAmount||0)<50000000) return false; // 金額≥5000萬
+      if((s.todayVol||0)<2000) return false; // 張數≥2000張
+      return true;
     });
     // 排除完的乾淨名單，依成交量排序，取前200名（確保拿到的200支都是真正有效的股票）
     filtered.sort((a,b)=>b.todayVol-a.todayVol);
