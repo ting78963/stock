@@ -942,7 +942,13 @@ function analyzeVCP(closes,vols,stockCode,dates){
   const s1=sdOf(closes.slice(-60,-40)),s2=sdOf(closes.slice(-40,-20)),s3=sdOf(closes.slice(-20));
   const prev20High=Math.max(...closes.slice(-21,-1));
   const cur=closes[n-1];
-  const justBroke=cur>prev20High*1.003;
+  const priceBroke=cur>prev20High*1.003;
+  // 量能確認：依Minervini原始方法論，突破當天量能須比前5日均量高出至少40%，價量必須同步才算完整確認的突破
+  const preBreakVols=vols.slice(-6,-1).filter(v=>v>0);
+  const avgVolBeforeBreak=preBreakVols.length>0?preBreakVols.reduce((a,b)=>a+b,0)/preBreakVols.length:0;
+  const todayVol=vols[n-1]||0;
+  const volConfirmed=avgVolBeforeBreak>0?todayVol>=avgVolBeforeBreak*1.4:false;
+  const justBroke=priceBroke&&volConfirmed;
   let breakDays=0;
   if(justBroke){for(let i=n-1;i>=Math.max(0,n-10);i--){if(closes[i]>Math.max(...closes.slice(Math.max(0,i-20),i))*1.003)breakDays++;else break;}}
   const vP1=vols.slice(-60,-40).filter(v=>v>0);
