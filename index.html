@@ -506,21 +506,14 @@ html.font-xl{font-size:19px}
         </div>
         <div id="stock-vcpsignal-card" style="margin-bottom:12px"></div>
         <div id="stock-hotvol-card" style="margin-bottom:12px">
-          <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股（盤中）</div>
+          <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div>
           <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 盤中查詢（即時快照）</div>
         </div>
 
-        <!-- 分隔線：盤中/盤後 -->
-        <div style="display:flex;align-items:center;gap:10px;margin:20px 0 14px">
-          <div style="flex:1;height:1px;background:var(--border)"></div>
-          <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.1em">盤後區塊</div>
-          <div style="flex:1;height:1px;background:var(--border)"></div>
-        </div>
-        <!-- VCP訊號 + 今日爆量股（盤後，TWSE收盤資料） -->
-        <div id="stock-vcpsignal-card-close" style="margin-bottom:12px"></div>
-        <div id="stock-hotvol-card-close" style="margin-bottom:12px">
-          <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股（盤後）</div>
-          <div onclick="loadHotVolStocksClose()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 盤後查詢（TWSE收盤資料）</div>
+        <!-- 法人買超觀察（比對今日爆量股候選 + 外資投信買賣超） -->
+        <div id="stock-institutional-card" style="margin-bottom:12px">
+          <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">📊 法人買超觀察</div>
+          <div onclick="loadInstitutionalWatchCard()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 查詢法人買超（建議18:00後查詢）</div>
         </div>
 
       </div>
@@ -2818,25 +2811,14 @@ function goHome(){
         <div id="stock-mkt-card" style="margin-bottom:12px">
           <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">載入市場數值中...</div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;margin:8px 0 14px">
-          <div style="flex:1;height:1px;background:var(--border)"></div>
-          <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.1em">盤中區塊</div>
-          <div style="flex:1;height:1px;background:var(--border)"></div>
-        </div>
         <div id="stock-vcpsignal-card" style="margin-bottom:12px"></div>
         <div id="stock-hotvol-card" style="margin-bottom:12px">
-          <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股（盤中）</div>
+          <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div>
           <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 盤中查詢（即時快照）</div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;margin:20px 0 14px">
-          <div style="flex:1;height:1px;background:var(--border)"></div>
-          <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.1em">盤後區塊</div>
-          <div style="flex:1;height:1px;background:var(--border)"></div>
-        </div>
-        <div id="stock-vcpsignal-card-close" style="margin-bottom:12px"></div>
-        <div id="stock-hotvol-card-close" style="margin-bottom:12px">
-          <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股（盤後）</div>
-          <div onclick="loadHotVolStocksClose()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 盤後查詢（TWSE收盤資料）</div>
+        <div id="stock-institutional-card" style="margin-bottom:12px">
+          <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">📊 法人買超觀察</div>
+          <div onclick="loadInstitutionalWatchCard()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 查詢法人買超（建議18:00後查詢）</div>
         </div>
       </div>`;
   }
@@ -4204,153 +4186,6 @@ async function loadHotVolStocks(forceRefresh){
   }
 }
 
-async function loadHotVolStocksClose(forceRefresh){
-  const el=document.getElementById('stock-hotvol-card-close');
-  const vcpEl2=document.getElementById('stock-vcpsignal-card-close');
-  if(!el)return;
-  try{
-    const today=new Date();
-    const dateStr=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
-    const cacheKey='hotvol_close_cache_v1';
-    const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
-    if(!forceRefresh && cached&&cached.date===dateStr){
-      renderHotVolCard(el,cached.noVcpStocks,cached.fetchTimeStr,'-close');
-      if(vcpEl2) renderVcpSignalCard(vcpEl2,cached.vcpSignalStocks,cached.fetchTimeStr);
-      return;
-    }
-
-    if(Object.keys(STOCK_MAP).length===0) await loadStockList();
-
-    el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股（盤後）</div>
-      <div style="padding:16px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs)">
-        <div id="hotvol-close-progress-text" style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:8px">抓取TWSE收盤資料中...</div>
-        <div style="width:100%;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
-          <div id="hotvol-close-progress-bar" style="width:0%;height:100%;background:var(--wine);transition:width 0.2s"></div>
-        </div>
-      </div>`;
-
-    // ① 抓TWSE全市場收盤資料（不限200名）
-    let allStocks=[];
-    try{
-      const twseUrl=`https://corsproxy.io/?https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL`;
-      const twseRes=await fetch(twseUrl);
-      const twseJson=await twseRes.json();
-      if(twseJson&&twseJson.length){
-        allStocks=twseJson.map(row=>{
-          const close=parseFloat(row.ClosingPrice||0);
-          const change=parseFloat(row.Change||0);
-          const prevClose=close-change;
-          const chgPct=prevClose>0?(change/prevClose*100):0;
-          return{
-            code:row.Code,
-            name:row.Name,
-            todayVol:parseFloat(String(row.TradeVolume||'0').replace(/,/g,''))/1000,
-            todayAmount:parseFloat(String(row.TradeValue||'0').replace(/,/g,'')),
-            close,
-            chgPct
-          };
-        });
-      }
-    }catch(e1){
-      console.error('STOCK_DAY_ALL failed:',e1);
-    }
-    if(!allStocks.length){
-      el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股（盤後）</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">TWSE資料抓取失敗，稍後再試</div>`;
-      return;
-    }
-
-    // ② 篩選：排除ETF/特別股/興櫃/金融/觀光餐旅/貿易百貨/建材營造，只留上漲的股票
-    // 再加上金額≥5000萬、張數≥2000張的流動性門檻
-    const filtered = allStocks.filter(s=>{
-      if(shouldExcludeStock(s.code)) return false;
-      if(s.chgPct<=0) return false;
-      if((s.todayAmount||0)<50000000) return false; // 金額≥5000萬
-      if((s.todayVol||0)<2000) return false; // 張數≥2000張
-      return true;
-    });
-    // 排除完的乾淨名單，依成交量排序，取前200名（確保拿到的200支都是真正有效的股票）
-    filtered.sort((a,b)=>b.todayVol-a.todayVol);
-    const upStocks = filtered.slice(0,200);
-
-    // ③ 逐一抓每支股票近5日資料算量比（節流）
-    const vcpSignalStocks=[];
-    const noVcpStocks=[];
-    const totalCount=upStocks.length;
-    let doneCount=0;
-    for(const stock of upStocks){
-      try{
-        const startD=new Date();startD.setMonth(startD.getMonth()-5); // 需至少60個交易日供VCP三段標準差計算，抓5個月確保足夠
-        const sD=`${startD.getFullYear()}-${String(startD.getMonth()+1).padStart(2,'0')}-${String(startD.getDate()).padStart(2,'0')}`;
-        const data=await fmFetchExtra('TaiwanStockPrice',stock.code,sD);
-        doneCount++;
-        const progText=document.getElementById('hotvol-close-progress-text');
-        const progBar=document.getElementById('hotvol-close-progress-bar');
-        if(progText) progText.textContent=`分析中... ${doneCount}/${totalCount}`;
-        if(progBar) progBar.style.width=`${totalCount>0?Math.round(doneCount/totalCount*100):100}%`;
-        if(!data||data.length<5)continue;
-        const sorted=[...data].sort((a,b)=>a.date.localeCompare(b.date));
-        const vols=sorted.map(r=>parseInt(r.Trading_Volume||0)/1000);
-        const last5=vols.slice(-5);
-        const avg5=last5.length>0?last5.reduce((a,b)=>a+b,0)/last5.length:0;
-        const volRatio=avg5>0?stock.todayVol/avg5:0;
-        if(volRatio<1.5)continue;
-
-        let vcpInfo=null;
-        try{
-          const closes=sorted.map(r=>parseFloat(r.close)||0);
-          const vols2=sorted.map(r=>parseInt(r.Trading_Volume||0)/1000);
-          const dates=sorted.map(r=>r.date);
-          const vcp=analyzeVCP(closes,vols2,stock.code,dates);
-          if(vcp.breakoutTrack && !vcp.breakoutTrack.broken){
-            if(vcp.breakoutTrack.dayCount===1){
-              vcpInfo={type:'broke'}; // 第一天，歸類為突破爆發
-            } else {
-              vcpInfo={type:'tracking',dayCount:vcp.breakoutTrack.dayCount}; // 第二天以後才是追蹤中
-            }
-          } else if(vcp.status==='final_contraction'){
-            vcpInfo={type:'near'};
-          } else if(vcp.status==='contracting'){
-            vcpInfo={type:'contracting'};
-          }
-        }catch(e2){}
-
-        const entry={
-          code:stock.code,
-          name:stock.name,
-          todayVol:stock.todayVol,
-          volRatio:Math.round(volRatio*100)/100,
-          chgPct:Math.round(stock.chgPct*100)/100,
-          price:stock.close,
-          priceTier:priceTierLabel(stock.close),
-          vcpInfo
-        };
-
-        if(vcpInfo){
-          if(typeof autoAddFromHotVol==='function'){
-            const labelMap={tracking:`突破第${vcpInfo.dayCount}天`,broke:'突破第1天',near:'即將突破',contracting:'收縮中'};
-            autoAddFromHotVol(stock.code,entry.name,labelMap[vcpInfo.type]||'');
-          }
-          vcpSignalStocks.push(entry);
-        } else {
-          noVcpStocks.push(entry);
-        }
-        await new Promise(r=>setTimeout(r,120));
-      }catch(e){continue;}
-    }
-    vcpSignalStocks.sort((a,b)=>b.volRatio-a.volRatio);
-    noVcpStocks.sort((a,b)=>b.volRatio-a.volRatio);
-
-    const fetchTimeStr=`${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
-    try{localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,vcpSignalStocks,noVcpStocks,fetchTimeStr}));}catch(e){}
-
-    renderHotVolCard(el,noVcpStocks,fetchTimeStr,'-close');
-    if(vcpEl2) renderVcpSignalCard(vcpEl2,vcpSignalStocks,fetchTimeStr);
-  }catch(e){
-    console.error('loadHotVolStocksClose error:',e);
-    el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股（盤後）</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">載入失敗：${e.message||'未知錯誤'}</div>`;
-  }
-}
-
 function priceTierLabel(price){
   if(price>=1000) return '1000元以上';
   if(price>=500) return '500-1000元';
@@ -4374,13 +4209,10 @@ function stockBadgeHtml(s,tier){
   </div>`;
 }
 
-function renderHotVolCard(el,noVcpStocks,fetchTimeStr,suffix){
-  suffix=suffix||'';
-  const label=suffix==='-close'?'盤後':'盤中';
-  const refreshFn=suffix==='-close'?'loadHotVolStocksClose(true)':'loadHotVolStocks(true)';
+function renderHotVolCard(el,noVcpStocks,fetchTimeStr){
   const header=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-    <div style="font-size:11px;font-weight:600;color:var(--wine)">🔥 今日爆量股（${label}‧無VCP型態）</div>
-    <div onclick="${refreshFn}" style="font-size:11px;color:var(--wine);display:flex;align-items:center;gap:3px;cursor:pointer">↺ 重新整理</div>
+    <div style="font-size:11px;font-weight:600;color:var(--wine)">🔥 今日爆量股（無VCP型態）</div>
+    <div onclick="loadHotVolStocks(true)" style="font-size:11px;color:var(--wine);display:flex;align-items:center;gap:3px;cursor:pointer">↺ 重新整理</div>
   </div>
   ${fetchTimeStr?`<div style="font-size:10px;color:var(--text3);margin-bottom:8px">更新於 ${fetchTimeStr}</div>`:''}`;
   if(!noVcpStocks||!noVcpStocks.length){
@@ -4637,34 +4469,35 @@ function renderWatchVcpCard(){
     return;
   }
 
-  const dayLabel=w=>w.trackDayCount?`　突破第${w.trackDayCount}天`:'';
-  const renderGroup=(title,color,bg,list)=>{
+  const dayLabel=w=>w.trackDayCount?`突破第${w.trackDayCount}天`:'觀察中';
+  const renderGroup=(title,color,list)=>{
     if(!list.length) return '';
     return `
-    <div style="font-size:11px;font-weight:600;color:${color};margin-bottom:6px">${title}</div>
-    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
-    ${list.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:${bg};border-radius:8px;padding:8px 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
-        <span style="font-size:13px;color:var(--text)">${w.sym} ${w.name||''}${dayLabel(w)}</span>
+    <div style="font-size:14px;font-weight:700;color:${color};margin-bottom:8px">${title}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+    ${list.map(w=>`<div onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:14px;color:var(--text)">${w.sym} ${w.name||''}</span>
+        <span style="font-size:13px;color:${color};font-weight:500">${dayLabel(w)}</span>
       </div>`).join('')}
     </div>`;
   };
 
   let body='';
-  body+=renderGroup('🔥 超級強勢，優先關注股票','var(--red)','var(--rbg)',superList);
-  body+=renderGroup('🔴 動能延續，持續觀察','#e05d38','#fff3ee',holdList);
-  body+=renderGroup('⚠️ 賣壓浮現，謹慎追蹤','var(--amber)','var(--abg)',warnList);
-  body+=renderGroup('⚡ 型態醞釀，即將突破','var(--green)','var(--gbg)',brewList);
+  body+=renderGroup('🔥 超級強勢，優先關注股票','var(--red)',superList);
+  body+=renderGroup('🔴 動能延續，持續觀察','#e05d38',holdList);
+  body+=renderGroup('⚠️ 賣壓浮現，謹慎追蹤','var(--amber)',warnList);
+  body+=renderGroup('⚡ 型態醞釀，即將突破','var(--green)',brewList);
 
   // 型態消失：摺疊顯示，展開後每支有垃圾桶按鈕可直接移除
   if(goneList.length){
     body+=`
-    <div onclick="document.getElementById('gone-list-body').style.display=document.getElementById('gone-list-body').style.display==='none'?'flex':'none';this.querySelector('.gone-arrow').textContent=this.querySelector('.gone-arrow').textContent==='▾'?'▴':'▾';" style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:6px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+    <div onclick="document.getElementById('gone-list-body').style.display=document.getElementById('gone-list-body').style.display==='none'?'flex':'none';this.querySelector('.gone-arrow').textContent=this.querySelector('.gone-arrow').textContent==='▾'?'▴':'▾';" style="font-size:14px;font-weight:700;color:var(--text3);margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
       <span id="gone-count-label">🗑️ 型態消失，建議檢視（${goneList.length}）</span>
       <span class="gone-arrow" style="font-size:12px">▾</span>
     </div>
-    <div id="gone-list-body" style="display:none;flex-direction:column;gap:6px;margin-bottom:12px">
-    ${goneList.map(w=>`<div id="gone-item-${w.sym}" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
-        <span onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="font-size:13px;color:var(--text);flex:1">${w.sym} ${w.name||''}</span>
+    <div id="gone-list-body" style="display:none;flex-direction:column;gap:8px;margin-bottom:16px">
+    ${goneList.map(w=>`<div id="gone-item-${w.sym}" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <span onclick="document.getElementById('ti').value='${w.sym}';doSearch();" style="font-size:14px;color:var(--text);flex:1">${w.sym} ${w.name||''}</span>
         <span onclick="event.stopPropagation();removeGoneItem('${w.sym}');" style="font-size:16px;color:var(--text3);cursor:pointer;padding:0 4px">🗑️</span>
       </div>`).join('')}
     </div>`;
@@ -4686,16 +4519,14 @@ async function loadStockDefault(){
       if(vsEl) renderVcpSignalCard(vsEl,cached.vcpSignalStocks,cached.fetchTimeStr);
     }
   }catch(e){}
-  // 今日爆量股（盤後）：檢查是否已有快取，有則直接顯示
+  // 法人買超觀察：檢查是否已有快取，有則直接顯示
   try{
-    const todayC=new Date();
-    const dateStrC=`${todayC.getFullYear()}${String(todayC.getMonth()+1).padStart(2,'0')}${String(todayC.getDate()).padStart(2,'0')}`;
-    const cachedC=JSON.parse(localStorage.getItem('hotvol_close_cache_v1')||'null');
-    if(cachedC&&cachedC.date===dateStrC){
-      const hvElC=document.getElementById('stock-hotvol-card-close');
-      const vsElC=document.getElementById('stock-vcpsignal-card-close');
-      if(hvElC) renderHotVolCard(hvElC,cachedC.noVcpStocks,cachedC.fetchTimeStr,'-close');
-      if(vsElC) renderVcpSignalCard(vsElC,cachedC.vcpSignalStocks,cachedC.fetchTimeStr);
+    const todayI=new Date();
+    const dateStrI=`${todayI.getFullYear()}${String(todayI.getMonth()+1).padStart(2,'0')}${String(todayI.getDate()).padStart(2,'0')}`;
+    const cachedI=JSON.parse(localStorage.getItem('institutional_watch_cache_v1')||'null');
+    if(cachedI&&cachedI.date===dateStrI){
+      const instEl=document.getElementById('stock-institutional-card');
+      if(instEl) renderInstitutionalWatchCard(instEl,cachedI.results,cachedI.fetchTimeStr);
     }
   }catch(e){}
   // ① 自選股VCP狀態：檢查今天是否已掃描過，有則直接顯示結果
