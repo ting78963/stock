@@ -971,7 +971,7 @@ function analyzeVCP(closes,vols,stockCode,dates){
   // ===== 突破後Pivot鎖定機制（10個交易日觀察期，含回溯檢測）=====
   let breakoutTrack=null;
   if(stockCode&&dates&&dates.length===n){
-    const LS_KEY='vcp_breakout_track_v1';
+    const LS_KEY='vcp_breakout_track_v2'; // v2：加入量能同步確認後，版本升級讓舊資料自動失效重新驗證
     let trackData={};
     try{trackData=JSON.parse(localStorage.getItem(LS_KEY)||'{}');}catch(e){trackData={};}
     const today=dates[n-1];
@@ -1011,7 +1011,13 @@ function analyzeVCP(closes,vols,stockCode,dates){
         const histCloses=closes.slice(0,idx+1);
         const histPrev20High=Math.max(...histCloses.slice(-21,-1));
         const histCur=histCloses[histCloses.length-1];
-        const histJustBroke=histCur>histPrev20High*1.003;
+        const histJustBrokePrice=histCur>histPrev20High*1.003;
+        // 回溯偵測也要套用量能確認（跟主邏輯一致，避免有價無量的假突破被回溯抓到）
+        const histPreBreakVols=vols.slice(Math.max(0,idx-5),idx).filter(v=>v>0);
+        const histAvgVol=histPreBreakVols.length>0?histPreBreakVols.reduce((a,b)=>a+b,0)/histPreBreakVols.length:0;
+        const histTodayVol=vols[idx]||0;
+        const histVolConfirmed=histAvgVol>0?histTodayVol>=histAvgVol*1.4:false;
+        const histJustBroke=histJustBrokePrice&&histVolConfirmed;
         if(histJustBroke){
           // 檢查該日往前推是不是連續突破的第1~2天（避免抓到延伸很久之後的某天）
           let histBreakDays=0;
