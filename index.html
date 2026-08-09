@@ -527,6 +527,10 @@ html.font-xl{font-size:19px}
     <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px">自選清單</div>
     <div style="font-size:13px;color:var(--text3);margin-bottom:14px">追蹤中的股票</div>
     <div id="watch-scan-status" style="display:none;font-size:11px;color:var(--text3);margin-bottom:8px;align-items:center;gap:6px"><span style="display:inline-block;animation:spin 1s linear infinite">↺</span> 更新VCP狀態中...</div>
+    <div id="divergence-alert-card" style="display:none;margin-bottom:14px"></div>
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px">
+      <div onclick="checkDivergenceMonitor()" style="font-size:11px;color:var(--wine);display:flex;align-items:center;gap:3px;cursor:pointer">↺ 更新背離</div>
+    </div>
     <div id="wa"></div>
     <!-- 舊功能需要的隱藏div -->
     <div id="ha" style="display:none"></div>
@@ -2746,7 +2750,9 @@ function rW(){
       w.vcpStatus==='final_contraction'?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff3eb;color:#f97316;border:0.5px solid #f9731640;font-weight:600;margin-left:6px">◈ 即將突破</span>`:
       w.vcpStatus==='just_broke'?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--rbg);color:var(--red);border:0.5px solid var(--rbr);font-weight:600;margin-left:6px">🚀 突破爆發</span>`:'';
     const scoreStyle=w.score>=70?'background:#f5c842;color:#fff;font-weight:700;border:none':`background:${c}18;color:${c};border:0.5px solid ${c}40`;
-    return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}${vcpBadge}</div><div class="lna">${displayName}</div></div><div class="lr"><div class="spill" style="${scoreStyle}">${w.score}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
+    const monitorOn=!!w.divergenceMonitor;
+    const monitorBtn=`<div onclick="event.stopPropagation();toggleDivergenceMonitor('${w.sym}')" style="font-size:10px;padding:2px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;${monitorOn?'background:var(--wine);color:#fff;font-weight:600':'background:var(--bg2);color:var(--text3);border:0.5px solid var(--border)'}">${monitorOn?'已監控':'背離監控'}</div>`;
+    return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}${vcpBadge}</div><div class="lna">${displayName}</div></div><div class="lr"><div class="spill" style="${scoreStyle}">${w.score}</div>${monitorBtn}<div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
   };
 
   let html='';
@@ -2762,6 +2768,62 @@ function rW(){
   area.innerHTML=html;
 }
 function rmW(sym){LS.set('watch',LS.get('watch').filter(w=>w.sym!==sym));rW();}
+
+function toggleDivergenceMonitor(sym){
+  const wl=LS.get('watch');
+  const idx=wl.findIndex(w=>w.sym===sym);
+  if(idx>=0){
+    wl[idx].divergenceMonitor=!wl[idx].divergenceMonitor;
+    LS.set('watch',wl);
+    rW();
+  }
+}
+
+async function checkDivergenceMonitor(){
+  const wl=LS.get('watch')||[];
+  const monitored=wl.filter(w=>w.divergenceMonitor);
+  const cardEl=document.getElementById('divergence-alert-card');
+  if(!cardEl)return;
+  if(!monitored.length){
+    cardEl.style.display='none';
+    return;
+  }
+  cardEl.style.display='block';
+  cardEl.innerHTML=`<div style="background:var(--bg2);border-radius:12px;border:0.5px solid var(--border);padding:14px 16px">
+    <div style="font-size:13px;color:var(--text2);text-align:center">背離檢測中... 0/${monitored.length}</div>
+  </div>`;
+
+  const results=[];
+  let doneCount=0;
+  for(const w of monitored){
+    try{
+      const raw=await fetchStock(w.sym);
+      doneCount++;
+      const progEl=cardEl.querySelector('div > div');
+      if(progEl) progEl.textContent=`背離檢測中... ${doneCount}/${monitored.length}`;
+      if(!raw||!raw.data||raw.data.length<40)continue;
+      const closes=raw.data.map(d=>d.close);
+      const macdRaw=calcMACD(closes,12,26,9);
+      const divergence=detectMACDDivergence(closes,macdRaw.histArr);
+      if(divergence){
+        results.push({sym:w.sym,name:w.name,text:divergence.text});
+      }
+    }catch(e){continue;}
+  }
+
+  if(!results.length){
+    cardEl.style.display='none';
+    return;
+  }
+  cardEl.innerHTML=`<div style="background:var(--abg);border-radius:12px;border:0.5px solid var(--abr);padding:14px 16px">
+    <div style="font-size:13px;font-weight:600;color:var(--amber);margin-bottom:10px">⚠️ 背離警示</div>
+    ${results.map(r=>`<div onclick="gs('${r.sym}')" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer">
+      <div style="font-size:14px;color:var(--text)">${r.sym} ${r.name||''}</div>
+      <div style="font-size:12px;color:var(--amber);margin-top:2px">${r.text}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
 function gs(sym){document.getElementById('ti').value=sym;showPage('stock',null,'nav-stock');setTimeout(()=>doSearch(),50);}
 function clrW(){if(confirm('確定清除自選清單？')){LS.set('watch',[]);rW();}}
 function sH(raw,a){let h=LS.get('hist');h.unshift({sym:raw.code,name:raw.name,score:a.overall,verdict:a.verdict,price:a.cur,time:new Date().toISOString()});if(h.length>50)h=h.slice(0,50);LS.set('hist',h);}
@@ -3578,17 +3640,17 @@ function getDayKPosition(dayKHist, dayDHist){
 
   if(isGolden&&k<20) return{text:'⚡ 低檔黃金交叉',badge:'cross',k,d};
   if(isGolden) return{text:'⚡ 黃金交叉',badge:'cross',k,d};
-  if(isDeath&&k>80) return{text:'💀 高檔鈍化結束，死亡交叉，注意離場',badge:'death',k,d};
+  if(isDeath&&k>80) return{text:'💀 高檔轉弱，死亡交叉，建議離場',badge:'death',k,d};
   if(isDeath) return{text:'💀 死亡交叉',badge:'death',k,d};
-  if(k<20&&trend==='up') return{text:'🔴 超賣低檔，強烈關注',badge:'cross',k,d};
-  if(k<20&&gapNarrowing) return{text:'🟡 超賣區，空方力竭中',badge:'near_cross',k,d};
-  if(k<20) return{text:'超賣低檔',badge:'near_cross',k,d};
-  if(k>80&&highPlateau) return{text:'🔴 高檔鈍化，強勢延續',badge:'up',k,d};
-  if(k>80&&!isDeath&&k<(d||0)) return{text:'🟢 超買高檔，需謹慎',badge:'death',k,d};
-  if(k>80) return{text:'高檔超買，觀察是否鈍化',badge:'near_death',k,d};
-  if(k>=20&&k<80&&trend==='up'&&k>=(d||0)) return{text:'正常區間偏多',badge:'up',k,d};
-  if(k>=20&&k<80&&trend==='down'&&k<(d||100)) return{text:'正常區間偏空',badge:'down',k,d};
-  if(gapNarrowing&&k<(d||100)) return{text:'空方力竭，K往D靠近',badge:'near_cross',k,d};
+  if(k<20&&trend==='up') return{text:'🔴 跌深接近底部，留意反彈機會',badge:'cross',k,d};
+  if(k<20&&gapNarrowing) return{text:'🟡 跌勢趨緩，賣壓快沒力了',badge:'near_cross',k,d};
+  if(k<20) return{text:'跌深接近底部',badge:'near_cross',k,d};
+  if(k>80&&highPlateau) return{text:'🔴 持續強勢整理，非轉弱訊號',badge:'up',k,d};
+  if(k>80&&!isDeath&&k<(d||0)) return{text:'🟢 漲多接近高點，留意回落風險',badge:'death',k,d};
+  if(k>80) return{text:'漲多接近高點，觀察是否持續強勢',badge:'near_death',k,d};
+  if(k>=20&&k<80&&trend==='up'&&k>=(d||0)) return{text:'正常區間偏多，動能穩健',badge:'up',k,d};
+  if(k>=20&&k<80&&trend==='down'&&k<(d||100)) return{text:'正常區間偏空，動能轉弱',badge:'down',k,d};
+  if(gapNarrowing&&k<(d||100)) return{text:'賣壓減弱，接近翻多時機',badge:'near_cross',k,d};
   return{text:`日K ${k}`,badge:'neutral',k,d};
 }
 
@@ -3604,31 +3666,31 @@ function getDayMACDSignal(histArr5){
   const lastUp=last>prev;
   const lastDown=last<prev;
 
-  if(crossZeroUp) return{text:'⚡ 由綠轉紅，強烈關注',badge:'cross',energy:'up'};
-  if(crossZeroDown) return{text:'💀 由紅轉綠，多方力竭',badge:'death',energy:'down'};
+  if(crossZeroUp) return{text:'⚡ 空方轉多方，動能開始加強',badge:'cross',energy:'up'};
+  if(crossZeroDown) return{text:'💀 多方轉空方，買氣快沒力了',badge:'death',energy:'down'};
 
   // 整體遞減但最後兩筆回升 → 能量恢復中
   if(last<0&&mono==='down'&&lastUp)
-    return{text:'🟡 空方力竭，能量開始回升',badge:'near_cross',energy:'up'};
+    return{text:'🟡 賣壓減弱，動能開始回升',badge:'near_cross',energy:'up'};
   if(last<0&&mono==='up')
-    return{text:'🟡 空方能量持續遞減，強烈關注',badge:'near_cross',energy:'up'};
+    return{text:'🟡 賣壓持續減弱，可能即將止跌',badge:'near_cross',energy:'up'};
   if(last<0&&mono==='mixed'&&lastUp)
-    return{text:'🟡 空方能量，最後出現回升，關注',badge:'near_cross',energy:'up'};
+    return{text:'🟡 賣壓最後出現回升跡象，留意',badge:'near_cross',energy:'up'};
 
   if(last>0&&mono==='up')
-    return{text:'🔴 多方能量持續遞增，持股',badge:'up',energy:'up'};
+    return{text:'🔴 買氣持續增強，可續抱',badge:'up',energy:'up'};
   // 整體遞減但最後兩筆回升 → 動能恢復
   if(last>0&&mono==='down'&&lastUp)
-    return{text:'🟡 多方能量遞減但出現回升，留意',badge:'near_death',energy:'mixed'};
+    return{text:'🟡 買氣一度減弱但回穩，觀察是否延續',badge:'near_death',energy:'mixed'};
   if(last>0&&mono==='down'&&lastDown)
-    return{text:'🟡 多方能量持續遞減，留意出場',badge:'near_death',energy:'down'};
+    return{text:'🟡 買氣持續減弱，該考慮獲利了結',badge:'near_death',energy:'down'};
   if(last>0&&mono==='mixed'&&lastUp)
-    return{text:'🔴 多方能量，最後回升中，持股觀察',badge:'up',energy:'up'};
+    return{text:'🔴 買氣最後回升中，持股觀察',badge:'up',energy:'up'};
   if(last>0&&mono==='mixed'&&lastDown)
-    return{text:'🟡 多方能量中斷，方向不明，觀望',badge:'neutral',energy:'mixed'};
+    return{text:'🟡 買氣中斷，方向不明，觀望',badge:'neutral',energy:'mixed'};
 
   if(last<0&&mono==='down')
-    return{text:'🟢 空方能量持續遞增，需謹慎',badge:'down',energy:'down'};
+    return{text:'🟢 賣壓持續加重，建議減碼觀望',badge:'down',energy:'down'};
   if(mono==='mixed'&&last<0&&nearZero)
     return{text:'⚠️ 能量趨近零軸，等待方向確認',badge:'neutral',energy:'mixed'};
   if(mono==='mixed')
@@ -3672,6 +3734,34 @@ function getFinalDesc(dayKPos,dayMACDSig){
   return{text:'📊 訊號尚未明確，持續觀察能量變化。',color:'var(--text2)'};
 }
 
+// 偵測MACD柱狀體頂背離：股價創新高但柱狀體未同步創高，代表動能未跟上，留意反轉風險
+function detectMACDDivergence(closes, histArr){
+  if(!closes||!histArr||closes.length<40||histArr.length<40) return null;
+  const cl=closes.map(x=>typeof x==='object'?x.close:x);
+  // 對齊：histArr是從資料尾端往前對齊的（前面warmup期被過濾），取跟histArr等長的收盤價尾段
+  const alignedCloses=cl.slice(-histArr.length);
+  const n=alignedCloses.length;
+  const todayClose=alignedCloses[n-1];
+  const recentWindow=alignedCloses.slice(-20,-1); // 不含今天，近19天
+  const isNewHigh=recentWindow.length>0 && todayClose>=Math.max(...recentWindow);
+  if(!isNewHigh) return null;
+  // 往前找上一個相對高點（排除最近5天，避免抓到太靠近的雜訊高點）
+  const priorWindow=alignedCloses.slice(-40,-5);
+  if(priorWindow.length<10) return null;
+  let priorPeakIdx=0,priorPeakVal=-Infinity;
+  priorWindow.forEach((v,i)=>{ if(v>priorPeakVal){priorPeakVal=v;priorPeakIdx=i;} });
+  if(todayClose<=priorPeakVal) return null; // 沒有真的創更高的高點，不算背離
+  const priorPeakGlobalIdx=n-40+priorPeakIdx;
+  if(priorPeakGlobalIdx<0||priorPeakGlobalIdx>=n) return null;
+  const priorPeakHist=histArr[priorPeakGlobalIdx];
+  const todayHist=histArr[n-1];
+  if(priorPeakHist==null||todayHist==null) return null;
+  if(todayHist<priorPeakHist){
+    return{text:'⚠️ 股價創高但動能未跟上，留意反轉風險',isDivergence:true};
+  }
+  return null;
+}
+
 function renderKDMACD(dayData, wkData, fStreak, tStreak){
   const dayKDraw=calcKD(dayData,9);
   const dayMACDraw=calcMACD(dayData,12,26,9);
@@ -3685,6 +3775,7 @@ function renderKDMACD(dayData, wkData, fStreak, tStreak){
   const wkPos=getDayKPosition(dayKHist,dayDHist);
   const dayMACDSig=getDayMACDSignal(dayMHist5);
   const desc=getFinalDesc(wkPos,dayMACDSig);
+  const divergence=detectMACDDivergence(dayData,dayMACDraw.histArr);
 
   const badgeStyle={
     cross:'background:#f5c842;color:#fff;font-weight:700',
@@ -3723,6 +3814,7 @@ function renderKDMACD(dayData, wkData, fStreak, tStreak){
       </div>
       <div style="font-size:11px;color:var(--text3)">${dayMTrend}</div>
       <div style="font-size:10px;color:var(--text3);margin-top:1px">OSC值：${dayMHist5[dayMHist5.length-1]?.toFixed(3)??'—'}　（負值遞減=空方衰竭 / 穿越0=進場 / 正值遞增=持股）</div>
+      ${divergence?`<div style="font-size:11px;color:var(--amber);margin-top:6px;padding:6px 8px;background:var(--abg);border-radius:6px">${divergence.text}</div>`:''}
     </div>
 
     <div style="display:flex;align-items:flex-start;gap:8px;margin-top:4px;padding:10px 12px;border-radius:8px;background:var(--bg3)">
@@ -4167,7 +4259,14 @@ async function loadHotVolStocks(forceRefresh){
           }
           vcpSignalStocks.push(entry);
         } else {
-          noVcpStocks.push(entry);
+          // 無VCP型態的股票，額外套用強度過濾：漲幅≥4.6% 且 站上20日均線（VCP訊號不受此限制）
+          const closesForMA=sorted.map(r=>parseFloat(r.close)||0);
+          const last20=closesForMA.slice(-20);
+          const ma20=last20.length>0?last20.reduce((a,b)=>a+b,0)/last20.length:0;
+          const aboveMA20=ma20>0?entry.price>=ma20:false;
+          if(entry.chgPct>=4.6 && aboveMA20){
+            noVcpStocks.push(entry);
+          }
         }
         await new Promise(r=>setTimeout(r,120));
       }catch(e){continue;}
