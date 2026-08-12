@@ -4181,12 +4181,12 @@ async function loadHotVolStocks(forceRefresh){
     }
 
     // ② 篩選：排除ETF/特別股/興櫃/金融/觀光餐旅/貿易百貨/建材營造，只留上漲的股票
-    // 再加上金額≥5000萬、張數≥2000張的流動性門檻（用即時快照本身欄位，不額外耗費請求）
+    // 再加上金額≥5000萬、張數≥4000張的流動性門檻（用即時快照本身欄位，不額外耗費請求）
     const upStocks = snapshot.filter(r=>{
       if(shouldExcludeStock(r.stock_id)) return false;
       if((r.change_rate||0)<=0) return false;
       if((r.total_amount||0)<50000000) return false; // 金額≥5000萬
-      if((r.total_volume||0)<2000) return false; // 張數≥2000張
+      if((r.total_volume||0)<4000) return false; // 張數≥4000張
       return true;
     });
 
