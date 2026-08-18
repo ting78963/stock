@@ -4273,6 +4273,7 @@ async function loadHotVolStocks(forceRefresh){
     }
     vcpSignalStocks.sort((a,b)=>b.volRatio-a.volRatio);
     noVcpStocks.sort((a,b)=>b.volRatio-a.volRatio);
+    updateMonthlyCount([...vcpSignalStocks,...noVcpStocks]); // 收盤後才會真正累加，盤中查詢只是讀取顯示
 
     const fetchTimeStr=`${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
     try{localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,vcpSignalStocks,noVcpStocks,fetchTimeStr}));}catch(e){}
@@ -4386,6 +4387,39 @@ function renderInstitutionalWatchCard(el,results,fetchTimeStr){
   }).join('')}`;
 }
 
+// 本月出現次數記錄：收盤後（非交易時間）才累加，盤中查詢只讀取不累加
+function getMonthlyCountKey(){
+  const now=new Date();
+  return `monthly_appear_count_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
+}
+
+function getMonthlyCountMap(){
+  try{
+    return JSON.parse(localStorage.getItem(getMonthlyCountKey())||'{}');
+  }catch(e){return {};}
+}
+
+function updateMonthlyCount(stockList){
+  const now=new Date();
+  const isTradingHours = now.getHours()>=9 && (now.getHours()<13 || (now.getHours()===13 && now.getMinutes()<30));
+  if(isTradingHours) return; // 盤中不累加，只有收盤後才記錄
+  const dateStr=`${now.getMonth()+1}/${now.getDate()}`;
+  const map=getMonthlyCountMap();
+  stockList.forEach(s=>{
+    if(!map[s.code]) map[s.code]={count:0,dates:[]};
+    if(!map[s.code].dates.includes(dateStr)){ // 同一天重複按不會重複累加
+      map[s.code].count++;
+      map[s.code].dates.push(dateStr);
+    }
+  });
+  try{localStorage.setItem(getMonthlyCountKey(),JSON.stringify(map));}catch(e){}
+}
+
+function getMonthlyCountFor(code){
+  const map=getMonthlyCountMap();
+  return map[code]?map[code].count:0;
+}
+
 function priceTierLabel(price){
   if(price>=1000) return '1000元以上';
   if(price>=500) return '500-1000元';
@@ -4396,9 +4430,11 @@ function priceTierLabel(price){
 }
 
 function stockBadgeHtml(s,tier){
+  const monthlyCount=getMonthlyCountFor(s.code);
+  const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--gbg);color:var(--green);border:0.5px solid var(--gbr);font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
   return `<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
     <div>
-      <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}</div>
+      <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}${countBadge}</div>
       <div style="font-size:13px;color:var(--text2);margin-top:2px">${s.price?`$${s.price}　`:''}<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
       <div style="font-size:11px;color:var(--text3);margin-top:2px">目前成交量：${fmtVol(s.todayVol)}</div>
     </div>
