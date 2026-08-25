@@ -860,14 +860,14 @@ async function fmFetch(dataset,stockId,startDate){
   }catch(e){return null;}
 }
 
-async function fetchRealtimeSnapshot(){
+async function fetchRealtimeSnapshot(forceRefresh){
   const now=new Date();
   const dateStr=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
   const isTradingHours = now.getHours()>=9 && (now.getHours()<13 || (now.getHours()===13 && now.getMinutes()<30));
   const cacheKey='realtime_snapshot_cache_v1';
 
-  // 非交易時間：優先使用今天的快取，不重新呼叫API
-  if(!isTradingHours){
+  // 非交易時間：優先使用今天的快取，不重新呼叫API（除非使用者明確按了重新整理，強制略過快取）
+  if(!isTradingHours && !forceRefresh){
     try{
       const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
       if(cached && cached.date===dateStr && cached.data && cached.data.length>0){
@@ -4175,8 +4175,7 @@ async function loadHotVolStocks(forceRefresh){
 
     // ① 抓即時快照（全市場，一次呼叫）
     if(Object.keys(STOCK_MAP).length===0) await loadStockList();
-    const snapshot = await fetchRealtimeSnapshot();
-    console.log('[爆量股偵錯] 即時快照筆數:', snapshot.length);
+    const snapshot = await fetchRealtimeSnapshot(forceRefresh);
     if(!snapshot.length){
       el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">即時快照無資料，稍後再試</div>`;
       return;
@@ -4580,8 +4579,8 @@ async function loadWatchVcpStatus(){
     </div>
   </div>`;
 
-  // 先抓一次即時快照，供後續「即將突破/收縮整理中」股票的盤中驗證使用（有快取，收盤後不重複呼叫）
-  const snapshotArr = await fetchRealtimeSnapshot();
+  // 先抓一次即時快照，供後續「即將突破/收縮整理中」股票的盤中驗證使用（每次都是使用者主動點擊，強制取得最新資料）
+  const snapshotArr = await fetchRealtimeSnapshot(true);
   const snapshotMap = {};
   snapshotArr.forEach(r=>{ if(r.stock_id) snapshotMap[r.stock_id]=r; });
 
