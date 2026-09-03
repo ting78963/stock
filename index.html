@@ -289,7 +289,7 @@ html.font-xl{font-size:19px}
 <!-- 頁籤 -->
 <div id="tabs" style="background:#fff;border-bottom:0.5px solid var(--border);display:flex;overflow-x:auto;padding:0 16px;scrollbar-width:none;position:sticky;top:47px;z-index:99">
   <div class="tab-item" onclick="showPage('home',this)">說明中心</div>
-  <div class="tab-item" onclick="showPage('money',this)">族群資金</div>
+  <div class="tab-item" onclick="showPage('money',this)">強勢股票</div>
   <div class="tab-item active" onclick="showPage('stock',this)">個股分析</div>
   <div class="tab-item" onclick="showPage('watch',this)">自選清單</div>
   <div class="tab-item" onclick="showPage('settings',this)">設定</div>
@@ -456,6 +456,7 @@ html.font-xl{font-size:19px}
 
 <!-- 族群資金 -->
 <div class="app-page" id="page-money">
+  <div id="strong-stocks-card" style="padding:14px 16px 0"></div>
   <div id="money-main" style="padding:14px 16px">
     <div onclick="initMoney()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 點擊查看族群資金流向（約120支個股）</div>
   </div>
@@ -2847,7 +2848,7 @@ function showPage(id, tabEl, navId){
   if(navId) document.getElementById(navId)?.classList.add('active');
   const tabMap={home:0,money:1,stock:2,watch:3,settings:4};
   if(tabMap[id]!==undefined) document.querySelectorAll('.tab-item')[tabMap[id]]?.classList.add('active');
-  if(id==='money'){/* 手動觸發，不自動載入 */}
+  if(id==='money'){ renderStrongStocksCard(); /* 族群資金本身手動觸發，不自動載入 */ }
   if(id==='stock'){
     const defView=document.getElementById('stock-default-view');
     if(defView) defView.style.display='block';
@@ -4408,36 +4409,70 @@ function renderInstitutionalWatchCard(el,results,fetchTimeStr){
 }
 
 // 本月出現次數記錄：收盤後（非交易時間）才累加，盤中查詢只讀取不累加
-function getMonthlyCountKey(){
-  const now=new Date();
-  return `monthly_appear_count_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
+const DAILY_SNAPSHOT_KEY='daily_snapshot_history_v1';
+const ROLLING_WINDOW_DAYS=20; // 只保留最近20個「有記錄」的交易日，不看日曆月份
+
+function getDailySnapshotMap(){
+  try{
+    return JSON.parse(localStorage.getItem(DAILY_SNAPSHOT_KEY)||'{}');
+  }catch(e){return {};}
 }
 
-function getMonthlyCountMap(){
-  try{
-    return JSON.parse(localStorage.getItem(getMonthlyCountKey())||'{}');
-  }catch(e){return {};}
+// 取得最近N個交易日的日期清單（由新到舊排序），只看「實際有記錄過」的日期，不管日曆
+function getRecentTradingDates(snapshotMap,n){
+  return Object.keys(snapshotMap).sort((a,b)=>b.localeCompare(a)).slice(0,n);
 }
 
 function updateMonthlyCount(stockList){
   const now=new Date();
   const isTradingHours = now.getHours()>=9 && (now.getHours()<13 || (now.getHours()===13 && now.getMinutes()<30));
   if(isTradingHours) return; // 盤中不累加，只有收盤後才記錄
-  const dateStr=`${now.getMonth()+1}/${now.getDate()}`;
-  const map=getMonthlyCountMap();
-  stockList.forEach(s=>{
-    if(!map[s.code]) map[s.code]={count:0,dates:[]};
-    if(!map[s.code].dates.includes(dateStr)){ // 同一天重複按不會重複累加
-      map[s.code].count++;
-      map[s.code].dates.push(dateStr);
-    }
-  });
-  try{localStorage.setItem(getMonthlyCountKey(),JSON.stringify(map));}catch(e){}
+  const dateStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const map=getDailySnapshotMap();
+  // 存今天完整快照（每支股票的完整資訊），同一天重複按會直接覆蓋成最新版本，不重複累加
+  map[dateStr]=stockList.map(s=>({code:s.code,name:s.name,price:s.price,chgPct:s.chgPct,todayVol:s.todayVol,volRatio:s.volRatio}));
+  // 只保留最近20個交易日，超過的自動清除，避免無限累積
+  const allDates=Object.keys(map).sort((a,b)=>b.localeCompare(a));
+  const keepDates=new Set(allDates.slice(0,ROLLING_WINDOW_DAYS));
+  Object.keys(map).forEach(d=>{ if(!keepDates.has(d)) delete map[d]; });
+  try{localStorage.setItem(DAILY_SNAPSHOT_KEY,JSON.stringify(map));}catch(e){}
 }
 
 function getMonthlyCountFor(code){
-  const map=getMonthlyCountMap();
-  return map[code]?map[code].count:0;
+  const map=getDailySnapshotMap();
+  const recentDates=getRecentTradingDates(map,ROLLING_WINDOW_DAYS);
+  return recentDates.filter(d=>map[d].some(s=>s.code===code)).length;
+}
+
+// 供「強勢股票」頁面使用：把最近20個交易日的資料，分成三層分類
+function getStrongStocksClassified(){
+  const map=getDailySnapshotMap();
+  const recentDates=getRecentTradingDates(map,ROLLING_WINDOW_DAYS);
+  if(!recentDates.length) return {firstAppear:[],streakAppear:[],cumulativeAppear:[]};
+  const latestDate=recentDates[0];
+  const firstAppear=[],streakAppear=[],cumulativeAppear=[];
+  map[latestDate].forEach(latestStock=>{
+    const code=latestStock.code;
+    // 累積次數：這支股票在最近20個交易日內，出現過幾次
+    const count=recentDates.filter(d=>map[d].some(s=>s.code===code)).length;
+    // 連續天數：從最新一天往前推，連續出現幾天（中斷就停止計算）
+    let streak=0;
+    for(const d of recentDates){
+      if(map[d].some(s=>s.code===code)) streak++;
+      else break;
+    }
+    const item={...latestStock,count,streak};
+    if(count===1){
+      firstAppear.push(item);
+    } else if(streak>=2){
+      streakAppear.push(item);
+    } else {
+      cumulativeAppear.push(item);
+    }
+  });
+  streakAppear.sort((a,b)=>b.streak-a.streak);
+  cumulativeAppear.sort((a,b)=>b.count-a.count);
+  return {firstAppear,streakAppear,cumulativeAppear};
 }
 
 function priceTierLabel(price){
@@ -4464,6 +4499,33 @@ function stockBadgeHtml(s,tier){
     </div>
   </div>`;
 }
+function renderStrongStocksCard(){
+  const el=document.getElementById('strong-stocks-card');
+  if(!el)return;
+  const {firstAppear,streakAppear,cumulativeAppear}=getStrongStocksClassified();
+  if(!firstAppear.length && !streakAppear.length && !cumulativeAppear.length){
+    el.innerHTML='';
+    return;
+  }
+  const renderSection=(title,color,list,foldId)=>{
+    if(!list.length) return '';
+    const top5=list.slice(0,5);
+    const rest=list.slice(5);
+    let html=`<div style="font-size:12px;font-weight:700;color:${color};margin-bottom:8px">${title}</div>`;
+    html+=top5.map(s=>stockBadgeHtml({...s},null)).join('');
+    if(rest.length){
+      html+=`<div onclick="const b=document.getElementById('${foldId}');b.style.display=b.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=b.style.display==='none'?'\u25be':'\u25b4';" style="text-align:center;font-size:12px;color:var(--text3);padding:8px;border:0.5px solid var(--border);border-radius:10px;cursor:pointer;margin-bottom:12px">\u5c55\u958b\u5176\u4ed6 ${rest.length} \u652f <span class="arrow">\u25be</span></div>
+      <div id="${foldId}" style="display:none">${rest.map(s=>stockBadgeHtml({...s},null)).join('')}</div>`;
+    }
+    return html+'<div style="margin-bottom:14px"></div>';
+  };
+  let body=`<div style="font-size:13px;font-weight:600;color:var(--wine);margin-bottom:12px">\u5f37\u52e2\u80a1\u7968</div>`;
+  body+=renderSection('\u9996\u6b21\u51fa\u73fe','#e6b800',firstAppear,'fold-first');
+  body+=renderSection('\u9023\u7e8c\u51fa\u73fe','var(--red)',streakAppear,'fold-streak');
+  body+=renderSection('\u7d2f\u7a4d\u6b21\u6578','var(--amber)',cumulativeAppear,'fold-cumulative');
+  el.innerHTML=body;
+}
+
 
 function renderHotVolCard(el,noVcpStocks,fetchTimeStr){
   const header=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
