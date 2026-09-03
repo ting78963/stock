@@ -4177,7 +4177,10 @@ async function loadHotVolStocks(forceRefresh){
     if(Object.keys(STOCK_MAP).length===0) await loadStockList();
     const snapshot = await fetchRealtimeSnapshot(forceRefresh);
     if(!snapshot.length){
-      el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">即時快照無資料，稍後再試</div>`;
+      el.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:11px;font-weight:600;color:var(--wine)">🔥 今日爆量股</div>
+        <div onclick="loadHotVolStocks(true)" style="font-size:11px;color:var(--wine);display:flex;align-items:center;gap:3px;cursor:pointer">↺ 重新整理</div>
+      </div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">即時快照無資料，稍後再試</div>`;
       return;
     }
 
@@ -4287,7 +4290,10 @@ async function loadHotVolStocks(forceRefresh){
     if(vcpEl2) renderVcpSignalCard(vcpEl2,vcpSignalStocks,fetchTimeStr);
   }catch(e){
     console.error('loadHotVolStocks error:',e);
-    el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">載入失敗：${e.message||'未知錯誤'}</div>`;
+    el.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:11px;font-weight:600;color:var(--wine)">🔥 今日爆量股</div>
+      <div onclick="loadHotVolStocks(true)" style="font-size:11px;color:var(--wine);display:flex;align-items:center;gap:3px;cursor:pointer">↺ 重新整理</div>
+    </div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">載入失敗：${e.message||'未知錯誤'}</div>`;
   }
 }
 
@@ -4307,12 +4313,18 @@ async function loadInstitutionalWatchCard(forceRefresh){
     // 讀取「今日爆量股」最後一次的候選清單（VCP訊號+無型態，合併）
     const hotvolCache=JSON.parse(localStorage.getItem('hotvol_cache_v5')||'null');
     if(!hotvolCache || hotvolCache.date!==dateStr){
-      el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">📊 法人買超觀察</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">請先按過「今日爆量股」更新，取得今天的候選清單</div>`;
+      el.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:11px;font-weight:600;color:var(--wine)">📊 法人買超觀察</div>
+        <div onclick="loadInstitutionalWatchCard(true)" style="font-size:11px;color:var(--wine);display:flex;align-items:center;gap:3px;cursor:pointer">↺ 重新整理</div>
+      </div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">請先按過「今日爆量股」更新，取得今天的候選清單</div>`;
       return;
     }
     const candidates=[...(hotvolCache.vcpSignalStocks||[]),...(hotvolCache.noVcpStocks||[])];
     if(!candidates.length){
-      el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">📊 法人買超觀察</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">今日爆量股候選清單為空</div>`;
+      el.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:11px;font-weight:600;color:var(--wine)">📊 法人買超觀察</div>
+        <div onclick="loadInstitutionalWatchCard(true)" style="font-size:11px;color:var(--wine);display:flex;align-items:center;gap:3px;cursor:pointer">↺ 重新整理</div>
+      </div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">今日爆量股候選清單為空</div>`;
       return;
     }
 
@@ -4362,7 +4374,10 @@ async function loadInstitutionalWatchCard(forceRefresh){
     renderInstitutionalWatchCard(el,results,fetchTimeStr);
   }catch(e){
     console.error('loadInstitutionalWatchCard error:',e);
-    el.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">📊 法人買超觀察</div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">載入失敗：${e.message||'未知錯誤'}</div>`;
+    el.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:11px;font-weight:600;color:var(--wine)">📊 法人買超觀察</div>
+      <div onclick="loadInstitutionalWatchCard(true)" style="font-size:11px;color:var(--wine);display:flex;align-items:center;gap:3px;cursor:pointer">↺ 重新整理</div>
+    </div><div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">載入失敗：${e.message||'未知錯誤'}</div>`;
   }
 }
 
