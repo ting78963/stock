@@ -2104,7 +2104,7 @@ async function renderExtraData(stockCode, a) {
 
     // ── 3. 火箭指標（波段版100分制）──
     const _RI={
-      'ROE':'ROE（股東權益報酬率）= 稅後淨利 ÷ 股東權益，年化計算。改用近12季（約3年）平均值評分，避免單季爆衝誤導，同時看是否持續改善。',
+      'EPS':'EPS（每股盈餘）= 稅後淨利 ÷ 流通股數。主要看季增率（QoQ）判斷動能是否加速，同時顯示年增率、今年累計EPS，以及業外占比——業外占比過高代表獲利可能是一次性收益撐起，非本業持續性成長。',
       '月營收 YoY':'月營收年增率 = 本月營收 ÷ 去年同月 - 1。最即時業績指標，同時顯示累計年增率。',
       '月營收 MoM':'月營收環比 = 本月營收 ÷ 上月營收 - 1。反映短期動能是否加速，波段交易者重點觀察項目。',
       '營收-毛利率同步性':'交叉比對營收成長與毛利率變化，判斷成長品質是否健康。營收成長+毛利率同步改善=真成長；營收成長但毛利率下滑=薄利多銷警訊。',
@@ -2332,38 +2332,58 @@ async function renderExtraData(stockCode, a) {
       }
     }
 
-    // ⑥ ROE（6分）- 年化，改用3年平均+趨勢
-    if(finData.length && balData.length) {
-      const niItems = finData.filter(r=>r.type==='IncomeAfterTaxes').sort((a,b)=>a.date.localeCompare(b.date));
-      const eqItems = balData.filter(r=>r.type==='EquityAttributableToOwnersOfParent').sort((a,b)=>a.date.localeCompare(b.date));
-      if(niItems.length>=2 && eqItems.length>=1) {
-        const calcROE = (ni, date) => {
-          const eq = eqItems.find(e=>e.date===date) || eqItems[eqItems.length-1];
-          const equity = eq ? parseFloat(eq.value||0) : 0;
-          return equity>0 ? (parseFloat(ni)*4/equity*100) : null;
-        };
-        // 改抓近12季（約3年）算平均，避免單季爆衝誤導
-        const roeHist = niItems.slice(-12).map(r=>({roe:calcROE(r.value,r.date),date:r.date})).filter(r=>r.roe!==null);
-        if(roeHist.length>=1) {
-          const cur = roeHist[roeHist.length-1].roe;
-          const prev = roeHist.length>=2 ? roeHist[roeHist.length-2].roe : cur;
-          const avg3y = roeHist.reduce((s,r)=>s+r.roe,0)/roeHist.length;
-          const isImproving = cur>=avg3y;
-          // 級距（水準0-4）+ 趨勢加分（0-2）
-          const levelScore = avg3y>=20?3:avg3y>=15?2.5:avg3y>=10?1.5:avg3y>=5?0.5:0;
-          const trendScore = isImproving?2:cur>=avg3y*0.9?1:0;
-          const score = Math.min(5, Math.round((levelScore+trendScore)*10)/10);
-          rocketItems.unshift({
-            label:'ROE', maxScore:5,
-            curLabel:niItems[niItems.length-1].date,
-            curVal:`${cur.toFixed(1)}%`,
-            prevVal:roeHist.length>=2?`前季：${prev.toFixed(1)}%`:'',
-            extra:`${roeHist.length}季均：${avg3y.toFixed(1)}%`,
-            trendUp:isImproving,
-            sub:avg3y>=15?(isImproving?'股東報酬優質且改善中':'股東報酬優質但趨緩'):avg3y>=10?(isImproving?'股東報酬尚可，轉強中':'股東報酬尚可'):'股東報酬偏低',
-            ok:avg3y>=10, score
-          });
+    // 日期轉季別（財報date欄位是會計期間結束日：03-31=Q1, 06-30=Q2, 09-30=Q3, 12-31=Q4）
+    const dateToQuarter = (dateStr) => {
+      const [y, m] = dateStr.split('-');
+      const q = m==='03'?1:m==='06'?2:m==='09'?3:m==='12'?4:null;
+      return q ? `${y}年Q${q}` : dateStr;
+    };
+
+    // ⑥ EPS（5分）- 顯示季增率(主)、年增率(次)、累計EPS、業外占比
+    if(finData.length) {
+      const epsItems = finData.filter(r=>r.type==='EPS').sort((a,b)=>a.date.localeCompare(b.date));
+      const niItemsForEps = finData.filter(r=>r.type==='IncomeAfterTaxes').sort((a,b)=>a.date.localeCompare(b.date));
+      const oiItemsForEps = finData.filter(r=>r.type==='OperatingIncome').sort((a,b)=>a.date.localeCompare(b.date));
+      if(epsItems.length>=2) {
+        const curEpsItem = epsItems[epsItems.length-1];
+        const curEps = parseFloat(curEpsItem.value||0);
+        const prevEps = parseFloat(epsItems[epsItems.length-2].value||0);
+        const qoq = prevEps!==0 ? ((curEps-prevEps)/Math.abs(prevEps)*100) : null;
+        // 年增率：找去年同季（往前推4筆季報）
+        const yoyItem = epsItems.length>=5 ? epsItems[epsItems.length-5] : null;
+        const yoy = yoyItem && parseFloat(yoyItem.value)!==0 ? ((curEps-parseFloat(yoyItem.value))/Math.abs(parseFloat(yoyItem.value))*100) : null;
+        // 累計EPS：抓「今年」（跟最新一筆同一年）所有季度加總
+        const curYear = curEpsItem.date.slice(0,4);
+        const cumulativeEps = epsItems.filter(r=>r.date.slice(0,4)===curYear).reduce((s,r)=>s+parseFloat(r.value||0),0);
+        // 業外占比：稅後淨利 - 營業利益，佔稅後淨利的比例
+        let nonOpText='';
+        const matchedNi = niItemsForEps.find(r=>r.date===curEpsItem.date);
+        const matchedOi = oiItemsForEps.find(r=>r.date===curEpsItem.date);
+        let nonOpRatio=null;
+        if(matchedNi && matchedOi){
+          const niVal=parseFloat(matchedNi.value||0);
+          const oiVal=parseFloat(matchedOi.value||0);
+          if(niVal!==0){
+            nonOpRatio=((niVal-oiVal)/Math.abs(niVal))*100;
+          }
         }
+        const score = curEps<=0?0:qoq===null?2:qoq>=25?5:qoq>=10?4:qoq>=0?3:1;
+        let sub;
+        if(curEps<=0) sub='本季每股虧損，留意營運狀況';
+        else if(nonOpRatio!==null && nonOpRatio>=50) sub='獲利主要來自業外，非本業持續性收益，需留意';
+        else if(nonOpRatio!==null && nonOpRatio<=-50) sub='業外顯著侵蝕獲利，但本業仍有支撐';
+        else sub='獲利以本業為主，體質相對健康';
+        const curQLabel = dateToQuarter(curEpsItem.date);
+        const prevQLabel = dateToQuarter(epsItems[epsItems.length-2].date);
+        rocketItems.unshift({
+          label:'EPS', maxScore:5,
+          curLabel:curQLabel,
+          curVal:`${curQLabel} ${curEps.toFixed(2)}元${qoq!==null?`　季增：${qoq>=0?'+':''}${qoq.toFixed(0)}%`:''}`,
+          prevVal:`${prevQLabel} ${prevEps.toFixed(2)}元`,
+          extra:`累計EPS：${cumulativeEps.toFixed(2)}元${nonOpRatio!==null?`　業外占比：${nonOpRatio.toFixed(0)}%`:''}`,
+          trendUp:qoq!==null?qoq>=0:curEps>0,
+          sub, ok:curEps>0 && (qoq===null||qoq>=0), score
+        });
       }
     }
 
