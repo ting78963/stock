@@ -488,6 +488,8 @@ html.font-xl{font-size:19px}
     <div id="ra">
       <!-- 預設狀態 -->
       <div id="stock-default-view">
+        <!-- 持股區（最優先顯示，因為是真金白銀的部位） -->
+        <div id="holdings-card" style="margin-bottom:12px"></div>
         <!-- 自選股VCP狀態（即將突破/突破爆發） -->
         <div id="stock-vcp-alert" style="margin-bottom:12px">
           <div style="background:var(--bg2);border-radius:12px;border:0.5px solid var(--border);padding:14px 16px">
@@ -528,10 +530,6 @@ html.font-xl{font-size:19px}
     <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px">自選清單</div>
     <div style="font-size:13px;color:var(--text3);margin-bottom:14px">追蹤中的股票</div>
     <div id="watch-scan-status" style="display:none;font-size:11px;color:var(--text3);margin-bottom:8px;align-items:center;gap:6px"><span style="display:inline-block;animation:spin 1s linear infinite">↺</span> 更新VCP狀態中...</div>
-    <div id="divergence-alert-card" style="display:none;margin-bottom:14px"></div>
-    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px">
-      <div onclick="checkDivergenceMonitor()" style="font-size:11px;color:var(--wine);display:flex;align-items:center;gap:3px;cursor:pointer">↺ 更新背離</div>
-    </div>
     <div id="wa"></div>
     <!-- 舊功能需要的隱藏div -->
     <div id="ha" style="display:none"></div>
@@ -1582,6 +1580,9 @@ function rResult(raw,a){
         <div id="watchBtnTop" onclick="tW('${raw.code}','${raw.name}',${a.overall},'${a.vcp.status||''}')" style="padding:6px 12px;background:${inW?'var(--gbg)':'var(--bg2)'};border:1px solid ${inW?'var(--green)':'var(--wine)'};border-radius:20px;font-size:12px;font-weight:600;color:${inW?'var(--green)':'var(--wine)'};cursor:pointer;white-space:nowrap">
           <span style="display:inline-block;animation:${inW?'none':'starSpin 2s linear infinite'}">${inW?'✅':'⭐'}</span> ${inW?'已自選':'自選'}
         </div>
+        <div id="holdingBtnTop" onclick="const isH=getHoldings().some(h=>h.sym==='${raw.code}');if(isH){removeHolding('${raw.code}')}else{addHolding('${raw.code}','${raw.name}')};this.innerHTML=(getHoldings().some(h=>h.sym==='${raw.code}')?'持股中':'持股');this.style.background=getHoldings().some(h=>h.sym==='${raw.code}')?'var(--rbg)':'var(--bg2)';this.style.borderColor=getHoldings().some(h=>h.sym==='${raw.code}')?'var(--wine)':'var(--border)';this.style.color=getHoldings().some(h=>h.sym==='${raw.code}')?'var(--wine)':'var(--text2)';" style="padding:6px 12px;background:${getHoldings().some(h=>h.sym===raw.code)?'var(--rbg)':'var(--bg2)'};border:1px solid ${getHoldings().some(h=>h.sym===raw.code)?'var(--wine)':'var(--border)'};border-radius:20px;font-size:12px;font-weight:600;color:${getHoldings().some(h=>h.sym===raw.code)?'var(--wine)':'var(--text2)'};cursor:pointer;white-space:nowrap">
+          ${getHoldings().some(h=>h.sym===raw.code)?'持股中':'持股'}
+        </div>
       </div>
     </div>
     <div style="font-size:var(--fs-3xl);font-weight:700;letter-spacing:-1px;color:${a.dayChg>=0?'var(--red)':'var(--green)'};margin-bottom:6px">${f(a.cur,2)}</div>
@@ -2373,14 +2374,14 @@ async function renderExtraData(stockCode, a) {
         else if(nonOpRatio!==null && nonOpRatio>=50) sub='獲利主要來自業外，非本業持續性收益，需留意';
         else if(nonOpRatio!==null && nonOpRatio<=-50) sub='業外顯著侵蝕獲利，但本業仍有支撐';
         else sub='獲利以本業為主，體質相對健康';
-        const curQLabel = dateToQuarter(curEpsItem.date);
-        const prevQLabel = dateToQuarter(epsItems[epsItems.length-2].date);
+        const curQLabel = dateToQuarter(curEpsItem.date).replace(/^\d{2}(\d{2}年)/,'$1');
+        const prevQLabel = dateToQuarter(epsItems[epsItems.length-2].date).replace(/^\d{2}(\d{2}年)/,'$1');
         rocketItems.unshift({
           label:'EPS', maxScore:5,
           curLabel:curQLabel,
           curVal: yoy!==null ? `${yoy>=0?'+':''}${yoy.toFixed(1)}%` : `${curEps.toFixed(2)}元`,
           prevVal:`${curQLabel} ${curEps.toFixed(2)}元${qoq!==null?`（季增${qoq>=0?'+':''}${qoq.toFixed(0)}%）`:''}`,
-          extra:`${prevQLabel} ${prevEps.toFixed(2)}元　累計EPS：${cumulativeEps.toFixed(2)}元${nonOpRatio!==null?`　業外：${nonOpRatio.toFixed(0)}%`:''}`,
+          extra:`${prevQLabel} ${prevEps.toFixed(2)}元<br>累計EPS：${cumulativeEps.toFixed(2)}元${nonOpRatio!==null?`　業外：${nonOpRatio.toFixed(0)}%`:''}`,
           trendUp:qoq!==null?qoq>=0:curEps>0,
           sub, ok:curEps>0 && (qoq===null||qoq>=0), score
         });
@@ -2772,9 +2773,7 @@ function rW(){
       w.vcpStatus==='final_contraction'?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff3eb;color:#f97316;border:0.5px solid #f9731640;font-weight:600;margin-left:6px">◈ 即將突破</span>`:
       w.vcpStatus==='just_broke'?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--rbg);color:var(--red);border:0.5px solid var(--rbr);font-weight:600;margin-left:6px">🚀 突破爆發</span>`:'';
     const scoreStyle=w.score>=70?'background:#f5c842;color:#fff;font-weight:700;border:none':`background:${c}18;color:${c};border:0.5px solid ${c}40`;
-    const monitorOn=!!w.divergenceMonitor;
-    const monitorBtn=`<div onclick="event.stopPropagation();toggleDivergenceMonitor('${w.sym}')" style="font-size:10px;padding:2px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;${monitorOn?'background:var(--wine);color:#fff;font-weight:600':'background:var(--bg2);color:var(--text3);border:0.5px solid var(--border)'}">${monitorOn?'已監控':'背離監控'}</div>`;
-    return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}${vcpBadge}</div><div class="lna">${displayName}</div></div><div class="lr"><div class="spill" style="${scoreStyle}">${w.score}</div>${monitorBtn}<div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
+    return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}${vcpBadge}</div><div class="lna">${displayName}</div></div><div class="lr"><div class="spill" style="${scoreStyle}">${w.score}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
   };
 
   let html='';
@@ -2791,59 +2790,86 @@ function rW(){
 }
 function rmW(sym){LS.set('watch',LS.get('watch').filter(w=>w.sym!==sym));rW();}
 
-function toggleDivergenceMonitor(sym){
-  const wl=LS.get('watch');
-  const idx=wl.findIndex(w=>w.sym===sym);
-  if(idx>=0){
-    wl[idx].divergenceMonitor=!wl[idx].divergenceMonitor;
-    LS.set('watch',wl);
-    rW();
+// 持股區：獨立於自選清單，只存代號+名稱，用來做背離監控
+function getHoldings(){
+  try{ return JSON.parse(localStorage.getItem('holdings_list')||'[]'); }catch(e){ return []; }
+}
+function setHoldings(list){
+  try{ localStorage.setItem('holdings_list',JSON.stringify(list)); }catch(e){}
+}
+function addHolding(sym,name){
+  const list=getHoldings();
+  if(!list.some(h=>h.sym===sym)){
+    list.unshift({sym,name});
+    setHoldings(list);
   }
+  renderHoldingsCard();
+}
+function removeHolding(sym){
+  setHoldings(getHoldings().filter(h=>h.sym!==sym));
+  renderHoldingsCard();
 }
 
-async function checkDivergenceMonitor(){
-  const wl=LS.get('watch')||[];
-  const monitored=wl.filter(w=>w.divergenceMonitor);
-  const cardEl=document.getElementById('divergence-alert-card');
+async function checkHoldingsDivergence(){
+  const holdings=getHoldings();
+  const cardEl=document.getElementById('holdings-card');
   if(!cardEl)return;
-  if(!monitored.length){
-    cardEl.style.display='none';
+  if(!holdings.length){
+    renderHoldingsCard();
     return;
   }
-  cardEl.style.display='block';
-  cardEl.innerHTML=`<div style="background:var(--bg2);border-radius:12px;border:0.5px solid var(--border);padding:14px 16px">
-    <div style="font-size:13px;color:var(--text2);text-align:center">背離檢測中... 0/${monitored.length}</div>
+  const header=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <div style="font-size:13px;font-weight:600;color:var(--wine)">💰 持股區</div>
+    <div onclick="checkHoldingsDivergence()" style="font-size:11px;color:var(--wine);display:flex;align-items:center;gap:3px;cursor:pointer">↺ 更新背離</div>
+  </div>`;
+  cardEl.innerHTML=`${header}<div style="background:var(--bg2);border-radius:12px;border:0.5px solid var(--border);padding:14px 16px">
+    <div style="font-size:13px;color:var(--text2);text-align:center">背離檢測中... 0/${holdings.length}</div>
   </div>`;
 
-  const results=[];
+  const results={};
   let doneCount=0;
-  for(const w of monitored){
+  for(const h of holdings){
     try{
-      const raw=await fetchStock(w.sym);
+      const raw=await fetchStock(h.sym);
       doneCount++;
       const progEl=cardEl.querySelector('div > div');
-      if(progEl) progEl.textContent=`背離檢測中... ${doneCount}/${monitored.length}`;
+      if(progEl) progEl.textContent=`背離檢測中... ${doneCount}/${holdings.length}`;
       if(!raw||!raw.data||raw.data.length<40)continue;
       const closes=raw.data.map(d=>d.close);
       const macdRaw=calcMACD(closes,12,26,9);
       const divergence=detectMACDDivergence(closes,macdRaw.histArr);
-      if(divergence){
-        results.push({sym:w.sym,name:w.name,text:divergence.text});
-      }
+      if(divergence) results[h.sym]=divergence.text;
     }catch(e){continue;}
   }
+  try{localStorage.setItem('holdings_divergence_result',JSON.stringify(results));}catch(e){}
+  renderHoldingsCard();
+}
 
-  if(!results.length){
-    cardEl.style.display='none';
+function renderHoldingsCard(){
+  const cardEl=document.getElementById('holdings-card');
+  if(!cardEl)return;
+  const holdings=getHoldings();
+  const header=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <div style="font-size:13px;font-weight:600;color:var(--wine)">💰 持股區</div>
+    <div onclick="checkHoldingsDivergence()" style="font-size:11px;color:var(--wine);display:flex;align-items:center;gap:3px;cursor:pointer">↺ 更新背離</div>
+  </div>`;
+  if(!holdings.length){
+    cardEl.innerHTML=`${header}<div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">尚未加入持股，可在個股分析頁面點擊「持股」</div>`;
     return;
   }
-  cardEl.innerHTML=`<div style="background:var(--abg);border-radius:12px;border:0.5px solid var(--abr);padding:14px 16px">
-    <div style="font-size:13px;font-weight:600;color:var(--amber);margin-bottom:10px">⚠️ 背離警示</div>
-    ${results.map(r=>`<div onclick="gs('${r.sym}')" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer">
-      <div style="font-size:14px;color:var(--text)">${r.sym} ${r.name||''}</div>
-      <div style="font-size:12px;color:var(--amber);margin-top:2px">${r.text}</div>
-    </div>`).join('')}
-  </div>`;
+  let divergenceMap={};
+  try{ divergenceMap=JSON.parse(localStorage.getItem('holdings_divergence_result')||'{}'); }catch(e){}
+  const body=holdings.map(h=>{
+    const warn=divergenceMap[h.sym];
+    return `<div onclick="gs('${h.sym}')" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:14px;color:var(--text)">${h.sym} ${h.name||''}</div>
+        ${warn?`<div style="font-size:12px;color:var(--amber);margin-top:2px">⚠️ ${warn}</div>`:''}
+      </div>
+      <div onclick="event.stopPropagation();removeHolding('${h.sym}')" style="font-size:14px;color:var(--text3);cursor:pointer;padding:0 4px">✕</div>
+    </div>`;
+  }).join('');
+  cardEl.innerHTML=header+body;
 }
 
 function gs(sym){document.getElementById('ti').value=sym;showPage('stock',null,'nav-stock');setTimeout(()=>doSearch(),50);}
@@ -2886,6 +2912,7 @@ function goHome(){
   if(ra){
     ra.innerHTML=`
       <div id="stock-default-view">
+        <div id="holdings-card" style="margin-bottom:12px"></div>
         <div id="stock-vcp-alert" style="margin-bottom:12px">
           <div style="background:var(--bg2);border-radius:12px;border:0.5px solid var(--border);padding:14px 16px">
             <div style="font-size:13px;font-weight:600;color:var(--wine);margin-bottom:8px">⭐ 自選股狀態</div>
@@ -4845,6 +4872,7 @@ function renderWatchVcpCard(){
 }
 
 async function loadStockDefault(){
+  renderHoldingsCard();
   // 今日爆量股（盤中）：檢查是否已有快取，有則直接顯示
   try{
     const today=new Date();
