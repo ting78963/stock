@@ -2378,9 +2378,9 @@ async function renderExtraData(stockCode, a) {
         rocketItems.unshift({
           label:'EPS', maxScore:5,
           curLabel:curQLabel,
-          curVal:`${curQLabel} ${curEps.toFixed(2)}元${qoq!==null?`　季增：${qoq>=0?'+':''}${qoq.toFixed(0)}%`:''}`,
-          prevVal:`${prevQLabel} ${prevEps.toFixed(2)}元`,
-          extra:`累計EPS：${cumulativeEps.toFixed(2)}元${nonOpRatio!==null?`　業外占比：${nonOpRatio.toFixed(0)}%`:''}`,
+          curVal: yoy!==null ? `${yoy>=0?'+':''}${yoy.toFixed(1)}%` : `${curEps.toFixed(2)}元`,
+          prevVal:`${curQLabel} ${curEps.toFixed(2)}元${qoq!==null?`（季增${qoq>=0?'+':''}${qoq.toFixed(0)}%）`:''}`,
+          extra:`${prevQLabel} ${prevEps.toFixed(2)}元　累計EPS：${cumulativeEps.toFixed(2)}元${nonOpRatio!==null?`　業外：${nonOpRatio.toFixed(0)}%`:''}`,
           trendUp:qoq!==null?qoq>=0:curEps>0,
           sub, ok:curEps>0 && (qoq===null||qoq>=0), score
         });
