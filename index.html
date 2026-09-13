@@ -513,6 +513,11 @@ html.font-xl{font-size:19px}
           <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 盤中查詢（即時快照）</div>
         </div>
 
+        <!-- 收盤存檔 -->
+        <div id="close-save-card" style="margin-bottom:12px">
+          <div id="close-save-btn-wrap"></div>
+        </div>
+
         <!-- 法人買超觀察（比對今日爆量股候選 + 外資投信買賣超） -->
         <div id="stock-institutional-card" style="margin-bottom:12px">
           <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">📊 法人買超觀察</div>
@@ -2899,6 +2904,7 @@ function showPage(id, tabEl, navId){
     const defView=document.getElementById('stock-default-view');
     if(defView) defView.style.display='block';
     loadStockDefault();
+    renderCloseSaveBtn();
   }
   if(id==='watch'){if(typeof rW==='function')rW();}
   if(id==='stock') renderSearchHistory();
@@ -2926,6 +2932,9 @@ function goHome(){
         <div id="stock-hotvol-card" style="margin-bottom:12px">
           <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">🔥 今日爆量股</div>
           <div onclick="loadHotVolStocks()" style="padding:14px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--rs);text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600">🔍 盤中查詢（即時快照）</div>
+        </div>
+        <div id="close-save-card" style="margin-bottom:12px">
+          <div id="close-save-btn-wrap"></div>
         </div>
         <div id="stock-institutional-card" style="margin-bottom:12px">
           <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">📊 法人買超觀察</div>
@@ -4208,7 +4217,7 @@ async function loadHotVolStocks(forceRefresh){
     const cacheKey='hotvol_cache_v5';
     const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
     if(!forceRefresh && cached&&cached.date===dateStr){
-      renderHotVolCard(el,cached.noVcpStocks,cached.fetchTimeStr);
+      renderHotVolCard(el,cached.noVcpStocks,cached.filteredOutStocks||[],cached.fetchTimeStr);
       if(vcpEl2) renderVcpSignalCard(vcpEl2,cached.vcpSignalStocks,cached.fetchTimeStr);
       return;
     }
@@ -4245,6 +4254,7 @@ async function loadHotVolStocks(forceRefresh){
     // ③ 逐一抓每支股票近5日資料算量比（節流）
     const vcpSignalStocks=[];
     const noVcpStocks=[];
+    const filteredOutStocks=[];
     const totalCount=upStocks.length;
     let doneCount=0;
     for(const stock of upStocks){
@@ -4311,13 +4321,18 @@ async function loadHotVolStocks(forceRefresh){
           }
           vcpSignalStocks.push(entry);
         } else {
-          // 無VCP型態的股票，額外套用強度過濾：漲幅≥4.6% 且 站上20日均線（VCP訊號不受此限制）
+          // 無VCP型態：漲幅≥3% 且 站上20日均線才進主清單，否則進未達門檻
           const closesForMA=sorted.map(r=>parseFloat(r.close)||0);
           const last20=closesForMA.slice(-20);
           const ma20=last20.length>0?last20.reduce((a,b)=>a+b,0)/last20.length:0;
           const aboveMA20=ma20>0?entry.price>=ma20:false;
-          if(entry.chgPct>=4.6 && aboveMA20){
+          if(entry.chgPct>=3 && aboveMA20){
             noVcpStocks.push(entry);
+          } else {
+            const reasons=[];
+            if(entry.chgPct<3) reasons.push('漲幅不足');
+            if(!aboveMA20) reasons.push('未站MA20');
+            filteredOutStocks.push({...entry, ma20:Math.round(ma20*100)/100, reasons});
           }
         }
         await new Promise(r=>setTimeout(r,120));
@@ -4325,6 +4340,7 @@ async function loadHotVolStocks(forceRefresh){
     }
     vcpSignalStocks.sort((a,b)=>b.volRatio-a.volRatio);
     noVcpStocks.sort((a,b)=>b.volRatio-a.volRatio);
+    filteredOutStocks.sort((a,b)=>b.volRatio-a.volRatio);
 
     // 只有「最新一次」的查詢，才會真正累加次數、寫入快取、渲染畫面；如果手機背景凍結導致這次查詢拖了很久，
     // 期間又有更新的查詢啟動並完成，這次（較舊）的結果就不會覆蓋快取或畫面，避免顯示過期資料
@@ -4332,9 +4348,10 @@ async function loadHotVolStocks(forceRefresh){
 
     updateMonthlyCount([...vcpSignalStocks,...noVcpStocks]); // 收盤後才會真正累加，盤中查詢只是讀取顯示
     const fetchTimeStr=`${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
-    try{localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,vcpSignalStocks,noVcpStocks,fetchTimeStr}));}catch(e){}
+    try{localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,vcpSignalStocks,noVcpStocks,filteredOutStocks,fetchTimeStr}));}catch(e){}
 
-    renderHotVolCard(el,noVcpStocks,fetchTimeStr);
+    renderHotVolCard(el,noVcpStocks,filteredOutStocks,fetchTimeStr);
+    renderCloseSaveBtn();
     if(vcpEl2) renderVcpSignalCard(vcpEl2,vcpSignalStocks,fetchTimeStr);
   }catch(e){
     console.error('loadHotVolStocks error:',e);
@@ -4574,32 +4591,251 @@ function renderStrongStocksCard(){
 }
 
 
-function renderHotVolCard(el,noVcpStocks,fetchTimeStr){
+// ══════════════════════════════════════════════════
+// 📦 收盤存檔系統
+// ══════════════════════════════════════════════════
+const RESEARCH_ARCHIVE_KEY = 'research_archive_v1';
+
+function getResearchArchive(){
+  try{ return JSON.parse(localStorage.getItem(RESEARCH_ARCHIVE_KEY)||'{}'); }
+  catch(e){ return {}; }
+}
+
+function saveResearchArchive(map){
+  try{ localStorage.setItem(RESEARCH_ARCHIVE_KEY, JSON.stringify(map)); }
+  catch(e){ alert('localStorage 空間不足，請先匯出舊資料後清除'); }
+}
+
+function getTodayStr(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getYesterdayStr(){
+  const d=new Date();
+  d.setDate(d.getDate()-1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// 取FinMind分K（TaiwanStockKBar），回傳指定日期的資料
+async function fetchKBar(stockId, dateStr){
+  try{
+    const url=`${FM_BASE}?dataset=TaiwanStockKBar&data_id=${stockId}&start_date=${dateStr}&token=${FM_TOKEN}`;
+    const r=await fetch(url);
+    const d=await r.json();
+    if(d.status===200 && d.data && d.data.length>0){
+      return d.data.filter(row=>row.date && row.date.slice(0,10)===dateStr);
+    }
+    return [];
+  }catch(e){ return []; }
+}
+
+// 主存檔函數
+async function saveClosingSnapshot(){
+  const now = new Date();
+  const hour = now.getHours();
+  const min  = now.getMinutes();
+
+  // 14:30 前不讓按
+  if(hour < 14 || (hour===14 && min<30)){
+    alert('⏰ 請於 14:30 收盤後再按存檔');
+    return;
+  }
+
+  const todayStr     = getTodayStr();
+  const yesterdayStr = getYesterdayStr();
+  const archive      = getResearchArchive();
+
+  // 防重複
+  if(archive[todayStr]){
+    alert(`✅ 今日（${todayStr}）已存檔，無需重複操作`);
+    return;
+  }
+
+  // 從 hotvol_cache_v5 取所有股票（passed + filteredOut）
+  let passedList = [];
+  let filteredList = [];
+  let scanTime = '';
+  try{
+    const hvCache = JSON.parse(localStorage.getItem('hotvol_cache_v5')||'null');
+    const d=new Date(); const dateStr=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+    if(hvCache && hvCache.date===dateStr){
+      passedList = [...(hvCache.vcpSignalStocks||[]),...(hvCache.noVcpStocks||[])];
+      filteredList = hvCache.filteredOutStocks||[];
+      scanTime = hvCache.fetchTimeStr||'';
+    }
+  }catch(e){}
+
+  const allStocks = [...passedList, ...filteredList];
+  if(!allStocks.length){
+    alert('⚠️ 今日尚無掃描資料，請先執行「盤中查詢」後再存檔');
+    return;
+  }
+
+  // 更新按鈕狀態
+  const btn = document.getElementById('close-save-action-btn');
+  if(btn){ btn.textContent='⏳ 抓取分K中...'; btn.style.opacity='0.6'; btn.onclick=null; }
+
+  // 逐一抓分K（全部股票）
+  const enriched = [];
+  for(let i=0; i<allStocks.length; i++){
+    const s = allStocks[i];
+    if(btn) btn.textContent=`⏳ 抓分K... ${i+1}/${allStocks.length}`;
+    const [todayK, yesterdayK] = await Promise.all([
+      fetchKBar(s.code, todayStr),
+      fetchKBar(s.code, yesterdayStr)
+    ]);
+    enriched.push({
+      ...s,
+      kbar_today: todayK,
+      kbar_yesterday: yesterdayK
+    });
+    await new Promise(r=>setTimeout(r,150));
+  }
+
+  const passedCodes = new Set(passedList.map(s=>s.code));
+  const enrichedPassed   = enriched.filter(s=>passedCodes.has(s.code));
+  const enrichedFiltered = enriched.filter(s=>!passedCodes.has(s.code));
+
+  // 寫入 archive
+  archive[todayStr] = {
+    scanTime,
+    savedAt: new Date().toISOString(),
+    passed: enrichedPassed,
+    filtered: enrichedFiltered
+  };
+  saveResearchArchive(archive);
+
+  // 下載 JSON
+  const payload = {date:todayStr, scanTime, savedAt:new Date().toISOString(), passed:enrichedPassed, filtered:enrichedFiltered};
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `stock_snapshot_${todayStr}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  // 更新按鈕顯示
+  renderCloseSaveBtn();
+  alert(`✅ ${todayStr} 存檔完成！通過 ${enrichedPassed.length} 支 / 未達門檻 ${enrichedFiltered.length} 支，已下載 JSON`);
+}
+
+// 匯出所有歷史為 CSV
+function exportAllHistoryCSV(){
+  const archive = getResearchArchive();
+  const dates = Object.keys(archive).sort();
+  if(!dates.length){ alert('尚無歷史資料'); return; }
+
+  const rows = [['日期','股號','股名','收盤價','漲跌幅%','今日量(張)','量比','VCP型態','存檔時間']];
+  dates.forEach(dateStr=>{
+    const entry = archive[dateStr];
+    (entry.stocks||[]).forEach(s=>{
+      rows.push([
+        dateStr,
+        s.code,
+        s.name,
+        s.price,
+        s.chgPct,
+        s.todayVol,
+        s.volRatio,
+        s.vcpInfo ? s.vcpInfo.type : '',
+        entry.savedAt||''
+      ]);
+    });
+  });
+
+  const csv = rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `stock_history_all_${getTodayStr()}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// 渲染收盤存檔按鈕
+function renderCloseSaveBtn(){
+  const wraps = document.querySelectorAll('#close-save-btn-wrap');
+  if(!wraps.length) return;
+  const todayStr  = getTodayStr();
+  const archive   = getResearchArchive();
+  const alreadySaved = !!archive[todayStr];
+  const dates     = Object.keys(archive).sort((a,b)=>b.localeCompare(a));
+  const html = `
+    <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">💾 收盤存檔</div>
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:12px 14px">
+      ${alreadySaved
+        ? `<div style="font-size:13px;color:var(--green);font-weight:600;margin-bottom:8px">✅ 今日（${todayStr}）已存檔（${(archive[todayStr].stocks||[]).length} 支）</div>`
+        : `<div id="close-save-action-btn" onclick="saveClosingSnapshot()" style="padding:11px;background:var(--wine);color:#fff;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">
+             💾 今日收盤存檔（14:30 後）
+           </div>`
+      }
+      ${dates.length
+        ? `<div style="font-size:11px;color:var(--text3);margin-bottom:6px">已存 ${dates.length} 天：${dates.slice(0,3).join('、')}${dates.length>3?'…':''}</div>`
+        : ''
+      }
+      <div onclick="exportAllHistoryCSV()" style="padding:8px;background:var(--bg3,var(--bg2));border:0.5px solid var(--border);border-radius:6px;text-align:center;font-size:12px;color:var(--text2);cursor:pointer">
+        📥 匯出全部歷史 CSV
+      </div>
+    </div>`;
+  wraps.forEach(w=>{ w.innerHTML=html; });
+}
+
+function renderHotVolCard(el,noVcpStocks,filteredOutStocks,fetchTimeStr){
   const header=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
     <div style="font-size:11px;font-weight:600;color:var(--wine)">🔥 今日爆量股（無VCP型態）</div>
     <div onclick="loadHotVolStocks(true)" style="font-size:11px;color:var(--wine);display:flex;align-items:center;gap:3px;cursor:pointer">↺ 重新整理</div>
   </div>
   ${fetchTimeStr?`<div style="font-size:10px;color:var(--text3);margin-bottom:8px">更新於 ${fetchTimeStr}</div>`:''}`;
-  if(!noVcpStocks||!noVcpStocks.length){
-    el.innerHTML=`${header}<div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">目前無「爆量上漲」訊號</div>`;
-    return;
-  }
-  // 依股價級距分組
+  // 主清單
   const tiers=['1000元以上','500-1000元','100-500元','50-100元','10-50元','10元以下'];
   const groups={};
   tiers.forEach(t=>groups[t]=[]);
-  noVcpStocks.forEach(s=>{
+  (noVcpStocks||[]).forEach(s=>{
     const t=s.priceTier && groups[s.priceTier] ? s.priceTier : '10-50元';
     groups[t].push(s);
   });
   let body='';
-  tiers.forEach(t=>{
-    if(groups[t].length){
-      body+=`<div style="font-size:11px;font-weight:600;color:var(--text2);margin:10px 0 6px">${t}</div>`;
-      body+=groups[t].map(s=>stockBadgeHtml(s)).join('');
-    }
-  });
-  el.innerHTML=`${header}${body}`;
+  if(!noVcpStocks||!noVcpStocks.length){
+    body=`<div style="padding:14px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);text-align:center;color:var(--text3);font-size:12px">目前無「爆量上漲」訊號</div>`;
+  } else {
+    tiers.forEach(t=>{
+      if(groups[t].length){
+        body+=`<div style="font-size:11px;font-weight:600;color:var(--text2);margin:10px 0 6px">${t}</div>`;
+        body+=groups[t].map(s=>stockBadgeHtml(s)).join('');
+      }
+    });
+  }
+  // 未達門檻折疊區塊
+  let filteredHtml='';
+  if(filteredOutStocks && filteredOutStocks.length){
+    const fId='filtered-out-'+Date.now();
+    const rows=filteredOutStocks.map(s=>{
+      const badges=(s.reasons||[]).map(r=>{
+        const color=r==='未站MA20'?'color:#5f5e5a;background:var(--bg2);border:0.5px solid var(--border)':'color:#854f0b;background:#faeeda';
+        return `<span style="font-size:10px;padding:1px 6px;border-radius:6px;${color};font-weight:500;margin-right:4px">${r}</span>`;
+      }).join('');
+      return `<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:6px;cursor:pointer">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text2)">量比 ${s.volRatio}x</div>
+        </div>
+        <div style="margin-top:3px">${badges}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:3px">$${s.price}　<span style="color:var(--red)">▲${s.chgPct}%</span>　MA20: ${s.ma20||'-'}</div>
+      </div>`;
+    }).join('');
+    filteredHtml=`<div style="margin-top:12px;border-top:0.5px solid var(--border);padding-top:10px">
+      <div onclick="(function(el,arrow){el.style.display=el.style.display==='none'?'block':'none';arrow.textContent=el.style.display==='none'?'▼':'▲';})(document.getElementById('${fId}'),this.querySelector('.fo-arrow'))" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;margin-bottom:6px">
+        <div>
+          <span style="font-size:11px;font-weight:600;color:var(--text2)">📋 其他上漲股（未達門檻）</span>
+          <span style="font-size:11px;color:var(--text3);margin-left:6px">共 ${filteredOutStocks.length} 支</span>
+        </div>
+        <span class="fo-arrow" style="font-size:11px;color:var(--text3)">▼</span>
+      </div>
+      <div id="${fId}" style="display:none">${rows}</div>
+    </div>`;
+  }
+  el.innerHTML=`${header}${body}${filteredHtml}`;
 }
 
 function renderVcpSignalCard(el,vcpSignalStocks,fetchTimeStr){
@@ -4881,7 +5117,7 @@ async function loadStockDefault(){
     if(cached&&cached.date===dateStr){
       const hvEl=document.getElementById('stock-hotvol-card');
       const vsEl=document.getElementById('stock-vcpsignal-card');
-      if(hvEl) renderHotVolCard(hvEl,cached.noVcpStocks,cached.fetchTimeStr);
+      if(hvEl) renderHotVolCard(hvEl,cached.noVcpStocks,cached.filteredOutStocks||[],cached.fetchTimeStr);
       if(vsEl) renderVcpSignalCard(vsEl,cached.vcpSignalStocks,cached.fetchTimeStr);
     }
   }catch(e){}
