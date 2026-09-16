@@ -3895,7 +3895,7 @@ function priceTierLabel(price){
 
 function stockBadgeHtml(s,tier){
   const monthlyCount=getMonthlyCountFor(s.code);
-  const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--wine);color:#fff;font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
+  const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:var(--red);border:0.5px solid var(--red);font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
   return `<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
     <div>
       <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}${countBadge}</div>
