@@ -4019,9 +4019,32 @@ async function saveClosingSnapshot(){
 
   // 更新按鈕狀態
   const btn = document.getElementById('close-save-action-btn');
-  if(btn){ btn.textContent='⏳ 抓取分K中...'; btn.style.opacity='0.6'; btn.onclick=null; }
+  if(btn){ btn.textContent='⏳ 存檔中...'; btn.style.opacity='0.6'; btn.onclick=null; }
 
-  // 逐一抓分K（全部股票）
+  const passedCodes = new Set(passedList.map(s=>s.code));
+
+  // ① localStorage 只存快照（不含分K，輕量）
+  const snapshotPassed   = passedList.map(s=>({
+    code:s.code, name:s.name, price:s.price, chgPct:s.chgPct,
+    todayVol:s.todayVol, volRatio:s.volRatio, avgPrice:s.avgPrice||null,
+    vcpInfo:s.vcpInfo||null, priceTier:s.priceTier||null
+  }));
+  const snapshotFiltered = filteredList.map(s=>({
+    code:s.code, name:s.name, price:s.price, chgPct:s.chgPct,
+    todayVol:s.todayVol, volRatio:s.volRatio, avgPrice:s.avgPrice||null,
+    ma20:s.ma20||null, reasons:s.reasons||[]
+  }));
+
+  archive[todayStr] = {
+    scanTime,
+    savedAt: new Date().toISOString(),
+    passed: snapshotPassed,
+    filtered: snapshotFiltered
+  };
+  saveResearchArchive(archive);
+
+  // ② 下載 JSON 時才即時抓分K
+  if(btn) btn.textContent=`⏳ 抓分K... 0/${allStocks.length}`;
   const enriched = [];
   for(let i=0; i<allStocks.length; i++){
     const s = allStocks[i];
@@ -4030,28 +4053,14 @@ async function saveClosingSnapshot(){
       fetchKBar(s.code, todayStr),
       fetchKBar(s.code, yesterdayStr)
     ]);
-    enriched.push({
-      ...s,
-      kbar_today: todayK,
-      kbar_yesterday: yesterdayK
-    });
+    enriched.push({ ...s, kbar_today:todayK, kbar_yesterday:yesterdayK });
     await new Promise(r=>setTimeout(r,150));
   }
 
-  const passedCodes = new Set(passedList.map(s=>s.code));
   const enrichedPassed   = enriched.filter(s=>passedCodes.has(s.code));
   const enrichedFiltered = enriched.filter(s=>!passedCodes.has(s.code));
 
-  // 寫入 archive
-  archive[todayStr] = {
-    scanTime,
-    savedAt: new Date().toISOString(),
-    passed: enrichedPassed,
-    filtered: enrichedFiltered
-  };
-  saveResearchArchive(archive);
-
-  // 下載 JSON
+  // 下載 JSON（含分K）
   const payload = {date:todayStr, scanTime, savedAt:new Date().toISOString(), passed:enrichedPassed, filtered:enrichedFiltered};
   const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
@@ -4942,6 +4951,11 @@ function renderSettings(){
     <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--border);padding:14px;margin-bottom:12px">
       <div style="font-size:var(--fs-sm);font-weight:600;color:var(--text);margin-bottom:4px">關於</div>
       <div style="font-size:var(--fs-xs);color:var(--text3);line-height:1.7">強勢選股 PWA<br>資料來源：FinMind、台灣證交所<br>⚠️ 本分析僅供技術面學習參考，不構成投資建議</div>
+    </div>
+    <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--border);padding:14px;margin-bottom:12px">
+      <div style="font-size:var(--fs-sm);font-weight:600;color:var(--text);margin-bottom:8px">收盤存檔管理</div>
+      <div onclick="if(confirm('確定清除所有收盤存檔？')){localStorage.removeItem('research_archive_v1');alert('✅ 已清除');}" style="padding:11px;background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;text-align:center;font-size:13px;color:var(--text2);cursor:pointer;margin-bottom:8px">🗑️ 清除收盤存檔（釋放空間）</div>
+      <div style="font-size:var(--fs-xs);color:var(--text3)">清除後 localStorage 空間釋放，已下載的 JSON 檔案不受影響</div>
     </div>
     <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--border);padding:14px;margin-bottom:12px">
       <div style="font-size:var(--fs-sm);font-weight:600;color:var(--text);margin-bottom:8px">APP 更新</div>
