@@ -3895,7 +3895,7 @@ function priceTierLabel(price){
 
 function stockBadgeHtml(s,tier){
   const monthlyCount=getMonthlyCountFor(s.code);
-  const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--gbg);color:var(--green);border:0.5px solid var(--gbr);font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
+  const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:var(--wine);color:#fff;font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
   return `<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
     <div>
       <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}${countBadge}</div>
@@ -4597,8 +4597,8 @@ async function renderMktCard(manual){
 
   const totalScore=devScore+fxScore+instScore;
   let suggestion='',sugColor='',sugBg='';
-  if(totalScore===0){suggestion='三項條件全部正常，市場環境良好';sugColor='var(--red)';sugBg='var(--rbg)';}
-  else if(totalScore===1){suggestion='大致正常，優先關注火箭指標高且外資買超個股';sugColor='var(--red)';sugBg='var(--rbg)';}
+  if(totalScore===0){suggestion='三項條件全部正常，市場環境良好';sugColor='#fff';sugBg='var(--wine)';}
+  else if(totalScore===1){suggestion='大致正常，優先關注火箭指標高且外資買超個股';sugColor='#fff';sugBg='var(--wine)';}
   else if(totalScore===2){suggestion='部分條件偏弱，建議嚴格篩選最強標的';sugColor='var(--amber)';sugBg='var(--abg)';}
   else{suggestion='條件全面偏弱，建議保持觀望';sugColor='var(--green)';sugBg='var(--gbg)';}
 
