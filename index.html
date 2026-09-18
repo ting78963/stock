@@ -4552,10 +4552,17 @@ async function fetchMktConditions(force){
     const yahoo=await fetchYahooBatch(['^TWII']);
     const twii=yahoo['^TWII']||null;
 
-    // FinMind：匯率（USD/TWD）
-    const startFx=(()=>{const d=new Date();d.setDate(d.getDate()-10);return d.toISOString().slice(0,10);})();
-    const fxRows=await fmFetch('TaiwanExchangeRate','USD',startFx)||[];
-    // 取最近兩筆算漲跌
+    // FinMind：匯率（USD/TWD）— 先用 FX_CACHE_KEY 快取，抓不到再用自己的
+    let fxRows=[];
+    try{
+      const fxCache=JSON.parse(localStorage.getItem(FX_CACHE_KEY)||'null');
+      if(fxCache&&fxCache.data&&fxCache.data.length>=2){
+        fxRows=fxCache.data;
+      } else {
+        const startFx=(()=>{const d=new Date();d.setDate(d.getDate()-10);return d.toISOString().slice(0,10);})();
+        fxRows=await fmFetch('TaiwanExchangeRate','USD',startFx)||[];
+      }
+    }catch(e){}
     const sortedFx=[...fxRows].sort((a,b)=>a.date.localeCompare(b.date));
     const twd=sortedFx.length>=2?{
       close:parseFloat(sortedFx[sortedFx.length-1].spot_sell||sortedFx[sortedFx.length-1].cash_sell||0),
