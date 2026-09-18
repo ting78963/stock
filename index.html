@@ -4548,10 +4548,21 @@ async function fetchMktConditions(force){
   }
 
   try{
-    // Yahoo Finance：即時加權 + 即時匯率
-    const yahoo=await fetchYahooBatch(['^TWII','TWD=X']);
+    // Yahoo Finance：即時加權指數
+    const yahoo=await fetchYahooBatch(['^TWII']);
     const twii=yahoo['^TWII']||null;
-    const twd=yahoo['TWD=X']||null;
+
+    // FinMind：匯率（USD/TWD）
+    const startFx=(()=>{const d=new Date();d.setDate(d.getDate()-10);return d.toISOString().slice(0,10);})();
+    const fxRows=await fmFetch('TaiwanExchangeRate','USD',startFx)||[];
+    // 取最近兩筆算漲跌
+    const sortedFx=[...fxRows].sort((a,b)=>a.date.localeCompare(b.date));
+    const twd=sortedFx.length>=2?{
+      close:parseFloat(sortedFx[sortedFx.length-1].spot_sell||sortedFx[sortedFx.length-1].cash_sell||0),
+      prev:parseFloat(sortedFx[sortedFx.length-2].spot_sell||sortedFx[sortedFx.length-2].cash_sell||0),
+      chg_pct:0
+    }:null;
+    if(twd&&twd.prev) twd.chg_pct=Math.round((twd.close-twd.prev)/twd.prev*10000)/100;
 
     // FinMind：TAIEX 歷史日K（算季線乖離 + 近5日走勢）
     const startDate=(()=>{const d=new Date();d.setDate(d.getDate()-90);return d.toISOString().slice(0,10);})();
