@@ -3980,10 +3980,13 @@ async function saveClosingSnapshot(){
   const now = new Date();
   const hour = now.getHours();
   const min  = now.getMinutes();
+  const day  = now.getDay(); // 0=日, 6=六
 
-  // 14:30 前不讓按
-  if(hour < 14 || (hour===14 && min<30)){
-    alert('⏰ 請於 14:30 收盤後再按存檔');
+  // 交易日 09:00-14:30 擋住（盤中資料不完整）
+  const isWeekday = day>=1 && day<=5;
+  const mins = hour*60+min;
+  if(isWeekday && mins>=540 && mins<=870){
+    alert('⏰ 盤中資料尚未完整，請於 14:30 收盤後再存檔');
     return;
   }
 
