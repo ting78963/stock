@@ -859,6 +859,71 @@ function maOf(arr,n){if(arr.length<n)return null;return arr.slice(-n).reduce((a,
 function sdOf(arr){if(arr.length<2)return 0;const m=arr.reduce((a,b)=>a+b,0)/arr.length;return Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length);}
 function toWeekly(data){const w=[];let wk=[];for(let i=0;i<data.length;i++){wk.push(data[i]);if(wk.length===5||i===data.length-1){w.push(wk[wk.length-1].close);wk=[];}}return w;}
 
+// 計算週KD並回傳標籤
+// 回傳: null / 'golden_cross'（黃金交叉第一天）/ 'prepare'（準備黃金交叉，差距≤8）
+function calcWeeklyKDLabel(sortedDayData){
+  if(!sortedDayData||sortedDayData.length<30) return null;
+  const weeklyOHLC=[];
+  let wk=[];
+  for(let i=0;i<sortedDayData.length;i++){
+    wk.push(sortedDayData[i]);
+    if(wk.length===5||i===sortedDayData.length-1){
+      weeklyOHLC.push({
+        close:parseFloat(wk[wk.length-1].close)||0,
+        high:Math.max(...wk.map(r=>parseFloat(r.max||r.high||r.close)||0)),
+        low:Math.min(...wk.map(r=>parseFloat(r.min||r.low||r.close)||0))
+      });
+      wk=[];
+    }
+  }
+  if(weeklyOHLC.length<12) return null;
+  const wkKD=calcKD(weeklyOHLC,9);
+  if(!wkKD.hist||wkKD.hist.length<6) return null;
+
+  const cur=wkKD.hist[wkKD.hist.length-1];
+  const prev=wkKD.hist[wkKD.hist.length-2];
+
+  // 黃金交叉第一天：上週 K<D，本週 K>D
+  if(prev.k<prev.d && cur.k>cur.d) return 'golden_cross';
+
+  // K 還在 D 下面才需要預測
+  if(cur.k>=cur.d) return null;
+
+  // 取最近6週的 K、D 歷史做線性回歸
+  const n=6;
+  const recent=wkKD.hist.slice(-n);
+  const xs=[...Array(n).keys()];
+
+  function linReg(ys){
+    const xMean=(n-1)/2;
+    const yMean=ys.reduce((a,b)=>a+b,0)/n;
+    let num=0,den=0;
+    xs.forEach((x,i)=>{num+=(x-xMean)*(ys[i]-yMean);den+=(x-xMean)**2;});
+    const slope=den?num/den:0;
+    const intercept=yMean-slope*xMean;
+    return{slope,intercept};
+  }
+
+  const kVals=recent.map(h=>h.k);
+  const dVals=recent.map(h=>h.d);
+  const kReg=linReg(kVals);
+  const dReg=linReg(dVals);
+
+  // 預測交叉點
+  const slopeDiff=kReg.slope-dReg.slope;
+  if(Math.abs(slopeDiff)<0.001) return null;
+  const crossX=(dReg.intercept-kReg.intercept)/slopeDiff;
+  const weeksUntilCross=crossX-(n-1);
+
+  // K 必須上升（排除假訊號）
+  if(kReg.slope<=0) return null;
+
+  // 預計 1 週內交叉（約5個交易日）
+  if(weeksUntilCross>0 && weeksUntilCross<=1) return 'prepare';
+
+  return null;
+}
+
 function analyzeVCP(closes,vols,stockCode,dates){
   const n=closes.length;
   if(n<30)return{status:'data_insufficient',s1:0,s2:0,s3:0,contracting:false,volDry:false,pivot:closes[n-1],justBroke:false,breakDays:0};
@@ -3656,7 +3721,8 @@ async function loadHotVolStocks(forceRefresh){
           chgPct:Math.round((stock.change_rate||0)*100)/100,
           price:stock.close||0,
           priceTier:priceTierLabel(stock.close||0),
-          vcpInfo
+          vcpInfo,
+          wkKDLabel:calcWeeklyKDLabel(sorted)
         };
 
         if(vcpInfo){
@@ -3896,9 +3962,10 @@ function priceTierLabel(price){
 function stockBadgeHtml(s,tier){
   const monthlyCount=getMonthlyCountFor(s.code);
   const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:var(--red);border:0.5px solid var(--red);font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
+  const wkKDBadge=s.wkKDLabel?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#b8860b;border:0.5px solid #b8860b;font-weight:700;margin-left:6px">週KD✦</span>`:'';
   return `<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
     <div>
-      <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}${countBadge}</div>
+      <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}${countBadge}${wkKDBadge}</div>
       <div style="font-size:13px;color:var(--text2);margin-top:2px">${s.price?`$${s.price}　`:''}<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
       <div style="font-size:11px;color:var(--text3);margin-top:2px">目前成交量：${fmtVol(s.todayVol)}</div>
     </div>
