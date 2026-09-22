@@ -863,17 +863,30 @@ function toWeekly(data){const w=[];let wk=[];for(let i=0;i<data.length;i++){wk.p
 // 回傳: null / 'golden_cross'（黃金交叉第一天）/ 'prepare'（準備黃金交叉，差距≤8）
 function calcWeeklyKDLabel(sortedDayData){
   if(!sortedDayData||sortedDayData.length<30) return null;
+  // 按自然週（週一為起點）切割，不用固定5根
   const weeklyOHLC=[];
   let wk=[];
   for(let i=0;i<sortedDayData.length;i++){
-    wk.push(sortedDayData[i]);
-    if(wk.length===5||i===sortedDayData.length-1){
+    const row=sortedDayData[i];
+    const d=new Date(row.date);
+    const dayOfWeek=d.getDay(); // 0=日,1=一,...,5=五,6=六
+    // 遇到週一且 wk 有資料 → 上一週結束，push 進去
+    if(dayOfWeek===1 && wk.length>0){
       weeklyOHLC.push({
         close:parseFloat(wk[wk.length-1].close)||0,
         high:Math.max(...wk.map(r=>parseFloat(r.max||r.high||r.close)||0)),
         low:Math.min(...wk.map(r=>parseFloat(r.min||r.low||r.close)||0))
       });
       wk=[];
+    }
+    wk.push(row);
+    // 最後一筆資料直接 push
+    if(i===sortedDayData.length-1 && wk.length>0){
+      weeklyOHLC.push({
+        close:parseFloat(wk[wk.length-1].close)||0,
+        high:Math.max(...wk.map(r=>parseFloat(r.max||r.high||r.close)||0)),
+        low:Math.min(...wk.map(r=>parseFloat(r.min||r.low||r.close)||0))
+      });
     }
   }
   if(weeklyOHLC.length<12) return null;
