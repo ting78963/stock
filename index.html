@@ -2774,15 +2774,14 @@ function rW(){
     return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}</div><div class="lna">${displayName}</div>${vcpTag}</div><div class="lr"><div class="spill" style="${scoreStyle}">${scoreDisplay}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
   };
 
-  // 六區塊分類（週KD在最上面）
-  const vcpSyms=new Set(wl.filter(w=>['just_broke','final_contraction','contracting','trending_up'].includes(w.vcpStatus)).map(w=>w.sym));
+  // 六區塊分類（週KD優先，VCP顯示為小字）
   const groups={
-    wkGolden:  wl.filter(w=>w.wkKDLabel==='golden_cross' && !vcpSyms.has(w.sym)),
-    wkPrepare: wl.filter(w=>w.wkKDLabel==='prepare' && !vcpSyms.has(w.sym)),
-    broke:     wl.filter(w=>w.vcpStatus==='just_broke'),
-    near:      wl.filter(w=>w.vcpStatus==='final_contraction'),
-    contract:  wl.filter(w=>['contracting','trending_up'].includes(w.vcpStatus)),
-    other:     wl.filter(w=>!['just_broke','final_contraction','contracting','trending_up'].includes(w.vcpStatus) && !w.wkKDLabel)
+    wkGolden:  wl.filter(w=>w.wkKDLabel==='golden_cross'),
+    wkPrepare: wl.filter(w=>w.wkKDLabel==='prepare'),
+    broke:     wl.filter(w=>!w.wkKDLabel && w.vcpStatus==='just_broke'),
+    near:      wl.filter(w=>!w.wkKDLabel && w.vcpStatus==='final_contraction'),
+    contract:  wl.filter(w=>!w.wkKDLabel && ['contracting','trending_up'].includes(w.vcpStatus)),
+    other:     wl.filter(w=>!w.wkKDLabel && !['just_broke','final_contraction','contracting','trending_up'].includes(w.vcpStatus))
   };
   // 其他依分數排序
   groups.other.sort((a,b)=>b.score-a.score);
