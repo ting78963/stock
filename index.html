@@ -3772,7 +3772,17 @@ async function loadHotVolStocks(forceRefresh){
 
     updateMonthlyCount([...vcpSignalStocks,...noVcpStocks]); // 收盤後才會真正累加，盤中查詢只是讀取顯示
     const fetchTimeStr=`${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
-    try{localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,vcpSignalStocks,noVcpStocks,filteredOutStocks,fetchTimeStr}));}catch(e){}
+    try{
+      // 收盤後才備份前一次快取為昨日備份
+      const day=today.getDay();
+      const mins=today.getHours()*60+today.getMinutes();
+      const isAfterClose=!(day>=1&&day<=5&&mins>=540&&mins<=870);
+      if(isAfterClose){
+        const prev=localStorage.getItem(cacheKey);
+        if(prev) localStorage.setItem('hotvol_cache_yesterday',prev);
+      }
+      localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,vcpSignalStocks,noVcpStocks,filteredOutStocks,fetchTimeStr}));
+    }catch(e){}
 
     renderHotVolCard(el,noVcpStocks,filteredOutStocks,fetchTimeStr);
     renderCloseSaveBtn();
@@ -3913,7 +3923,10 @@ function getRecentTradingDates(snapshotMap,n){
 
 function updateMonthlyCount(stockList){
   const now=new Date();
-  const isTradingHours = now.getHours()>=9 && (now.getHours()<13 || (now.getHours()===13 && now.getMinutes()<30));
+  const day=now.getDay();
+  const mins=now.getHours()*60+now.getMinutes();
+  const isWeekday=day>=1&&day<=5;
+  const isTradingHours=isWeekday&&mins>=540&&mins<=870; // 09:00-14:30
   if(isTradingHours) return; // 盤中不累加，只有收盤後才記錄
   const dateStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const map=getDailySnapshotMap();
@@ -4058,24 +4071,37 @@ async function fetchKBar(stockId, dateStr){
 // 主存檔函數
 async function saveClosingSnapshot(){
   const now = new Date();
-  const todayStr     = getTodayStr();
+  const hour = now.getHours();
+  const min  = now.getMinutes();
+  const day  = now.getDay();
+  const mins = hour*60+min;
+  const isWeekday = day>=1&&day<=5;
+  const isTradingHours = isWeekday&&mins>=540&&mins<=870;
+
+  // 交易日盤中（09:00-14:30）→ 只能補存昨日
+  // 其他時間 → 存今日
+  const todayStr = getTodayStr();
   const yesterdayStr = getYesterdayStr();
   const archive      = getResearchArchive();
 
+  // 決定要存哪一天
+  const saveDate = isTradingHours ? yesterdayStr : todayStr;
+  const saveLabel = isTradingHours ? `昨日（${yesterdayStr}）` : `今日（${todayStr}）`;
+
   // 防重複
-  if(archive[todayStr]){
-    alert(`✅ 今日（${todayStr}）已存檔，無需重複操作`);
+  if(archive[saveDate]){
+    alert(`✅ ${saveLabel}已存檔，無需重複操作`);
     return;
   }
 
-  // 從 hotvol_cache_v5 取所有股票（passed + filteredOut）
+  // 從快取取資料：盤中用昨日備份，收盤後用今日快取
   let passedList = [];
   let filteredList = [];
   let scanTime = '';
   try{
-    const hvCache = JSON.parse(localStorage.getItem('hotvol_cache_v5')||'null');
-    const d=new Date(); const dateStr=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-    if(hvCache && hvCache.date===dateStr){
+    const cacheKey = isTradingHours ? 'hotvol_cache_yesterday' : 'hotvol_cache_v5';
+    const hvCache = JSON.parse(localStorage.getItem(cacheKey)||'null');
+    if(hvCache){
       passedList = [...(hvCache.vcpSignalStocks||[]),...(hvCache.noVcpStocks||[])];
       filteredList = hvCache.filteredOutStocks||[];
       scanTime = hvCache.fetchTimeStr||'';
@@ -4084,7 +4110,10 @@ async function saveClosingSnapshot(){
 
   const allStocks = [...passedList, ...filteredList];
   if(!allStocks.length){
-    alert('⚠️ 今日尚無掃描資料，請先執行「盤中查詢」後再存檔');
+    const msg = isTradingHours
+      ? '⚠️ 沒有昨日備份資料，請確認昨日有執行過「盤中查詢」'
+      : '⚠️ 今日尚無掃描資料，請先執行「盤中查詢」後再存檔';
+    alert(msg);
     return;
   }
 
@@ -4106,7 +4135,7 @@ async function saveClosingSnapshot(){
     ma20:s.ma20||null, reasons:s.reasons||[]
   }));
 
-  archive[todayStr] = {
+  archive[saveDate] = {
     scanTime,
     savedAt: new Date().toISOString(),
     passed: snapshotPassed,
@@ -4121,8 +4150,8 @@ async function saveClosingSnapshot(){
     const s = allStocks[i];
     if(btn) btn.textContent=`⏳ 抓分K... ${i+1}/${allStocks.length}`;
     const [todayK, yesterdayK] = await Promise.all([
-      fetchKBar(s.code, todayStr),
-      fetchKBar(s.code, yesterdayStr)
+      fetchKBar(s.code, saveDate),
+      fetchKBar(s.code, isTradingHours ? todayStr : yesterdayStr)
     ]);
     enriched.push({ ...s, kbar_today:todayK, kbar_yesterday:yesterdayK });
     await new Promise(r=>setTimeout(r,150));
@@ -4132,17 +4161,17 @@ async function saveClosingSnapshot(){
   const enrichedFiltered = enriched.filter(s=>!passedCodes.has(s.code));
 
   // 下載 JSON（含分K）
-  const payload = {date:todayStr, scanTime, savedAt:new Date().toISOString(), passed:enrichedPassed, filtered:enrichedFiltered};
+  const payload = {date:saveDate, scanTime, savedAt:new Date().toISOString(), passed:enrichedPassed, filtered:enrichedFiltered};
   const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `stock_snapshot_${todayStr}.json`;
+  a.download = `stock_snapshot_${saveDate}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
 
   // 更新按鈕顯示
   renderCloseSaveBtn();
-  alert(`✅ ${todayStr} 存檔完成！通過 ${enrichedPassed.length} 支 / 未達門檻 ${enrichedFiltered.length} 支，已下載 JSON`);
+  alert(`✅ ${saveLabel}存檔完成！通過 ${enrichedPassed.length} 支 / 未達門檻 ${enrichedFiltered.length} 支，已下載 JSON`);
 }
 
 // 匯出所有歷史為 CSV
