@@ -506,14 +506,10 @@ html.font-xl{font-size:19px}
   <div style="padding:14px 16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
       <div style="font-size:18px;font-weight:600;color:var(--text)">自選清單</div>
-      <div style="display:flex;gap:8px">
-        <div id="watch-wkKD-btn" onclick="scanWatchWeeklyKD()" style="font-size:12px;font-weight:600;color:#f5a623;padding:5px 12px;border:1px solid #f5a623;border-radius:20px;cursor:pointer">✦ 週KD掃描</div>
-        <div id="watch-score-btn" onclick="updateWatchScores()" style="font-size:12px;font-weight:600;color:var(--wine);padding:5px 12px;border:1px solid var(--wine);border-radius:20px;cursor:pointer">↺ 更新分數</div>
-      </div>
+      <div id="watch-update-btn" onclick="fullWatchUpdate()" style="font-size:12px;font-weight:600;color:var(--wine);padding:5px 12px;border:1px solid var(--wine);border-radius:20px;cursor:pointer">↺ 全面更新</div>
     </div>
     <div style="font-size:13px;color:var(--text3);margin-bottom:14px">追蹤中的股票</div>
-    <div id="watch-wkKD-progress" style="display:none;font-size:11px;color:var(--text3);margin-bottom:8px">週KD掃描中... 0/0</div>
-    <div id="watch-score-progress" style="display:none;font-size:11px;color:var(--text3);margin-bottom:8px">更新分數中... 0/0</div>
+    <div id="watch-update-progress" style="display:none;font-size:11px;color:var(--text3);margin-bottom:8px">更新中... 0/0</div>
     <div id="watch-scan-status" style="display:none;font-size:11px;color:var(--text3);margin-bottom:8px;align-items:center;gap:6px"><span style="display:inline-block;animation:spin 1s linear infinite">↺</span> 更新VCP狀態中...</div>
     <div id="wa"></div>
     <!-- 舊功能需要的隱藏div -->
@@ -2768,36 +2764,39 @@ function rW(){
   });
   if(updated)LS.set('watch',wl);
 
-  const renderItem=(w)=>{
+  const vcpLabel={'just_broke':'🔥突破爆發','final_contraction':'🔴即將突破','contracting':'🟢收縮中','trending_up':'🟢收縮中'};
+  const renderItem=(w,showVcp)=>{
     const c=sc(w.score);
     const displayName=w.name&&w.name!==w.sym?w.name:w.sym;
     const scoreStyle=w.score>=70?'background:#f5c842;color:#fff;font-weight:700;border:none':`background:${c}18;color:${c};border:0.5px solid ${c}40`;
     const scoreDisplay=(w.score===0&&(!w.vcpStatus||w.source==='auto'))?'--':w.score;
-    return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}</div><div class="lna">${displayName}</div></div><div class="lr"><div class="spill" style="${scoreStyle}">${scoreDisplay}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
+    const vcpTag=showVcp&&w.vcpStatus&&vcpLabel[w.vcpStatus]?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${vcpLabel[w.vcpStatus]}</div>`:'';
+    return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}</div><div class="lna">${displayName}</div>${vcpTag}</div><div class="lr"><div class="spill" style="${scoreStyle}">${scoreDisplay}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
   };
 
   // 六區塊分類（週KD在最上面）
+  const vcpSyms=new Set(wl.filter(w=>['just_broke','final_contraction','contracting','trending_up'].includes(w.vcpStatus)).map(w=>w.sym));
   const groups={
-    wkGolden:  wl.filter(w=>w.wkKDLabel==='golden_cross'),
-    wkPrepare: wl.filter(w=>w.wkKDLabel==='prepare'),
+    wkGolden:  wl.filter(w=>w.wkKDLabel==='golden_cross' && !vcpSyms.has(w.sym)),
+    wkPrepare: wl.filter(w=>w.wkKDLabel==='prepare' && !vcpSyms.has(w.sym)),
     broke:     wl.filter(w=>w.vcpStatus==='just_broke'),
     near:      wl.filter(w=>w.vcpStatus==='final_contraction'),
     contract:  wl.filter(w=>['contracting','trending_up'].includes(w.vcpStatus)),
-    other:     wl.filter(w=>!['just_broke','final_contraction','contracting','trending_up'].includes(w.vcpStatus))
+    other:     wl.filter(w=>!['just_broke','final_contraction','contracting','trending_up'].includes(w.vcpStatus) && !w.wkKDLabel)
   };
   // 其他依分數排序
   groups.other.sort((a,b)=>b.score-a.score);
 
-  const sectionHtml=(label,stocks,color)=>{
+  const sectionHtml=(label,stocks,color,showVcp)=>{
     if(!stocks.length) return '';
     const c=color||'var(--wine)';
     return `<div style="font-size:11px;font-weight:600;color:${c};letter-spacing:.08em;margin:12px 0 8px;padding:0 2px">${label}</div>`
-      + stocks.map(w=>renderItem(w)).join('');
+      + stocks.map(w=>renderItem(w,showVcp)).join('');
   };
 
   let html='';
-  html+=sectionHtml('🟡 週KD黃金交叉第一天', groups.wkGolden, '#f5a623');
-  html+=sectionHtml('🟠 週KD準備交叉',       groups.wkPrepare, '#f5a623');
+  html+=sectionHtml('🟡 週KD黃金交叉第一天', groups.wkGolden, '#f5a623', true);
+  html+=sectionHtml('🟠 週KD準備交叉',       groups.wkPrepare, '#f5a623', true);
   html+=sectionHtml('🔥 突破爆發',            groups.broke);
   html+=sectionHtml('🔴 即將突破',            groups.near, 'var(--wine)');
   html+=sectionHtml('🟢 收縮中',              groups.contract);
@@ -2811,6 +2810,59 @@ function rW(){
   if(needScore.length) updateWatchScores(needScore);
 }
 function rmW(sym){LS.set('watch',LS.get('watch').filter(w=>w.sym!==sym));rW();}
+
+async function fullWatchUpdate(){
+  const wl=LS.get('watch');
+  if(!wl.length) return;
+  const btn=document.getElementById('watch-update-btn');
+  const prog=document.getElementById('watch-update-progress');
+  if(btn){ btn.style.opacity='0.4'; btn.style.pointerEvents='none'; }
+  if(prog){ prog.style.display='block'; }
+
+  let done=0;
+  let deleted=0;
+  for(const w of [...wl]){
+    if(prog) prog.textContent=`更新中... ${done}/${wl.length}`;
+    try{
+      const raw=await fetchStock(w.sym);
+      if(raw&&raw.data&&raw.data.length>30){
+        const a=analyze(raw);
+        const wlNow=LS.get('watch');
+        const idx=wlNow.findIndex(x=>x.sym===w.sym);
+        if(idx>=0){
+          if(a&&typeof a.overall==='number'&&a.overall<=50){
+            wlNow.splice(idx,1);
+            deleted++;
+          } else {
+            if(a&&typeof a.overall==='number'){
+              wlNow[idx].score=a.overall;
+              wlNow[idx].vcpStatus=a.vcp?a.vcp.status:'';
+            }
+            // 同時算週KD
+            const sorted=[...raw.data].sort((a,b)=>a.date.localeCompare(b.date));
+            wlNow[idx].wkKDLabel=calcWeeklyKDLabel(sorted);
+          }
+          LS.set('watch',wlNow);
+        }
+      } else {
+        const wlNow=LS.get('watch');
+        const idx=wlNow.findIndex(x=>x.sym===w.sym);
+        if(idx>=0&&(wlNow[idx].score||0)<=50&&wlNow[idx].score!==0){
+          wlNow.splice(idx,1);
+          deleted++;
+          LS.set('watch',wlNow);
+        }
+      }
+    }catch(e){}
+    done++;
+    await new Promise(r=>setTimeout(r,300));
+  }
+
+  const msg=deleted>0?`✅ 完成（${done} 支），已刪除 ${deleted} 支低分`:`✅ 完成（${done} 支）`;
+  if(prog){ prog.textContent=msg; setTimeout(()=>{ prog.style.display='none'; },2500); }
+  if(btn){ btn.style.opacity='1'; btn.style.pointerEvents='auto'; }
+  rW();
+}
 
 async function scanWatchWeeklyKD(){
   const wl=LS.get('watch');
@@ -2866,8 +2918,7 @@ async function updateWatchScores(targetList){
           const wlNow=LS.get('watch');
           const idx=wlNow.findIndex(x=>x.sym===w.sym);
           if(idx>=0){
-            if(a.overall<50){
-              // 分數低於50自動刪除
+            if(a.overall<=50){
               wlNow.splice(idx,1);
               deleted++;
             } else {
@@ -2876,6 +2927,15 @@ async function updateWatchScores(targetList){
             }
             LS.set('watch',wlNow);
           }
+        }
+      } else {
+        // API 失敗時，現有分數 ≤ 50 也刪除
+        const wlNow=LS.get('watch');
+        const idx=wlNow.findIndex(x=>x.sym===w.sym);
+        if(idx>=0 && (wlNow[idx].score||0)<=50 && wlNow[idx].score!==0){
+          wlNow.splice(idx,1);
+          deleted++;
+          LS.set('watch',wlNow);
         }
       }
     }catch(e){}
@@ -3344,6 +3404,43 @@ function renderKDMACD(dayData, wkData, fStreak, tStreak){
       <div style="font-size:11px;color:var(--text3)">${dayMTrend}</div>
       <div style="font-size:10px;color:var(--text3);margin-top:1px">OSC值：${dayMHist5[dayMHist5.length-1]?.toFixed(3)??'—'}　（負值遞減=空方衰竭 / 穿越0=進場 / 正值遞增=持股）</div>
     </div>
+
+    ${(()=>{
+      // 週KD區塊
+      const wkKDraw=calcKD(wkData&&wkData.length>=12?wkData:[],9);
+      if(!wkKDraw.hist||wkKDraw.hist.length<2) return '';
+      const wkCur=wkKDraw.hist[wkKDraw.hist.length-1];
+      const wkPrev=wkKDraw.hist[wkKDraw.hist.length-2];
+      const wkK=wkCur.k?.toFixed(1)??'—';
+      const wkD=wkCur.d?.toFixed(1)??'—';
+      const diff=wkCur.k&&wkCur.d?Math.abs(wkCur.k-wkCur.d).toFixed(1):null;
+
+      let wkStatus='', wkColor='var(--text3)', wkBg='var(--bg3)';
+      if(wkPrev.k<wkPrev.d && wkCur.k>wkCur.d){
+        wkStatus='🟡 黃金交叉第一天';
+        wkColor='#f5a623'; wkBg='#fff8ee';
+      } else if(wkCur.k>wkCur.d){
+        wkStatus='📈 K 在 D 上方（多頭）';
+        wkColor='var(--red)'; wkBg='var(--rbg)';
+      } else if(wkCur.k<wkCur.d && diff&&parseFloat(diff)<=5 && wkCur.k>wkPrev.k){
+        wkStatus=`🟠 準備交叉（差距 ${diff}）`;
+        wkColor='#f5a623'; wkBg='#fff8ee';
+      } else if(wkPrev.k>wkPrev.d && wkCur.k<wkCur.d){
+        wkStatus='💀 死亡交叉第一天';
+        wkColor='var(--text2)'; wkBg='var(--bg2)';
+      } else if(wkCur.k<wkCur.d){
+        wkStatus='📉 K 在 D 下方（空頭）';
+        wkColor='var(--text3)'; wkBg='var(--bg2)';
+      }
+
+      return `<div style="margin-top:8px;padding:10px 12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-size:12px;color:var(--text3)">週 KD 狀態</div>
+          <div style="font-size:11px;font-weight:600;color:${wkColor}">${wkStatus}</div>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">K: ${wkK}　D: ${wkD}${diff?`　差距: ${diff}`:''}</div>
+      </div>`;
+    })()}
 
     <div style="display:flex;align-items:flex-start;gap:8px;margin-top:4px;padding:10px 12px;border-radius:8px;background:var(--bg3)">
       <div style="width:8px;height:8px;border-radius:50%;background:${desc.color};flex-shrink:0;margin-top:4px"></div>
