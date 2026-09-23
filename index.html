@@ -861,6 +861,27 @@ function toWeekly(data){const w=[];let wk=[];for(let i=0;i<data.length;i++){wk.p
 
 // 計算週KD並回傳標籤
 // 回傳: null / 'golden_cross'（黃金交叉第一天）/ 'prepare'（準備黃金交叉，差距≤8）
+// 計算日K 5MA/20MA黃金交叉，回傳 Day1-Day5 或 null
+function calcMA5MA20CrossLabel(sortedDayData){
+  if(!sortedDayData||sortedDayData.length<25) return null;
+  const closes=sortedDayData.map(r=>parseFloat(r.close)||0);
+  const ma=(arr,n,i)=>arr.slice(i-n+1,i+1).reduce((a,b)=>a+b,0)/n;
+  const n=closes.length;
+  // 找最近一次黃金交叉（最近10天內）
+  for(let day=1;day<=5;day++){
+    const i=n-day;
+    if(i<20) break;
+    const ma5cur=ma(closes,5,i);
+    const ma20cur=ma(closes,20,i);
+    const ma5prev=ma(closes,5,i-1);
+    const ma20prev=ma(closes,20,i-1);
+    if(ma5prev<=ma20prev && ma5cur>ma20cur){
+      return day; // 幾天前交叉
+    }
+  }
+  return null;
+}
+
 function calcWeeklyKDLabel(sortedDayData){
   if(!sortedDayData||sortedDayData.length<30) return null;
   // 按自然週（週一為起點）切割，不用固定5根
@@ -2771,7 +2792,10 @@ function rW(){
     const scoreStyle=w.score>=70?'background:#f5c842;color:#fff;font-weight:700;border:none':`background:${c}18;color:${c};border:0.5px solid ${c}40`;
     const scoreDisplay=(w.score===0&&(!w.vcpStatus||w.source==='auto'))?'--':w.score;
     const vcpTag=showVcp&&w.vcpStatus&&vcpLabel[w.vcpStatus]?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${vcpLabel[w.vcpStatus]}</div>`:'';
-    return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}</div><div class="lna">${displayName}</div>${vcpTag}</div><div class="lr"><div class="spill" style="${scoreStyle}">${scoreDisplay}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
+    const wkBadgeWatch=w.wkKDLabel?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#c0392b;border:0.5px solid #c0392b;font-weight:600;margin-left:6px">${w.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉第一天':'週KD✦—準備黃金交叉'}</span>`:'';
+    const maBadge=w.maCrossLabel?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#c0392b;border:0.5px solid #c0392b;font-weight:600;margin-left:6px">5、20MA✦—黃金交叉 Day${w.maCrossLabel}</span>`:'';
+    const tripleBadge=w.tripleSignal?`<span style="font-size:11px;font-weight:600;color:#c0392b;margin-left:6px">🔥 強勢買進訊號 🔥</span>`:'';
+    return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}${wkBadgeWatch}${maBadge}${tripleBadge}</div><div class="lna">${displayName}</div>${vcpTag}</div><div class="lr"><div class="spill" style="${scoreStyle}">${scoreDisplay}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
   };
 
   // 六區塊分類（週KD優先，VCP顯示為小字）
@@ -2840,6 +2864,14 @@ async function fullWatchUpdate(){
             // 同時算週KD
             const sorted=[...raw.data].sort((a,b)=>a.date.localeCompare(b.date));
             wlNow[idx].wkKDLabel=calcWeeklyKDLabel(sorted);
+            // 算日K 5MA/20MA黃金交叉（Day1-Day5）
+            wlNow[idx].maCrossLabel=calcMA5MA20CrossLabel(sorted);
+            // 三強共振：週KD黃金交叉 + MACD正向 + 5/20MA黃金交叉Day1-5
+            const macdRaw=calcMACD(sorted.map(r=>parseFloat(r.close)||0),12,26,9);
+            const macdOSC=(macdRaw.histArr5||macdRaw.histArr||[]).slice(-3);
+            const macdPositive=macdOSC.length>=2&&macdOSC[macdOSC.length-1]>macdOSC[0];
+            const tripleSignal=(wlNow[idx].wkKDLabel==='golden_cross')&&macdPositive&&(wlNow[idx].maCrossLabel!=null);
+            wlNow[idx].tripleSignal=tripleSignal;
           }
           LS.set('watch',wlNow);
         }
@@ -3381,18 +3413,37 @@ function renderKDMACD(dayData, wkData, fStreak, tStreak){
   return`
   <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <span style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em">技術指標　日KD位置 / 日MACD能量</span>
+      <span style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em">技術指標　週KD位置 / 日MACD能量</span>
       <div class="ri-btn" data-info="kdmacd" style="width:18px;height:18px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--text3)">ⓘ</div>
     </div>
-    <div class="ri-box" data-for="kdmacd" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">【日KD位置】判斷股票現在在哪個超買超賣區間。日K&lt;20為超賣低檔，空間大；20-80為正常區間；&gt;80為超買高檔謹慎。【日MACD能量】觀察5天OSC數值是否持續遞減（空方衰竭）或遞增（多方增強）。能量中斷代表訊號不穩，需觀望。日KD低檔＋日MACD由綠轉紅為最佳關注時機。有VCP型態時優先用型態進場。⚠️ 本資料僅供參考，不構成投資建議。</div>
+    <div class="ri-box" data-for="kdmacd" style="display:none;background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:var(--fs-xs);color:var(--text2);line-height:1.7">【週KD位置】判斷中期趨勢方向。週KD黃金交叉代表中期趨勢翻多，是重要進場訊號。【日MACD能量】觀察5天OSC數值是否持續遞減（空方衰竭）或遞增（多方增強）。【5/20MA】觀察短期均線穿越月線的狀態，黃金交叉代表短期趨勢翻多。⚠️ 本資料僅供參考，不構成投資建議。</div>
 
     <div style="padding:8px 0;border-bottom:0.5px solid var(--border)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-        <div style="font-size:12px;color:var(--text3)">日 KD 位置（最近5天）</div>
-        <div style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;${badgeStyle[wkPos.badge]||badgeStyle.neutral}">${wkPos.text}</div>
+        <div style="font-size:12px;color:var(--text3)">週 KD 位置</div>
+        ${(()=>{
+          const wkKDraw2=calcKD(wkData&&wkData.length>=12?wkData:[],9);
+          if(!wkKDraw2.hist||wkKDraw2.hist.length<2) return '<div style="font-size:11px;color:var(--text3)">資料不足</div>';
+          const wkCur2=wkKDraw2.hist[wkKDraw2.hist.length-1];
+          const wkPrev2=wkKDraw2.hist[wkKDraw2.hist.length-2];
+          const wkK2=wkCur2.k?.toFixed(1)??'—';
+          const wkD2=wkCur2.d?.toFixed(1)??'—';
+          const diff2=wkCur2.k&&wkCur2.d?Math.abs(wkCur2.k-wkCur2.d).toFixed(1):null;
+          let wkSt='', wkCol='var(--text3)';
+          if(wkPrev2.k<wkPrev2.d && wkCur2.k>wkCur2.d){ wkSt='🟡 黃金交叉第一天'; wkCol='#f5a623'; }
+          else if(wkCur2.k>wkCur2.d){ wkSt='📈 多頭（K>D）'; wkCol='var(--red)'; }
+          else if(wkCur2.k<wkCur2.d && diff2&&parseFloat(diff2)<=5 && wkCur2.k>wkPrev2.k){ wkSt=`🟠 準備交叉（差距${diff2}）`; wkCol='#f5a623'; }
+          else if(wkPrev2.k>wkPrev2.d && wkCur2.k<wkCur2.d){ wkSt='💀 死亡交叉第一天'; wkCol='var(--text2)'; }
+          else{ wkSt='📉 空頭（K<D）'; wkCol='var(--text3)'; }
+          return `<div style="font-size:11px;font-weight:600;color:${wkCol}">${wkSt}</div>`;
+        })()}
       </div>
-      <div style="font-size:11px;color:var(--text3)">${dayKTrend}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:1px">日K：${wkPos.k??'—'}　日D：${wkPos.d??'—'}　（&lt;20超賣低檔 / 20-80正常 / &gt;80超買高檔）</div>
+      ${(()=>{
+        const wkKDraw3=calcKD(wkData&&wkData.length>=12?wkData:[],9);
+        if(!wkKDraw3.hist||wkKDraw3.hist.length<2) return '';
+        const wkCur3=wkKDraw3.hist[wkKDraw3.hist.length-1];
+        return `<div style="font-size:11px;color:var(--text3)">週K：${wkCur3.k?.toFixed(1)??'—'}　週D：${wkCur3.d?.toFixed(1)??'—'}</div>`;
+      })()}
     </div>
 
     <div style="padding:8px 0">
@@ -3405,39 +3456,53 @@ function renderKDMACD(dayData, wkData, fStreak, tStreak){
     </div>
 
     ${(()=>{
-      // 週KD區塊
-      const wkKDraw=calcKD(wkData&&wkData.length>=12?wkData:[],9);
-      if(!wkKDraw.hist||wkKDraw.hist.length<2) return '';
-      const wkCur=wkKDraw.hist[wkKDraw.hist.length-1];
-      const wkPrev=wkKDraw.hist[wkKDraw.hist.length-2];
-      const wkK=wkCur.k?.toFixed(1)??'—';
-      const wkD=wkCur.d?.toFixed(1)??'—';
-      const diff=wkCur.k&&wkCur.d?Math.abs(wkCur.k-wkCur.d).toFixed(1):null;
+      // 5MA/20MA 狀態區塊
+      const closes=dayData.map(r=>typeof r==='object'?(parseFloat(r.close)||0):r);
+      const n=closes.length;
+      if(n<21) return '';
+      const ma=(arr,period,idx)=>arr.slice(idx-period+1,idx+1).reduce((a,b)=>a+b,0)/period;
+      const ma5cur=ma(closes,5,n-1);
+      const ma20cur=ma(closes,20,n-1);
+      const ma5prev=ma(closes,5,n-2);
+      const ma20prev=ma(closes,20,n-2);
+      const diffPct=Math.abs(ma5cur-ma20cur)/ma20cur*100;
 
-      let wkStatus='', wkColor='var(--text3)', wkBg='var(--bg3)';
-      if(wkPrev.k<wkPrev.d && wkCur.k>wkCur.d){
-        wkStatus='🟡 黃金交叉第一天';
-        wkColor='#f5a623'; wkBg='#fff8ee';
-      } else if(wkCur.k>wkCur.d){
-        wkStatus='📈 K 在 D 上方（多頭）';
-        wkColor='var(--red)'; wkBg='var(--rbg)';
-      } else if(wkCur.k<wkCur.d && diff&&parseFloat(diff)<=5 && wkCur.k>wkPrev.k){
-        wkStatus=`🟠 準備交叉（差距 ${diff}）`;
-        wkColor='#f5a623'; wkBg='#fff8ee';
-      } else if(wkPrev.k>wkPrev.d && wkCur.k<wkCur.d){
-        wkStatus='💀 死亡交叉第一天';
-        wkColor='var(--text2)'; wkBg='var(--bg2)';
-      } else if(wkCur.k<wkCur.d){
-        wkStatus='📉 K 在 D 下方（空頭）';
-        wkColor='var(--text3)'; wkBg='var(--bg2)';
+      let maStatus='', maColor='var(--text3)';
+      // 黃金交叉 Day1-Day5
+      let crossDay=null;
+      for(let day=1;day<=5;day++){
+        const i=n-day;
+        if(i<20) break;
+        const m5c=ma(closes,5,i), m20c=ma(closes,20,i);
+        const m5p=ma(closes,5,i-1), m20p=ma(closes,20,i-1);
+        if(m5p<=m20p && m5c>m20c){ crossDay=day; break; }
+      }
+      if(crossDay){
+        maStatus=`🟡 5、20MA黃金交叉 Day${crossDay}`;
+        maColor='var(--red)';
+      } else if(ma5cur>ma20cur && diffPct<=1){
+        maStatus='📈 多頭（5MA>20MA，差距小）';
+        maColor='var(--red)';
+      } else if(ma5cur>ma20cur){
+        maStatus='📈 多頭（5MA>20MA）';
+        maColor='var(--red)';
+      } else if(ma5cur<ma20cur && diffPct<=1 && ma5cur>ma5prev){
+        maStatus=`🟠 準備上穿（差距${diffPct.toFixed(2)}%）`;
+        maColor='#f5a623';
+      } else if(ma5prev>=ma20prev && ma5cur<ma20cur){
+        maStatus='💀 死亡交叉第一天';
+        maColor='var(--text2)';
+      } else {
+        maStatus='📉 空頭（5MA<20MA）';
+        maColor='var(--text3)';
       }
 
       return `<div style="margin-top:8px;padding:10px 12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:8px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <div style="font-size:12px;color:var(--text3)">週 KD 狀態</div>
-          <div style="font-size:11px;font-weight:600;color:${wkColor}">${wkStatus}</div>
+          <div style="font-size:12px;color:var(--text3)">5MA / 20MA</div>
+          <div style="font-size:11px;font-weight:600;color:${maColor}">${maStatus}</div>
         </div>
-        <div style="font-size:13px;font-weight:600;color:var(--text)">K: ${wkK}　D: ${wkD}${diff?`　差距: ${diff}`:''}</div>
+        <div style="font-size:11px;color:var(--text3)">5MA：${ma5cur.toFixed(2)}　20MA：${ma20cur.toFixed(2)}　差距：${diffPct.toFixed(2)}%</div>
       </div>`;
     })()}
 
@@ -3869,6 +3934,13 @@ async function loadHotVolStocks(forceRefresh){
           }
         }catch(e2){}
 
+        const maCrossLabelEntry=calcMA5MA20CrossLabel(sorted);
+        const macdRawEntry=calcMACD(sorted.map(r=>parseFloat(r.close)||0),12,26,9);
+        const macdOSCEntry=(macdRawEntry.histArr5||macdRawEntry.histArr||[]).slice(-3);
+        const macdPositiveEntry=macdOSCEntry.length>=2&&macdOSCEntry[macdOSCEntry.length-1]>macdOSCEntry[0];
+        const wkKDLabelEntry=calcWeeklyKDLabel(sorted);
+        const tripleSignalEntry=(wkKDLabelEntry==='golden_cross')&&macdPositiveEntry&&(maCrossLabelEntry!=null);
+
         const entry={
           code:stock.stock_id,
           name:getStockName(stock.stock_id)||stock.stock_id,
@@ -3878,7 +3950,9 @@ async function loadHotVolStocks(forceRefresh){
           price:stock.close||0,
           priceTier:priceTierLabel(stock.close||0),
           vcpInfo,
-          wkKDLabel:calcWeeklyKDLabel(sorted)
+          wkKDLabel:wkKDLabelEntry,
+          maCrossLabel:maCrossLabelEntry,
+          tripleSignal:tripleSignalEntry
         };
 
         if(vcpInfo){
@@ -4131,10 +4205,12 @@ function priceTierLabel(price){
 function stockBadgeHtml(s,tier){
   const monthlyCount=getMonthlyCountFor(s.code);
   const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:var(--red);border:0.5px solid var(--red);font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
-  const wkKDBadge=s.wkKDLabel?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#f5a623;border:0.5px solid #f5a623;font-weight:700;margin-left:6px">週KD✦</span>`:'';
+  const wkKDBadge=s.wkKDLabel?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#c0392b;border:0.5px solid #c0392b;font-weight:600;margin-left:6px">${s.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉第一天':'週KD✦—準備黃金交叉'}</span>`:'';
+  const maBadgeCard=s.maCrossLabel?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#c0392b;border:0.5px solid #c0392b;font-weight:600;margin-left:6px">5、20MA✦—黃金交叉 Day${s.maCrossLabel}</span>`:'';
+  const tripleBadgeCard=s.tripleSignal?`<span style="font-size:11px;font-weight:600;color:#c0392b;margin-left:6px">🔥 強勢買進訊號 🔥</span>`:'';
   return `<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
     <div>
-      <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}${countBadge}${wkKDBadge}</div>
+      <div style="font-size:14px;font-weight:500;color:var(--text)">${s.code} ${s.name}${countBadge}${wkKDBadge}${maBadgeCard}${tripleBadgeCard}</div>
       <div style="font-size:13px;color:var(--text2);margin-top:2px">${s.price?`$${s.price}　`:''}<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
       <div style="font-size:11px;color:var(--text3);margin-top:2px">目前成交量：${fmtVol(s.todayVol)}</div>
     </div>
