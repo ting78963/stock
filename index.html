@@ -2855,6 +2855,7 @@ async function updateWatchScores(targetList){
   }
 
   let done=0;
+  let deleted=0;
   for(const w of list){
     if(!isAuto&&prog) prog.textContent=`更新分數中... ${done}/${list.length}`;
     try{
@@ -2865,8 +2866,14 @@ async function updateWatchScores(targetList){
           const wlNow=LS.get('watch');
           const idx=wlNow.findIndex(x=>x.sym===w.sym);
           if(idx>=0){
-            wlNow[idx].score=a.overall;
-            wlNow[idx].vcpStatus=a.vcp?a.vcp.status:'';
+            if(a.overall<50){
+              // 分數低於50自動刪除
+              wlNow.splice(idx,1);
+              deleted++;
+            } else {
+              wlNow[idx].score=a.overall;
+              wlNow[idx].vcpStatus=a.vcp?a.vcp.status:'';
+            }
             LS.set('watch',wlNow);
           }
         }
@@ -2877,7 +2884,8 @@ async function updateWatchScores(targetList){
   }
 
   if(!isAuto){
-    if(prog){ prog.textContent=`✅ 更新完成（${done} 支）`; setTimeout(()=>{ prog.style.display='none'; },2000); }
+    const msg=deleted>0?`✅ 更新完成（${done} 支），已刪除 ${deleted} 支低分股票`:`✅ 更新完成（${done} 支）`;
+    if(prog){ prog.textContent=msg; setTimeout(()=>{ prog.style.display='none'; },3000); }
     if(btn){ btn.style.opacity='1'; btn.style.pointerEvents='auto'; }
   }
   rW();
