@@ -890,12 +890,12 @@ function calcMA5MA20CrossLabel(sortedDayData){
   }
 
   // 準備上穿：5MA 在 20MA 下方，差距 ≤ 1%，且 5MA 上升中
-  const ma5cur=ma(closes,5,n-1);
-  const ma20cur=ma(closes,20,n-1);
-  const ma5prev=ma(closes,5,n-2);
-  if(ma5cur<ma20cur){
-    const diffPct=(ma20cur-ma5cur)/ma20cur*100;
-    if(diffPct<=1 && ma5cur>ma5prev){
+  const ma5now=ma(closes,5,n-1);
+  const ma20now=ma(closes,20,n-1);
+  const ma5before=ma(closes,5,n-2);
+  if(ma5now<ma20now){
+    const diffPct=(ma20now-ma5now)/ma20now*100;
+    if(diffPct<=1 && ma5now>ma5before){
       return {type:'prepare', day:null};
     }
   }
@@ -2839,7 +2839,7 @@ function rW(){
     const scoreStyle=w.score>=70?'background:#f5c842;color:#fff;font-weight:700;border:none':`background:${c}18;color:${c};border:0.5px solid ${c}40`;
     const scoreDisplay=(w.score===0&&(!w.vcpStatus||w.source==='auto'))?'--':w.score;
     const scoreDiff=w.prevScore&&w.score&&w.score!==w.prevScore?w.score-w.prevScore:null;
-    const diffHtml=scoreDiff?`<span style="font-size:10px;font-weight:600;color:${scoreDiff>0?'#27ae60':'#e74c3c'};margin-left:3px">${scoreDiff>0?'↑':'↓'}${Math.abs(scoreDiff)}</span>`:'`';
+    const diffHtml=scoreDiff?`<span style="font-size:10px;font-weight:600;color:${scoreDiff>0?'#27ae60':'#e74c3c'};margin-left:3px">${scoreDiff>0?'↑':'↓'}${Math.abs(scoreDiff)}</span>`:'';
     const vcpTag=showVcp&&w.vcpStatus&&vcpLabel[w.vcpStatus]?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${vcpLabel[w.vcpStatus]}</div>`:'';
     const wkBadgeWatch=(!w.tripleSignal&&w.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">${w.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉第一天':'週KD✦—準備黃金交叉'}</span>`:'';
     const maBadge=(!w.tripleSignal&&w.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">5、20MA✦—黃金交叉 Day${w.maCrossLabel}</span>`:'';
@@ -4288,7 +4288,7 @@ function stockBadgeHtml(s,tier){
   const monthlyCount=getMonthlyCountFor(s.code);
   const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:var(--red);border:0.5px solid var(--red);font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
   const wkKDBadge=(!s.tripleSignal&&s.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">${s.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉第一天':'週KD✦—準備黃金交叉'}</span>`:'';
-  const maBadgeCard=(!s.tripleSignal&&s.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">${s.maCrossLabel.type==='cross'?`5、20MA✦—黃金交叉 Day${s.maCrossLabel.day}`:'5、20MA✦—準備交叉'}</span>`:'`';
+  const maBadgeCard=(!s.tripleSignal&&s.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">${s.maCrossLabel.type==='cross'?`5、20MA✦—黃金交叉 Day${s.maCrossLabel.day}`:'5、20MA✦—準備交叉'}</span>`:'';
   const macdBadgeCard=(!s.tripleSignal&&s.macdLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">${s.macdLabel.type==='cross'?`MACD✦—黃金交叉 Day${s.macdLabel.day}`:'MACD✦—準備黃金交叉'}</span>`:'';
   const tripleBadgeCard=s.tripleSignal?`<span style="font-size:11px;font-weight:600;color:#e67e22">🔥 強勢買進訊號 🔥</span>`:'';
   const orangeBadges=[wkKDBadge,maBadgeCard,macdBadgeCard,tripleBadgeCard].filter(Boolean);
