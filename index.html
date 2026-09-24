@@ -875,8 +875,7 @@ function calcMA5MA20CrossLabel(sortedDayData){
   const closes=sortedDayData.map(r=>parseFloat(r.close)||0);
   const ma=(arr,n,i)=>arr.slice(i-n+1,i+1).reduce((a,b)=>a+b,0)/n;
   const n=closes.length;
-
-  // 黃金交叉 Day1-Day5
+  // 黃金交叉 Day1-Day5，回傳天數
   for(let day=1;day<=5;day++){
     const i=n-day;
     if(i<20) break;
@@ -885,22 +884,26 @@ function calcMA5MA20CrossLabel(sortedDayData){
     const ma5prev=ma(closes,5,i-1);
     const ma20prev=ma(closes,20,i-1);
     if(ma5prev<=ma20prev && ma5cur>ma20cur){
-      return {type:'cross', day};
+      return day;
     }
   }
+  return null;
+}
 
-  // 準備上穿：5MA 在 20MA 下方，差距 ≤ 1%，且 5MA 上升中
+// 準備上穿：獨立函數
+function calcMA5MA20Prepare(sortedDayData){
+  if(!sortedDayData||sortedDayData.length<25) return false;
+  const closes=sortedDayData.map(r=>parseFloat(r.close)||0);
+  const ma=(arr,n,i)=>arr.slice(i-n+1,i+1).reduce((a,b)=>a+b,0)/n;
+  const n=closes.length;
   const ma5now=ma(closes,5,n-1);
   const ma20now=ma(closes,20,n-1);
   const ma5before=ma(closes,5,n-2);
   if(ma5now<ma20now){
     const diffPct=(ma20now-ma5now)/ma20now*100;
-    if(diffPct<=1 && ma5now>ma5before){
-      return {type:'prepare', day:null};
-    }
+    if(diffPct<=1 && ma5now>ma5before) return true;
   }
-
-  return null;
+  return false;
 }
 
 // 計算MACD狀態標籤
@@ -2845,7 +2848,7 @@ function rW(){
     const maBadge=(!w.tripleSignal&&w.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">5、20MA✦—黃金交叉 Day${w.maCrossLabel}</span>`:'';
     const macdBadge=(!w.tripleSignal&&w.macdLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">${w.macdLabel.type==='cross'?`MACD✦—黃金交叉 Day${w.macdLabel.day}`:`MACD✦—準備黃金交叉`}</span>`:'';
     const tripleBadge=w.tripleSignal?`<span style="font-size:11px;font-weight:600;color:#e67e22">🔥 強勢買進訊號 🔥</span>`:'';
-    return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}${wkBadgeWatch}${maBadge}${macdBadge}${tripleBadge}</div><div class="lna">${displayName}</div>${vcpTag}</div><div class="lr"><div style="display:flex;align-items:center"><div class="spill" style="${scoreStyle}">${scoreDisplay}</div>${diffHtml}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
+    return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}${wkBadgeWatch}${maBadge}${maPrepareBadge}${macdBadge}${tripleBadge}</div><div class="lna">${displayName}</div>${vcpTag}</div><div class="lr"><div style="display:flex;align-items:center"><div class="spill" style="${scoreStyle}">${scoreDisplay}</div>${diffHtml}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
   };
 
   // 六區塊分類（週KD優先，VCP顯示為小字）
@@ -2930,6 +2933,7 @@ async function fullWatchUpdate(isAuto){
             const sorted=[...raw.data].sort((a,b)=>a.date.localeCompare(b.date));
             wlNow[idx].wkKDLabel=calcWeeklyKDLabel(sorted);
             wlNow[idx].maCrossLabel=calcMA5MA20CrossLabel(sorted);
+            wlNow[idx].maPrepare=calcMA5MA20Prepare(sorted);
             wlNow[idx].macdLabel=calcMACDLabel(sorted);
             const macdRawE=calcMACD(sorted.map(r=>parseFloat(r.close)||0),12,26,9);
             const macdOSCE=(macdRawE.histArr5||macdRawE.histArr||[]).slice(-3);
@@ -4015,6 +4019,7 @@ async function loadHotVolStocks(forceRefresh){
         }catch(e2){}
 
         const maCrossLabelEntry=calcMA5MA20CrossLabel(sorted);
+        const maPrepareEntry=calcMA5MA20Prepare(sorted);
         const macdRawEntry=calcMACD(sorted.map(r=>parseFloat(r.close)||0),12,26,9);
         const macdOSCEntry=(macdRawEntry.histArr5||macdRawEntry.histArr||[]).slice(-3);
         const macdPositiveEntry=macdOSCEntry.length>=2&&macdOSCEntry[macdOSCEntry.length-1]>macdOSCEntry[0];
@@ -4033,6 +4038,7 @@ async function loadHotVolStocks(forceRefresh){
           vcpInfo,
           wkKDLabel:wkKDLabelEntry,
           maCrossLabel:maCrossLabelEntry,
+          maPrepare:maPrepareEntry,
           macdLabel:macdLabelEntry,
           tripleSignal:tripleSignalEntry
         };
@@ -4291,7 +4297,7 @@ function stockBadgeHtml(s,tier){
   const maBadgeCard=(!s.tripleSignal&&s.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">${s.maCrossLabel.type==='cross'?`5、20MA✦—黃金交叉 Day${s.maCrossLabel.day}`:'5、20MA✦—準備交叉'}</span>`:'';
   const macdBadgeCard=(!s.tripleSignal&&s.macdLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">${s.macdLabel.type==='cross'?`MACD✦—黃金交叉 Day${s.macdLabel.day}`:'MACD✦—準備黃金交叉'}</span>`:'';
   const tripleBadgeCard=s.tripleSignal?`<span style="font-size:11px;font-weight:600;color:#e67e22">🔥 強勢買進訊號 🔥</span>`:'';
-  const orangeBadges=[wkKDBadge,maBadgeCard,macdBadgeCard,tripleBadgeCard].filter(Boolean);
+  const orangeBadges=[wkKDBadge,maBadgeCard,maPrepareBadgeCard,macdBadgeCard,tripleBadgeCard].filter(Boolean);
 
   return `<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:flex-start;justify-content:space-between">
     <div>
