@@ -4294,7 +4294,8 @@ function stockBadgeHtml(s,tier){
   const monthlyCount=getMonthlyCountFor(s.code);
   const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:var(--red);border:0.5px solid var(--red);font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
   const wkKDBadge=(!s.tripleSignal&&s.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">${s.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉第一天':'週KD✦—準備黃金交叉'}</span>`:'';
-  const maBadgeCard=(!s.tripleSignal&&s.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">${s.maCrossLabel.type==='cross'?`5、20MA✦—黃金交叉 Day${s.maCrossLabel.day}`:'5、20MA✦—準備交叉'}</span>`:'';
+  const maBadgeCard=(!s.tripleSignal&&s.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">5、20MA✦—黃金交叉 Day${s.maCrossLabel}</span>`:'';
+  const maPrepareBadgeCard=(!s.tripleSignal&&!s.maCrossLabel&&s.maPrepare)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">5、20MA✦—準備交叉</span>`:'';
   const macdBadgeCard=(!s.tripleSignal&&s.macdLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600">${s.macdLabel.type==='cross'?`MACD✦—黃金交叉 Day${s.macdLabel.day}`:'MACD✦—準備黃金交叉'}</span>`:'';
   const tripleBadgeCard=s.tripleSignal?`<span style="font-size:11px;font-weight:600;color:#e67e22">🔥 強勢買進訊號 🔥</span>`:'';
   const orangeBadges=[wkKDBadge,maBadgeCard,maPrepareBadgeCard,macdBadgeCard,tripleBadgeCard].filter(Boolean);
