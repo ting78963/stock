@@ -4279,19 +4279,14 @@ function stockBadgeHtml(s,tier){
   const macdBadgeCard=(!s.tripleSignal&&s.macdLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">${s.macdLabel.type==='cross'?`MACD✦—黃金交叉 Day${s.macdLabel.day}`:'MACD✦—準備黃金交叉'}</span>`:'';
   const tripleBadgeCard=s.tripleSignal?`<span style="font-size:11px;font-weight:600;color:#e67e22;margin-left:6px">🔥 強勢買進訊號 🔥</span>`:'';
   const orangeBadges=[wkKDBadge,maBadgeCard,macdBadgeCard,tripleBadgeCard].filter(Boolean);
-  const hasOrange=orangeBadges.length>0;
-  const firstOrange=orangeBadges[0]||'';
-  const restOrange=orangeBadges.slice(1).join('');
 
   return `<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:flex-start;justify-content:space-between">
     <div>
-      <div style="display:flex;align-items:flex-start;margin-bottom:3px">
-        <div style="font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;margin-right:6px">${s.code} ${s.name}</div>
-        ${hasOrange?`<div style="display:flex;flex-direction:column;gap:3px">
-          <div style="display:flex;gap:4px;align-items:center;flex-wrap:nowrap">${firstOrange}${countBadge}</div>
-          ${restOrange?`<div style="display:flex;gap:4px;align-items:center">${restOrange}</div>`:''}
-        </div>`:countBadge?`<div>${countBadge}</div>`:''}
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:${orangeBadges.length?'4px':'2px'}">
+        <div style="font-size:14px;font-weight:500;color:var(--text);white-space:nowrap">${s.code} ${s.name}</div>
+        ${countBadge}
       </div>
+      ${orangeBadges.length?`<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:4px">${orangeBadges.map(b=>`<div>${b}</div>`).join('')}</div>`:''}
       <div style="font-size:13px;color:var(--text2)">${s.price?`$${s.price}　`:''}<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
       <div style="font-size:11px;color:var(--text3);margin-top:2px">目前成交量：${fmtVol(s.todayVol)}</div>
     </div>
