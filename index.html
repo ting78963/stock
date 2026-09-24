@@ -910,8 +910,20 @@ function calcMA5MA20Prepare(sortedDayData){
 function calcMACDLabel(sortedDayData){
   if(!sortedDayData||sortedDayData.length<30) return null;
   const closes=sortedDayData.map(r=>parseFloat(r.close)||0);
+  // 自己算完整 histArr
   const macdRaw=calcMACD(closes,12,26,9);
-  const hist=macdRaw.histArr||[];
+  // 重新算完整 hist
+  const fast=12,slow=26,signal=9;
+  if(closes.length<slow+signal) return null;
+  const ema=(arr,p)=>{
+    const k=2/(p+1);let e=arr[0];
+    return arr.map((v,i)=>i===0?e:(e=v*k+e*(1-k)));
+  };
+  const emaFast=ema(closes,fast);
+  const emaSlow=ema(closes,slow);
+  const dif=emaFast.map((v,i)=>Math.round((v-emaSlow[i])*100)/100).slice(slow-1);
+  const emaDif=ema(dif,signal);
+  const hist=dif.map((v,i)=>i<signal-1?null:Math.round((v-emaDif[i])*100)/100).filter(x=>x!=null);
   if(hist.length<6) return null;
 
   // 黃金交叉 Day1-Day5（OSC從負穿越0）
@@ -920,13 +932,12 @@ function calcMACDLabel(sortedDayData){
     if(i<1) break;
     if(hist[i-1]<0 && hist[i]>=0) return {type:'cross', day};
   }
-  // 準備黃金交叉（OSC在負值但連續上升，差距≤某閾值）
+  // 準備黃金交叉（OSC在負值但連續上升，速度夠快）
   const cur=hist[hist.length-1];
   const prev=hist[hist.length-2];
   const prev2=hist[hist.length-3];
   if(cur<0 && cur>prev && prev>prev2){
-    // 計算上升速度，預估1週內穿越0
-    const speed=cur-prev2; // 兩天平均上升量
+    const speed=cur-prev2;
     if(speed>0 && Math.abs(cur)/speed<=3) return {type:'prepare', day:null};
   }
   return null;
@@ -973,37 +984,8 @@ function calcWeeklyKDLabel(sortedDayData){
   // K 還在 D 下面才需要預測
   if(cur.k>=cur.d) return null;
 
-  // 取最近6週的 K、D 歷史做線性回歸
-  const n=6;
-  const recent=wkKD.hist.slice(-n);
-  const xs=[...Array(n).keys()];
-
-  function linReg(ys){
-    const xMean=(n-1)/2;
-    const yMean=ys.reduce((a,b)=>a+b,0)/n;
-    let num=0,den=0;
-    xs.forEach((x,i)=>{num+=(x-xMean)*(ys[i]-yMean);den+=(x-xMean)**2;});
-    const slope=den?num/den:0;
-    const intercept=yMean-slope*xMean;
-    return{slope,intercept};
-  }
-
-  const kVals=recent.map(h=>h.k);
-  const dVals=recent.map(h=>h.d);
-  const kReg=linReg(kVals);
-  const dReg=linReg(dVals);
-
-  // 預測交叉點
-  const slopeDiff=kReg.slope-dReg.slope;
-  if(Math.abs(slopeDiff)<0.001) return null;
-  const crossX=(dReg.intercept-kReg.intercept)/slopeDiff;
-  const weeksUntilCross=crossX-(n-1);
-
-  // K 必須上升（排除假訊號）
-  if(kReg.slope<=0) return null;
-
-  // 預計 1 週內交叉（約5個交易日）
-  if(weeksUntilCross>0 && weeksUntilCross<=1) return 'prepare';
+  // 準備黃金交叉：差距 ≤ 5 且 K 上升中
+  if(cur.d-cur.k<=5 && cur.k>prev.k) return 'prepare';
 
   return null;
 }
