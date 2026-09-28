@@ -561,14 +561,14 @@ html.font-xl{font-size:19px}
 </nav>
 
 <script>
-const STOCKS=[]; // 已改用 FinMind 全市場清單，見 STOCK_MAP
+const STOCKS=[]; // 已改用 Fugle 全市場快照清單，見 STOCK_MAP
 
 const LS={
   get:k=>{try{const v=JSON.parse(localStorage.getItem(k));if(k==='positions')return Array.isArray(v)?v:[];return Array.isArray(v)?v:[];}catch(e){return[];}},
   set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))
 };
 
-// ── 全市場股票清單（從FinMind載入）──
+// ── 全市場股票清單（從 Fugle 載入）──
 let STOCK_MAP = {}; // {代號: 名稱}
 let hotVolScanGeneration = 0; // 世代計數器：避免手機背景凍結導致舊查詢結果覆蓋新結果
 let STOCK_TYPE_MAP = {}; // {代號: 'twse'/'tpex'/'emerging'}
@@ -3881,6 +3881,7 @@ async function loadHotVolStocks(forceRefresh){
     // 再加上金額≥5000萬、張數≥4000張的流動性門檻（用即時快照本身欄位，不額外耗費請求）
     const upStocks = snapshot.filter(r=>{
       if(shouldExcludeStock(r.stock_id)) return false;
+      if(r.strong_meta_ok===false) return false; // Fugle ticker metadata fail-closed / industry exclusion
       if((r.change_rate||0)<=0) return false;
       if((r.total_amount||0)<50000000) return false; // 金額≥5000萬
       if((r.total_volume||0)<4000) return false; // 張數≥4000張
