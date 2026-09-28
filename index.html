@@ -3995,6 +3995,35 @@ async function loadHotVolStocks(forceRefresh){
           }
         }catch(e2){}
 
+        // 顯示用：昨天仍在日20MA下方，今天盤中首次站上日20MA。
+        // 一旦本裝置在今天確認過，就保留到當日結束；不參與Strong/VCP/進榜篩選。
+        let todayCrossMA20Entry=false;
+        try{
+          const todayDateStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+          const histCloses=sorted
+            .filter(r=>String(r.date||'').slice(0,10)<todayDateStr)
+            .map(r=>parseFloat(r.close))
+            .filter(v=>Number.isFinite(v)&&v>0);
+          const rtPrice=parseFloat(stock.close);
+          if(histCloses.length>=20 && Number.isFinite(rtPrice) && rtPrice>0){
+            const prev20=histCloses.slice(-20);
+            const prevClose=prev20[prev20.length-1];
+            const prevMA20=prev20.reduce((a,b)=>a+b,0)/20;
+            const prev19=histCloses.slice(-19);
+            const intradayMA20=(prev19.reduce((a,b)=>a+b,0)+rtPrice)/20;
+            const crossedNow=prevClose<prevMA20 && rtPrice>=intradayMA20;
+            const key='today_cross_ma20_v1';
+            let state=null;
+            try{state=JSON.parse(localStorage.getItem(key)||'null');}catch(e){}
+            if(!state || state.date!==todayDateStr || !Array.isArray(state.codes)) state={date:todayDateStr,codes:[]};
+            if(crossedNow && !state.codes.includes(stock.stock_id)){
+              state.codes.push(stock.stock_id);
+              try{localStorage.setItem(key,JSON.stringify(state));}catch(e){}
+            }
+            todayCrossMA20Entry=state.codes.includes(stock.stock_id);
+          }
+        }catch(e){}
+
         const maCrossLabelEntry=calcMA5MA20CrossLabel(sorted);
         const maPrepareEntry=calcMA5MA20Prepare(sorted);
         const macdRawEntry=calcMACD(sorted.map(r=>parseFloat(r.close)||0),12,26,9);
@@ -4015,6 +4044,7 @@ async function loadHotVolStocks(forceRefresh){
           wkKDLabel:wkKDLabelEntry,
           maCrossLabel:maCrossLabelEntry,
           maPrepare:maPrepareEntry,
+          todayCrossMA20:todayCrossMA20Entry,
           tripleSignal:tripleSignalEntry
         };
 
@@ -4268,26 +4298,27 @@ function priceTierLabel(price){
 function stockBadgeHtml(s,tier){
   const monthlyCount=getMonthlyCountFor(s.code);
   const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:var(--red);border:0.5px solid var(--red);font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
-  const wkKDBadge=(!s.tripleSignal&&s.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">${s.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉第一天':'週KD✦—準備黃金交叉'}</span>`:'';
-  const maBadgeCard=(!s.tripleSignal&&s.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—黃金交叉 Day${s.maCrossLabel}</span>`:'';
-  const maPrepareBadgeCard=(!s.tripleSignal&&!s.maCrossLabel&&s.maPrepare)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—準備交叉</span>`:'';
-  const tripleBadgeCard=s.tripleSignal?`<span style="font-size:11px;font-weight:600;color:#e67e22;margin-left:6px">🔥 強勢買進訊號 🔥</span>`:'';
-  const orangeBadges=[wkKDBadge,maBadgeCard,maPrepareBadgeCard,tripleBadgeCard].filter(Boolean);
+  const wkKDBadge=(!s.tripleSignal&&s.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">${s.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉第一天':'週KD✦—準備黃金交叉'}</span>`:'';
+  const maBadgeCard=(!s.tripleSignal&&s.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">5、20MA✦—黃金交叉 Day${s.maCrossLabel}</span>`:'';
+  const maPrepareBadgeCard=(!s.tripleSignal&&!s.maCrossLabel&&s.maPrepare)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">5、20MA✦—準備交叉</span>`:'';
+  const todayMA20Badge=s.todayCrossMA20?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">20MA✦—今日站上</span>`:'';
+  const tripleBadgeCard=s.tripleSignal?`<span style="font-size:11px;font-weight:600;color:#e67e22;white-space:nowrap">🔥 強勢買進訊號 🔥</span>`:'';
+  const orangeBadges=[wkKDBadge,maBadgeCard,maPrepareBadgeCard,todayMA20Badge,tripleBadgeCard].filter(Boolean);
 
-  return `<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:flex-start;justify-content:space-between">
-    <div>
+  return `<div onclick="document.getElementById('ti').value='${s.code}';doSearch();" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:${orangeBadges.length?'4px':'2px'}">
         <div style="font-size:14px;font-weight:500;color:var(--text);white-space:nowrap">${s.code} ${s.name}</div>
         ${countBadge}
       </div>
-      ${orangeBadges.length?`<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:4px">${orangeBadges.map(b=>`<div>${b}</div>`).join('')}</div>`:''}
-      <div style="font-size:13px;color:var(--text2)">${s.price?`$${s.price}　`:''}<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
-      <div style="font-size:11px;color:var(--text3);margin-top:2px">目前成交量：${fmtVol(s.todayVol)}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:2px">
+        <div style="font-size:14px;font-weight:700;color:var(--red);white-space:nowrap">量比 ${s.volRatio}x</div>
+        <div onclick="event.stopPropagation();tW('${s.code}','${s.name}',0,'');this.textContent=LS.get('watch').some(w=>w.sym==='${s.code}')?'★':'☆';" style="font-size:20px;color:var(--red);cursor:pointer;line-height:1">${(typeof LS!=='undefined'&&LS.get('watch').some(w=>w.sym===s.code))?'★':'☆'}</div>
+      </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-top:2px">
-      <div style="font-size:14px;font-weight:700;color:var(--red)">量比 ${s.volRatio}x</div>
-      <div onclick="event.stopPropagation();tW('${s.code}','${s.name}',0,'');this.textContent=LS.get('watch').some(w=>w.sym==='${s.code}')?'★':'☆';" style="font-size:20px;color:var(--red);cursor:pointer;line-height:1">${(typeof LS!=='undefined'&&LS.get('watch').some(w=>w.sym===s.code))?'★':'☆'}</div>
-    </div>
+    ${orangeBadges.length?`<div style="display:grid;grid-template-columns:repeat(2,max-content);gap:3px 6px;margin-bottom:4px">${orangeBadges.map(b=>`<div>${b}</div>`).join('')}</div>`:''}
+    <div style="font-size:13px;color:var(--text2)">${s.price?`${s.price}　`:''}<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
+    <div style="font-size:11px;color:var(--text3);margin-top:2px">目前成交量：${fmtVol(s.todayVol)}</div>
   </div>`;
 }
 function renderStrongStocksCard(){
