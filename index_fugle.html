@@ -1837,7 +1837,7 @@ async function renderExtraData(stockCode, a) {
     const [taiexRes, instRes, holdRes, foreignRes, revenueRes, finRes, fxRes, priceRes] = await Promise.allSettled([
       fmFetchExtra('TaiwanStockPrice', 'TAIEX', startDate90),
       fmFetchExtra('TaiwanStockInstitutionalInvestorsBuySell', stockCode, startDate),
-      fmFetchExtra('TaiwanStockHoldingSharesPer', stockCode, startDate90),
+      Promise.resolve([]), // 大戶持股暫緩：免費 FinMind 不呼叫 Backer/Sponsor-only dataset
       fmFetchExtra('TaiwanStockShareholding', stockCode, startDate),
       fmFetchExtra('TaiwanStockMonthRevenue', stockCode, startDate90),
       fmFetchExtra('TaiwanStockFinancialStatements', stockCode, startDate90),
@@ -2019,7 +2019,7 @@ async function renderExtraData(stockCode, a) {
 
     // 大戶持股
     let holdHtml="";
-    if(!holdData.length){holdHtml=`<div class="new-row"><span style="font-size:10px;color:var(--text3)">大戶：無資料(holdData空)</span></div>`;}
+    if(!holdData.length){holdHtml="";} // 大戶功能暫緩時不顯示空資料列
     if(holdData.length && a.close>0) {
       // 2000萬 ÷ 股價 = 大戶門檻張數
       const threshold = Math.round(20000000 / (a.close * 1000));
