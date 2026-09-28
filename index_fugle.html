@@ -2744,15 +2744,23 @@ async function renderExtraData(stockCode, a) {
 function getStartDate30(){const d=new Date();d.setDate(d.getDate()-45);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function getStartDate90(){const d=new Date();d.setMonth(d.getMonth()-26);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 async function fmFetchExtra(dataset, id, startDate){
-  if(dataset==='TaiwanStockPrice' && id!=='TAIEX'){
-    const to=new Date().toISOString().slice(0,10);
-    const url=`${FUGLE_PROXY}/daily/${encodeURIComponent(id)}?from=${encodeURIComponent(startDate)}&to=${encodeURIComponent(to)}`;
-    const r=await fetch(url);const d=await r.json();
-    return (r.ok&&d.ok&&Array.isArray(d.data))?enrichFugleDailyForFinMind(d.data):[];
+  try{
+    if(dataset==='TaiwanStockPrice' && id!=='TAIEX'){
+      const to=new Date().toISOString().slice(0,10);
+      const url=`${FUGLE_PROXY}/daily/${encodeURIComponent(id)}?from=${encodeURIComponent(startDate)}&to=${encodeURIComponent(to)}`;
+      const r=await fetch(url);
+      if(!r.ok) return [];
+      const d=await r.json();
+      return (d&&d.ok&&Array.isArray(d.data))?enrichFugleDailyForFinMind(d.data):[];
+    }
+    const url=`${FM_BASE}?dataset=${dataset}&data_id=${id}&start_date=${startDate}&token=${FM_TOKEN}`;
+    const r=await fetch(url);
+    if(!r.ok) return [];
+    const d=await r.json();
+    return (d&&d.status===200&&Array.isArray(d.data)&&d.data.length)?d.data:[];
+  }catch(e){
+    return [];
   }
-  const url=`https://api.finmindtrade.com/api/v4/data?dataset=${dataset}&data_id=${id}&start_date=${startDate}&token=${FM_TOKEN}`;
-  const r=await fetch(url);const d=await r.json();
-  return (d.status===200&&d.data?.length)?d.data:[];
 }
 
 // ── 持倉追蹤 ──
