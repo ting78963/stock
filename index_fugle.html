@@ -4314,13 +4314,13 @@ function getYesterdayStr(){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-// 取FinMind分K（TaiwanStockKBar），回傳指定日期的資料
+// 取富果1分K，回傳與原 TaiwanStockKBar 相容的指定日期資料
 async function fetchKBar(stockId, dateStr){
   try{
-    const url=`${FM_BASE}?dataset=TaiwanStockKBar&data_id=${stockId}&start_date=${dateStr}&token=${FM_TOKEN}`;
+    const url=`${FUGLE_PROXY}/kbar/${encodeURIComponent(stockId)}?date=${encodeURIComponent(dateStr)}`;
     const r=await fetch(url);
     const d=await r.json();
-    if(d.status===200 && d.data && d.data.length>0){
+    if(r.ok && d.ok && d.data && d.data.length>0){
       return d.data.filter(row=>row.date && row.date.slice(0,10)===dateStr);
     }
     return [];
