@@ -1770,12 +1770,8 @@ async function doSearch(){
       // 再從 FinMind 搜尋
       document.getElementById('ra').innerHTML=`<div class="lbox"><div class="sp"></div><div class="lt">搜尋「${raw}」中...</div></div>`;
       try {
-        const r=await fetch(`https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo&token=${FM_TOKEN}`);
-        const d=await r.json();
-        if(d.status===200&&d.data){
-          const match=d.data.find(s=>s.stock_name&&s.stock_name.includes(raw));
-          if(match) code=match.stock_id;
-        }
+        await loadStockList();
+        code=findStockByName(raw);
       } catch(e){}
       if(!code){
         document.getElementById('ra').innerHTML=`<div class="eb">⚠️ 找不到「${raw}」，請輸入股票代號或完整名稱</div>`;
