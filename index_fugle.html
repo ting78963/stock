@@ -575,7 +575,6 @@ let STOCK_TYPE_MAP = {}; // {代號: 'twse'/'tpex'/'emerging'}
 let STOCK_INDUSTRY_MAP = {}; // {代號: '半導體業'/'觀光餐旅'/...}
 
 async function loadStockList() {
-  // 先從 localStorage 取快取
   try {
     const cached = JSON.parse(localStorage.getItem('stock_list_cache_v3'));
     if(cached && cached.date === new Date().toISOString().slice(0,10) && cached.data) {
@@ -586,19 +585,17 @@ async function loadStockList() {
     }
   } catch(e){}
 
-  // 從 FinMind 抓全市場股票清單
   try {
-    const r = await fetch(`https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo&token=${FM_TOKEN}`);
+    const r = await fetch(FUGLE_PROXY+'/snapshot');
     const d = await r.json();
-    if(d.status===200 && d.data) {
+    if(r.ok && d.ok && Array.isArray(d.data)) {
       d.data.forEach(s=>{
         if(s.stock_id && s.stock_name) {
           STOCK_MAP[s.stock_id] = s.stock_name;
-          if(s.type) STOCK_TYPE_MAP[s.stock_id] = s.type;
-          if(s.industry_category) STOCK_INDUSTRY_MAP[s.stock_id] = s.industry_category;
+          STOCK_TYPE_MAP[s.stock_id] = s.market==='OTC' ? 'tpex' : 'twse';
+          if(s.industry_name) STOCK_INDUSTRY_MAP[s.stock_id] = s.industry_name;
         }
       });
-      // 存入 localStorage
       localStorage.setItem('stock_list_cache_v3', JSON.stringify({
         date: new Date().toISOString().slice(0,10),
         data: STOCK_MAP,
@@ -819,10 +816,9 @@ async function fetchRealtimeSnapshot(forceRefresh){
 
   // 交易時間內，或非交易時間但還沒有今天的快取（例如第一次收盤後查詢）
   try{
-    const url=`https://api.finmindtrade.com/api/v4/taiwan_stock_tick_snapshot?token=${FM_TOKEN}`;
-    const r=await fetch(url);
+    const r=await fetch(FUGLE_PROXY+'/snapshot');
     const d=await r.json();
-    if(d.status===200&&d.data&&d.data.length>0){
+    if(r.ok&&d.ok&&d.data&&d.data.length>0){
       try{localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,data:d.data}));}catch(e){}
       return d.data;
     }
