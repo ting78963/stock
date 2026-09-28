@@ -561,43 +561,52 @@ html.font-xl{font-size:19px}
 </nav>
 
 <script>
-const STOCKS=[]; // 已改用 Fugle 全市場快照清單，見 STOCK_MAP
+const STOCKS=[]; // 已改用 FinMind 全市場清單，見 STOCK_MAP
 
 const LS={
   get:k=>{try{const v=JSON.parse(localStorage.getItem(k));if(k==='positions')return Array.isArray(v)?v:[];return Array.isArray(v)?v:[];}catch(e){return[];}},
   set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))
 };
 
-// ── 全市場股票清單（從 Fugle 載入）──
+// ── 全市場股票清單（從FinMind載入）──
 let STOCK_MAP = {}; // {代號: 名稱}
 let hotVolScanGeneration = 0; // 世代計數器：避免手機背景凍結導致舊查詢結果覆蓋新結果
 let STOCK_TYPE_MAP = {}; // {代號: 'twse'/'tpex'/'emerging'}
 let STOCK_INDUSTRY_MAP = {}; // {代號: '半導體業'/'觀光餐旅'/...}
 
-const FUGLE_PROXY='https://stock-alert-91j1.onrender.com/public/fugle';
-
 async function loadStockList() {
+  // 先從 localStorage 取快取
   try {
-    const cached=JSON.parse(localStorage.getItem('stock_list_cache_fugle_v1'));
-    if(cached&&cached.date===new Date().toISOString().slice(0,10)&&cached.data){
-      STOCK_MAP=cached.data;STOCK_TYPE_MAP=cached.typeData||{};STOCK_INDUSTRY_MAP=cached.industryData||{};return;
+    const cached = JSON.parse(localStorage.getItem('stock_list_cache_v3'));
+    if(cached && cached.date === new Date().toISOString().slice(0,10) && cached.data) {
+      STOCK_MAP = cached.data;
+      STOCK_TYPE_MAP = cached.typeData || {};
+      STOCK_INDUSTRY_MAP = cached.industryData || {};
+      return;
     }
-  }catch(e){}
-  try{
-    const r=await fetch(FUGLE_PROXY+'/snapshot');
-    const d=await r.json();
-    if(!r.ok||!d.ok||!Array.isArray(d.data)) throw new Error(d.error||'Fugle snapshot failed');
-    d.data.forEach(s=>{
-      if(s.stock_id&&s.stock_name){
-        STOCK_MAP[s.stock_id]=s.stock_name;
-        STOCK_TYPE_MAP[s.stock_id]=s.market==='OTC'?'tpex':'twse';
-        if(s.industry_code) STOCK_INDUSTRY_MAP[s.stock_id]=s.industry_code;
-      }
-    });
-    localStorage.setItem('stock_list_cache_fugle_v1',JSON.stringify({
-      date:new Date().toISOString().slice(0,10),data:STOCK_MAP,typeData:STOCK_TYPE_MAP,industryData:STOCK_INDUSTRY_MAP
-    }));
-  }catch(e){console.error('loadStockList Fugle error:',e);}
+  } catch(e){}
+
+  // 從 FinMind 抓全市場股票清單
+  try {
+    const r = await fetch(`https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo&token=${FM_TOKEN}`);
+    const d = await r.json();
+    if(d.status===200 && d.data) {
+      d.data.forEach(s=>{
+        if(s.stock_id && s.stock_name) {
+          STOCK_MAP[s.stock_id] = s.stock_name;
+          if(s.type) STOCK_TYPE_MAP[s.stock_id] = s.type;
+          if(s.industry_category) STOCK_INDUSTRY_MAP[s.stock_id] = s.industry_category;
+        }
+      });
+      // 存入 localStorage
+      localStorage.setItem('stock_list_cache_v3', JSON.stringify({
+        date: new Date().toISOString().slice(0,10),
+        data: STOCK_MAP,
+        typeData: STOCK_TYPE_MAP,
+        industryData: STOCK_INDUSTRY_MAP
+      }));
+    }
+  } catch(e){}
 }
 
 function getStockName(code) {
@@ -773,9 +782,17 @@ function qs(s){tiEl.value=s;acEl.style.display='none';doSearch();}
 // ── FinMind API ──
 const FM_TOKEN='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiSGFtaWx0b25XYW5nIiwiZW1haWwiOiJ0aW5nNzg5NjNAZ21haWwuY29tIiwidG9rZW5fdmVyc2lvbiI6MH0.l67zXvqwdLQbdUqPBJGDokFU-zAgrnmlvM-r41Zt9yA';
 const FM_BASE='https://api.finmindtrade.com/api/v4/data';
+const FUGLE_PROXY='https://stock-alert-91j1.onrender.com/public/fugle';
 
 async function fmFetch(dataset,stockId,startDate){
   try{
+    if(dataset==='TaiwanStockPrice' && stockId!=='TAIEX'){
+      const to=new Date().toISOString().slice(0,10);
+      const url=`${FUGLE_PROXY}/daily/${encodeURIComponent(stockId)}?from=${encodeURIComponent(startDate)}&to=${encodeURIComponent(to)}`;
+      const r=await fetch(url);
+      const d=await r.json();
+      return (r.ok&&d.ok&&Array.isArray(d.data)&&d.data.length)?d.data:null;
+    }
     const url=`${FM_BASE}?dataset=${dataset}&data_id=${stockId}&start_date=${startDate}&token=${FM_TOKEN}`;
     const r=await fetch(url);
     const d=await r.json();
@@ -787,29 +804,30 @@ async function fmFetch(dataset,stockId,startDate){
 async function fetchRealtimeSnapshot(forceRefresh){
   const now=new Date();
   const dateStr=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
-  const isTradingHours=now.getHours()>=9&&(now.getHours()<13||(now.getHours()===13&&now.getMinutes()<30));
-  const cacheKey='realtime_snapshot_cache_fugle_v1';
-  if(!isTradingHours&&!forceRefresh){
-    try{const x=JSON.parse(localStorage.getItem(cacheKey)||'null');if(x&&x.date===dateStr&&x.data?.length)return x.data;}catch(e){}
+  const isTradingHours = now.getHours()>=9 && (now.getHours()<13 || (now.getHours()===13 && now.getMinutes()<30));
+  const cacheKey='realtime_snapshot_cache_v1';
+
+  // 非交易時間：優先使用今天的快取，不重新呼叫API（除非使用者明確按了重新整理，強制略過快取）
+  if(!isTradingHours && !forceRefresh){
+    try{
+      const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
+      if(cached && cached.date===dateStr && cached.data && cached.data.length>0){
+        return cached.data;
+      }
+    }catch(e){}
   }
+
+  // 交易時間內，或非交易時間但還沒有今天的快取（例如第一次收盤後查詢）
   try{
-    const r=await fetch(FUGLE_PROXY+'/snapshot');
+    const url=`https://api.finmindtrade.com/api/v4/taiwan_stock_tick_snapshot?token=${FM_TOKEN}`;
+    const r=await fetch(url);
     const d=await r.json();
-    if(r.ok&&d.ok&&Array.isArray(d.data)&&d.data.length){
+    if(d.status===200&&d.data&&d.data.length>0){
       try{localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,data:d.data}));}catch(e){}
       return d.data;
     }
     return [];
-  }catch(e){console.error('fetchRealtimeSnapshot Fugle error:',e);return [];}
-}
-
-async function fugleDaily(stockId,startDate,endDate){
-  try{
-    const to=endDate||new Date().toISOString().slice(0,10);
-    const u=FUGLE_PROXY+'/daily/'+encodeURIComponent(stockId)+'?from='+encodeURIComponent(startDate)+'&to='+encodeURIComponent(to);
-    const r=await fetch(u);const d=await r.json();
-    return (r.ok&&d.ok&&Array.isArray(d.data))?d.data:[];
-  }catch(e){return [];}
+  }catch(e){console.error('fetchRealtimeSnapshot error:',e);return [];}
 }
 
 async function fetchStock(code){
@@ -1753,9 +1771,16 @@ async function doSearch(){
     if(foundCode){
       code=foundCode;
     } else {
-      // Fugle 股票清單已在 STOCK_MAP；不再向 FinMind 查詢
-      await loadStockList();
-      code=findStockByName(raw);
+      // 再從 FinMind 搜尋
+      document.getElementById('ra').innerHTML=`<div class="lbox"><div class="sp"></div><div class="lt">搜尋「${raw}」中...</div></div>`;
+      try {
+        const r=await fetch(`https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInfo&token=${FM_TOKEN}`);
+        const d=await r.json();
+        if(d.status===200&&d.data){
+          const match=d.data.find(s=>s.stock_name&&s.stock_name.includes(raw));
+          if(match) code=match.stock_id;
+        }
+      } catch(e){}
       if(!code){
         document.getElementById('ra').innerHTML=`<div class="eb">⚠️ 找不到「${raw}」，請輸入股票代號或完整名稱</div>`;
         return;
@@ -2705,6 +2730,12 @@ async function renderExtraData(stockCode, a) {
 function getStartDate30(){const d=new Date();d.setDate(d.getDate()-45);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function getStartDate90(){const d=new Date();d.setMonth(d.getMonth()-26);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 async function fmFetchExtra(dataset, id, startDate){
+  if(dataset==='TaiwanStockPrice' && id!=='TAIEX'){
+    const to=new Date().toISOString().slice(0,10);
+    const url=`${FUGLE_PROXY}/daily/${encodeURIComponent(id)}?from=${encodeURIComponent(startDate)}&to=${encodeURIComponent(to)}`;
+    const r=await fetch(url);const d=await r.json();
+    return (r.ok&&d.ok&&Array.isArray(d.data))?d.data:[];
+  }
   const url=`https://api.finmindtrade.com/api/v4/data?dataset=${dataset}&data_id=${id}&start_date=${startDate}&token=${FM_TOKEN}`;
   const r=await fetch(url);const d=await r.json();
   return (d.status===200&&d.data?.length)?d.data:[];
@@ -3884,7 +3915,6 @@ async function loadHotVolStocks(forceRefresh){
     // 再加上金額≥5000萬、張數≥4000張的流動性門檻（用即時快照本身欄位，不額外耗費請求）
     const upStocks = snapshot.filter(r=>{
       if(shouldExcludeStock(r.stock_id)) return false;
-      if(r.strong_meta_ok===false) return false; // Fugle ticker metadata fail-closed / industry exclusion
       if((r.change_rate||0)<=0) return false;
       if((r.total_amount||0)<50000000) return false; // 金額≥5000萬
       if((r.total_volume||0)<4000) return false; // 張數≥4000張
@@ -3901,7 +3931,7 @@ async function loadHotVolStocks(forceRefresh){
       try{
         const startD=new Date();startD.setMonth(startD.getMonth()-5); // 需至少60個交易日供VCP三段標準差計算，抓5個月確保足夠
         const sD=`${startD.getFullYear()}-${String(startD.getMonth()+1).padStart(2,'0')}-${String(startD.getDate()).padStart(2,'0')}`;
-        const data=await fugleDaily(stock.stock_id,sD);
+        const data=await fmFetchExtra('TaiwanStockPrice',stock.stock_id,sD);
         doneCount++;
         const progText=document.getElementById('hotvol-progress-text');
         const progBar=document.getElementById('hotvol-progress-bar');
@@ -5319,7 +5349,7 @@ function renderSettings(){
     </div>
     <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--border);padding:14px;margin-bottom:12px">
       <div style="font-size:var(--fs-sm);font-weight:600;color:var(--text);margin-bottom:4px">關於</div>
-      <div style="font-size:var(--fs-xs);color:var(--text3);line-height:1.7">強勢選股 PWA<br>資料來源：Fugle、台灣證交所<br>⚠️ 本分析僅供技術面學習參考，不構成投資建議</div>
+      <div style="font-size:var(--fs-xs);color:var(--text3);line-height:1.7">強勢選股 PWA<br>資料來源：FinMind、台灣證交所<br>⚠️ 本分析僅供技術面學習參考，不構成投資建議</div>
     </div>
     <div style="background:var(--card);border-radius:12px;border:0.5px solid var(--border);padding:14px;margin-bottom:12px">
       <div style="font-size:var(--fs-sm);font-weight:600;color:var(--text);margin-bottom:8px">收盤存檔管理</div>
