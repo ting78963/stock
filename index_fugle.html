@@ -1753,7 +1753,10 @@ async function doSearch(){
     if(foundCode){
       code=foundCode;
     } else {
-      // Fugle 股票清單已在 STOCK_MAP；不再向 FinMind 查詢\n      await loadStockList();\n      code=findStockByName(raw);\n      if(!code){
+      // Fugle 股票清單已在 STOCK_MAP；不再向 FinMind 查詢
+      await loadStockList();
+      code=findStockByName(raw);
+      if(!code){
         document.getElementById('ra').innerHTML=`<div class="eb">⚠️ 找不到「${raw}」，請輸入股票代號或完整名稱</div>`;
         return;
       }
