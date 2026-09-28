@@ -868,8 +868,20 @@ async function fetchStock(code){
 
   if(data.length<20)throw new Error(`找不到股票代號 ${code}，請確認後重試（支援上市與上櫃）`);
 
-  // 抓加權指數（TAIEX）用於RS值計算
-  const twiiRows=await fmFetch('TaiwanStockPrice','TAIEX',startDate);
+  // 抓加權指數（TAIEX）用於RS值計算；同一天共用，避免自選掃描每檔重複打 FinMind
+  let twiiRows=null;
+  const twiiCacheKey='taiex_rs_26m_cache_v1';
+  const todayKey=new Date().toISOString().slice(0,10);
+  try{
+    const cached=JSON.parse(localStorage.getItem(twiiCacheKey)||'null');
+    if(cached&&cached.date===todayKey&&Array.isArray(cached.data)&&cached.data.length>0) twiiRows=cached.data;
+  }catch(e){}
+  if(!twiiRows){
+    twiiRows=await fmFetch('TaiwanStockPrice','TAIEX',startDate);
+    if(twiiRows&&twiiRows.length>0){
+      try{localStorage.setItem(twiiCacheKey,JSON.stringify({date:todayKey,data:twiiRows}));}catch(e){}
+    }
+  }
   if(twiiRows&&twiiRows.length>0){
     twiiData=twiiRows.map(r=>parseFloat(r.close)).filter(v=>!isNaN(v)&&v>0);
   }
