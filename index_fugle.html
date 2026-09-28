@@ -4448,9 +4448,11 @@ async function saveClosingSnapshot(){
 
   const enrichedPassed   = enriched.filter(s=>passedCodes.has(s.code));
   const enrichedFiltered = enriched.filter(s=>!passedCodes.has(s.code));
+  const kbarMissing = enriched.filter(s=>!Array.isArray(s.kbar_today)||s.kbar_today.length===0||!Array.isArray(s.kbar_yesterday)||s.kbar_yesterday.length===0);
+  const kbarComplete = kbarMissing.length===0;
 
-  // 下載 JSON（含分K）
-  const payload = {date:saveDate, scanTime, savedAt:new Date().toISOString(), passed:enrichedPassed, filtered:enrichedFiltered};
+  // 下載 JSON（含分K）；明確記錄完整性，避免 KBar 缺漏被誤認為完整成功
+  const payload = {date:saveDate, scanTime, savedAt:new Date().toISOString(), kbarComplete, kbarMissingCodes:kbarMissing.map(s=>s.code), passed:enrichedPassed, filtered:enrichedFiltered};
   const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -4460,7 +4462,11 @@ async function saveClosingSnapshot(){
 
   // 更新按鈕顯示
   renderCloseSaveBtn();
-  alert(`✅ ${saveLabel}存檔完成！通過 ${enrichedPassed.length} 支 / 未達門檻 ${enrichedFiltered.length} 支，已下載 JSON`);
+  if(kbarComplete){
+    alert(`✅ ${saveLabel}存檔完成！通過 ${enrichedPassed.length} 支 / 未達門檻 ${enrichedFiltered.length} 支，KBar 完整，已下載 JSON`);
+  } else {
+    alert(`⚠️ ${saveLabel}已下載 JSON，但 KBar 不完整：${kbarMissing.length}/${enriched.length} 支有缺漏。缺漏代碼：${kbarMissing.map(s=>s.code).join('、')}。請勿把這份檔案視為完整研究存檔。`);
+  }
 }
 
 // 匯出所有歷史為 CSV
