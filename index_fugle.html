@@ -781,6 +781,16 @@ const FM_TOKEN='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiSGFtaWx0b25
 const FM_BASE='https://api.finmindtrade.com/api/v4/data';
 const FUGLE_PROXY='https://stock-alert-91j1.onrender.com/public/fugle';
 
+function enrichFugleDailyForFinMind(rows){
+  const sorted=[...(rows||[])].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+  for(let i=0;i<sorted.length;i++){
+    const close=parseFloat(sorted[i].close);
+    const prev=i>0?parseFloat(sorted[i-1].close):NaN;
+    sorted[i].spread=(i>0&&Number.isFinite(close)&&Number.isFinite(prev))?close-prev:0;
+  }
+  return sorted;
+}
+
 async function fmFetch(dataset,stockId,startDate){
   try{
     if(dataset==='TaiwanStockPrice' && stockId!=='TAIEX'){
@@ -788,7 +798,7 @@ async function fmFetch(dataset,stockId,startDate){
       const url=`${FUGLE_PROXY}/daily/${encodeURIComponent(stockId)}?from=${encodeURIComponent(startDate)}&to=${encodeURIComponent(to)}`;
       const r=await fetch(url);
       const d=await r.json();
-      return (r.ok&&d.ok&&Array.isArray(d.data)&&d.data.length)?d.data:null;
+      return (r.ok&&d.ok&&Array.isArray(d.data)&&d.data.length)?enrichFugleDailyForFinMind(d.data):null;
     }
     const url=`${FM_BASE}?dataset=${dataset}&data_id=${stockId}&start_date=${startDate}&token=${FM_TOKEN}`;
     const r=await fetch(url);
@@ -2726,7 +2736,7 @@ async function fmFetchExtra(dataset, id, startDate){
     const to=new Date().toISOString().slice(0,10);
     const url=`${FUGLE_PROXY}/daily/${encodeURIComponent(id)}?from=${encodeURIComponent(startDate)}&to=${encodeURIComponent(to)}`;
     const r=await fetch(url);const d=await r.json();
-    return (r.ok&&d.ok&&Array.isArray(d.data))?d.data:[];
+    return (r.ok&&d.ok&&Array.isArray(d.data))?enrichFugleDailyForFinMind(d.data):[];
   }
   const url=`https://api.finmindtrade.com/api/v4/data?dataset=${dataset}&data_id=${id}&start_date=${startDate}&token=${FM_TOKEN}`;
   const r=await fetch(url);const d=await r.json();
