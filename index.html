@@ -4375,17 +4375,45 @@ function getYesterdayStr(){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-// 取富果1分K，回傳與原 TaiwanStockKBar 相容的指定日期資料
+// 取1分K：Fugle 優先；指定歷史日若 Fugle 無資料，才 fallback FinMind。
+// 回傳格式維持原 TaiwanStockKBar 相容格式。
 async function fetchKBar(stockId, dateStr){
   try{
     const url=`${FUGLE_PROXY}/kbar/${encodeURIComponent(stockId)}?date=${encodeURIComponent(dateStr)}`;
     const r=await fetch(url);
     const d=await r.json();
-    if(r.ok && d.ok && d.data && d.data.length>0){
+    if(r.ok && d.ok && Array.isArray(d.data) && d.data.length>0){
+      const rows=d.data.filter(row=>row.date && row.date.slice(0,10)===dateStr);
+      if(rows.length) return rows;
+    }
+  }catch(e){}
+
+  // Fugle historical 1m miss/failure: use the pre-migration FinMind path as a narrow fallback.
+  try{
+    const url=`${FM_BASE}?dataset=TaiwanStockKBar&data_id=${encodeURIComponent(stockId)}&start_date=${encodeURIComponent(dateStr)}&token=${FM_TOKEN}`;
+    const r=await fetch(url);
+    const d=await r.json();
+    if(r.ok && d.status===200 && Array.isArray(d.data) && d.data.length>0){
       return d.data.filter(row=>row.date && row.date.slice(0,10)===dateStr);
     }
-    return [];
-  }catch(e){ return []; }
+  }catch(e){}
+  return [];
+}
+
+// 以上一個「實際有 KBar 的交易日」為 yesterday；不再用曆日 -1。
+// 最多往前 10 天，涵蓋週末與一般連假；找不到就回空，讓完整性 audit 擋下。
+async function fetchPreviousTradingKBar(stockId, saveDate){
+  const base=new Date(saveDate+'T12:00:00');
+  for(let back=1; back<=10; back++){
+    const d=new Date(base);
+    d.setDate(d.getDate()-back);
+    const dow=d.getDay();
+    if(dow===0 || dow===6) continue;
+    const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const rows=await fetchKBar(stockId, ds);
+    if(rows.length) return rows;
+  }
+  return [];
 }
 
 // 主存檔函數
@@ -4471,7 +4499,7 @@ async function saveClosingSnapshot(){
     if(btn) btn.textContent=`⏳ 抓分K... ${i+1}/${allStocks.length}`;
     const [todayK, yesterdayK] = await Promise.all([
       fetchKBar(s.code, saveDate),
-      fetchKBar(s.code, isTradingHours ? todayStr : yesterdayStr)
+      fetchPreviousTradingKBar(s.code, saveDate)
     ]);
     enriched.push({ ...s, kbar_today:todayK, kbar_yesterday:yesterdayK });
     await new Promise(r=>setTimeout(r,150));
