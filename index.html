@@ -4436,25 +4436,29 @@ async function saveClosingSnapshot(){
   const saveDate = isTradingHours ? yesterdayStr : todayStr;
   const saveLabel = isTradingHours ? `昨日（${yesterdayStr}）` : `今日（${todayStr}）`;
 
-  // 防重複
-  if(archive[saveDate]){
-    alert(`✅ ${saveLabel}已存檔，無需重複操作`);
-    return;
-  }
+  // 已存檔時允許「重新下載 JSON」：固定使用原 archive 快照，
+  // 只重抓 KBar，不重新定義當日 passed/filtered 母體。
+  const savedSnapshot = archive[saveDate] || null;
 
-  // 從快取取資料：盤中用昨日備份，收盤後用今日快取
   let passedList = [];
   let filteredList = [];
   let scanTime = '';
-  try{
-    const cacheKey = isTradingHours ? 'hotvol_cache_yesterday' : 'hotvol_cache_v5';
-    const hvCache = JSON.parse(localStorage.getItem(cacheKey)||'null');
-    if(hvCache){
-      passedList = [...(hvCache.vcpSignalStocks||[]),...(hvCache.noVcpStocks||[])];
-      filteredList = hvCache.filteredOutStocks||[];
-      scanTime = hvCache.fetchTimeStr||'';
-    }
-  }catch(e){}
+  if(savedSnapshot){
+    passedList = (savedSnapshot.passed||[]).map(s=>({...s}));
+    filteredList = (savedSnapshot.filtered||[]).map(s=>({...s}));
+    scanTime = savedSnapshot.scanTime||'';
+  } else {
+    // 首次存檔才從快取取資料：盤中用昨日備份，收盤後用今日快取
+    try{
+      const cacheKey = isTradingHours ? 'hotvol_cache_yesterday' : 'hotvol_cache_v5';
+      const hvCache = JSON.parse(localStorage.getItem(cacheKey)||'null');
+      if(hvCache){
+        passedList = [...(hvCache.vcpSignalStocks||[]),...(hvCache.noVcpStocks||[])];
+        filteredList = hvCache.filteredOutStocks||[];
+        scanTime = hvCache.fetchTimeStr||'';
+      }
+    }catch(e){}
+  }
 
   const allStocks = [...passedList, ...filteredList];
   if(!allStocks.length){
@@ -4573,7 +4577,10 @@ function renderCloseSaveBtn(){
     <div style="font-size:11px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:8px">💾 收盤存檔</div>
     <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:12px 14px">
       ${alreadySaved
-        ? `<div style="font-size:13px;color:var(--green);font-weight:600;margin-bottom:8px">✅ 今日（${todayStr}）已存檔（通過 ${(archive[todayStr].passed||[]).length} 支 / 未達門檻 ${(archive[todayStr].filtered||[]).length} 支）</div>`
+        ? `<div style="font-size:13px;color:var(--green);font-weight:600;margin-bottom:8px">✅ 今日（${todayStr}）已存檔（通過 ${(archive[todayStr].passed||[]).length} 支 / 未達門檻 ${(archive[todayStr].filtered||[]).length} 支）</div>
+           <div id="close-save-action-btn" onclick="saveClosingSnapshot()" style="padding:11px;background:var(--wine);color:#fff;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">
+             🔄 重新下載今日 JSON（重抓 KBar）
+           </div>`
         : `<div id="close-save-action-btn" onclick="saveClosingSnapshot()" style="padding:11px;background:var(--wine);color:#fff;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">
              💾 今日收盤存檔（14:30 後）
            </div>`
