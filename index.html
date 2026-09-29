@@ -4400,9 +4400,8 @@ async function fetchKBar(stockId, dateStr){
   return [];
 }
 
-// 以上一個「實際有 KBar 的交易日」為 yesterday；不再用曆日 -1。
-// 最多往前 10 天，涵蓋週末與一般連假；找不到就回空，讓完整性 audit 擋下。
-async function fetchPreviousTradingKBar(stockId, saveDate){
+// 只解析一次上一個實際交易日；不要每支股票重複逐日探測。
+async function resolvePreviousTradingDate(probeStockId, saveDate){
   const base=new Date(saveDate+'T12:00:00');
   for(let back=1; back<=10; back++){
     const d=new Date(base);
@@ -4410,10 +4409,10 @@ async function fetchPreviousTradingKBar(stockId, saveDate){
     const dow=d.getDay();
     if(dow===0 || dow===6) continue;
     const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    const rows=await fetchKBar(stockId, ds);
-    if(rows.length) return rows;
+    const rows=await fetchKBar(probeStockId, ds);
+    if(rows.length) return ds;
   }
-  return [];
+  return null;
 }
 
 // 主存檔函數
@@ -4495,18 +4494,30 @@ async function saveClosingSnapshot(){
   };
   saveResearchArchive(archive);
 
-  // ② 下載 JSON 時才即時抓分K
+  // ② 下載 JSON 時才即時抓分K。
+  // 上一交易日只解析一次；股票以受控並行抓取，避免逐支串行過慢。
+  if(btn) btn.textContent=`⏳ 判定上一交易日...`;
+  const previousTradingDate = await resolvePreviousTradingDate(allStocks[0].code, saveDate);
+
   if(btn) btn.textContent=`⏳ 抓分K... 0/${allStocks.length}`;
-  const enriched = [];
-  for(let i=0; i<allStocks.length; i++){
-    const s = allStocks[i];
-    if(btn) btn.textContent=`⏳ 抓分K... ${i+1}/${allStocks.length}`;
-    const [todayK, yesterdayK] = await Promise.all([
-      fetchKBar(s.code, saveDate),
-      fetchPreviousTradingKBar(s.code, saveDate)
-    ]);
-    enriched.push({ ...s, kbar_today:todayK, kbar_yesterday:yesterdayK });
-    await new Promise(r=>setTimeout(r,150));
+  const enriched = new Array(allStocks.length);
+  let completed = 0;
+  const CONCURRENCY = 5;
+
+  for(let start=0; start<allStocks.length; start+=CONCURRENCY){
+    const batch=allStocks.slice(start,start+CONCURRENCY);
+    await Promise.all(batch.map(async (s,j)=>{
+      const idx=start+j;
+      const [todayK, yesterdayK] = await Promise.all([
+        fetchKBar(s.code, saveDate),
+        previousTradingDate ? fetchKBar(s.code, previousTradingDate) : Promise.resolve([])
+      ]);
+      enriched[idx]={ ...s, kbar_today:todayK, kbar_yesterday:yesterdayK };
+      completed++;
+      if(btn) btn.textContent=`⏳ 抓分K... ${completed}/${allStocks.length}`;
+    }));
+    // 小幅節流，避免同時大量 historical requests 觸發上游限流。
+    if(start+CONCURRENCY<allStocks.length) await new Promise(r=>setTimeout(r,120));
   }
 
   const enrichedPassed   = enriched.filter(s=>passedCodes.has(s.code));
