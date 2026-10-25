@@ -4329,7 +4329,7 @@ function stockBadgeHtml(s,tier){
       </div>
     </div>
     ${orangeBadges.length?`<div style="display:grid;grid-template-columns:repeat(2,max-content);gap:3px 6px;margin-bottom:4px">${orangeBadges.map(b=>`<div>${b}</div>`).join('')}</div>`:''}
-    <div style="font-size:13px;color:var(--text2)">${s.price?`${s.price}　`:''}<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span>${oscBadgeHtml(s)}</div>
+    <div style="font-size:13px;color:var(--text2);display:flex;align-items:center;flex-wrap:wrap;row-gap:4px"><span style="white-space:nowrap">${s.price?`${s.price}　`:''}<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></span>${oscBadgeHtml(s)}</div>
     <div style="font-size:11px;color:var(--text3);margin-top:2px">目前成交量：${fmtVol(s.todayVol)}</div>
   </div>`;
 }
