@@ -3910,7 +3910,7 @@ async function loadHotVolStocks(forceRefresh){
     const dateStr=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
     const cacheKey='hotvol_cache_v5';
     const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
-    if(!forceRefresh && cached&&cached.date===dateStr){
+    if(!forceRefresh && cached&&cached.date===dateStr && cached.oscCacheVersion===1){
       renderHotVolCard(el,cached.noVcpStocks,cached.filteredOutStocks||[],cached.fetchTimeStr);
       if(vcpEl2) renderVcpSignalCard(vcpEl2,cached.vcpSignalStocks,cached.fetchTimeStr);
       return;
@@ -4105,7 +4105,7 @@ async function loadHotVolStocks(forceRefresh){
         const prev=localStorage.getItem(cacheKey);
         if(prev) localStorage.setItem('hotvol_cache_yesterday',prev);
       }
-      localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,vcpSignalStocks,noVcpStocks,filteredOutStocks,fetchTimeStr}));
+      localStorage.setItem(cacheKey,JSON.stringify({date:dateStr,oscCacheVersion:1,vcpSignalStocks,noVcpStocks,filteredOutStocks,fetchTimeStr}));
     }catch(e){}
 
     renderHotVolCard(el,noVcpStocks,filteredOutStocks,fetchTimeStr);
@@ -4961,7 +4961,7 @@ async function loadStockDefault(){
     const today=new Date();
     const dateStr=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
     const cached=JSON.parse(localStorage.getItem('hotvol_cache_v5')||'null');
-    if(cached&&cached.date===dateStr){
+    if(cached&&cached.date===dateStr && cached.oscCacheVersion===1){
       const hvEl=document.getElementById('stock-hotvol-card');
       const vsEl=document.getElementById('stock-vcpsignal-card');
       if(hvEl) renderHotVolCard(hvEl,cached.noVcpStocks,cached.filteredOutStocks||[],cached.fetchTimeStr);
