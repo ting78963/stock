@@ -4030,14 +4030,7 @@ async function loadHotVolStocks(forceRefresh){
         const maPrepareEntry=calcMA5MA20Prepare(sorted);
         const macdRawEntry=calcMACD(sorted.map(r=>parseFloat(r.close)||0),12,26,9);
         // 卡片 OSC 優先使用今日即時收盤價；不修改既有共振判斷所用的歷史序列
-        const oscCloses=sorted.map(r=>parseFloat(r.close)||0);
-        const snapshotDate=(stock.date||'').slice(0,10);
-        const lastHistoryDate=sorted.length?sorted[sorted.length-1].date:'';
-        const localToday=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-        if(snapshotDate===localToday && Number.isFinite(Number(stock.close)) && Number(stock.close)>0){
-          if(lastHistoryDate===snapshotDate) oscCloses[oscCloses.length-1]=Number(stock.close);
-          else if(lastHistoryDate<snapshotDate) oscCloses.push(Number(stock.close));
-        }
+        const oscCloses=buildSnapshotOscCloses(sorted,stock,today);
         const macdDisplayEntry=calcMACD(oscCloses,12,26,9);
         const macdOSCEntry=(macdRawEntry.histArr5||macdRawEntry.histArr||[]).slice(-3);
         const macdPositiveEntry=macdOSCEntry.length>=2&&macdOSCEntry[macdOSCEntry.length-1]>macdOSCEntry[0];
@@ -4307,6 +4300,21 @@ function priceTierLabel(price){
   if(price>=50) return '50-100元';
   if(price>=10) return '10-50元';
   return '10元以下';
+}
+
+// 盤中 OSC：今日快照覆蓋今日歷史棒，或在歷史只到昨日時新增一棒；絕不重複計入同日。
+function buildSnapshotOscCloses(sorted,stock,today){
+  const closes=sorted.map(r=>parseFloat(r.close)||0);
+  const localToday=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const normalizeDate=v=>String(v||'').slice(0,10);
+  const snapshotDate=normalizeDate(stock.date);
+  const lastHistoryDate=sorted.length?normalizeDate(sorted[sorted.length-1].date):'';
+  const snapshotPrice=Number(stock.close);
+  if(snapshotDate===localToday && Number.isFinite(snapshotPrice) && snapshotPrice>0){
+    if(lastHistoryDate===snapshotDate) closes[closes.length-1]=snapshotPrice;
+    else if(lastHistoryDate && lastHistoryDate<snapshotDate) closes.push(snapshotPrice);
+  }
+  return closes;
 }
 
 function oscBadgeHtml(s){
