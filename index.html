@@ -2915,7 +2915,9 @@ async function fullWatchUpdate(isAuto){
             const macdRawE=calcMACD(sorted.map(r=>parseFloat(r.close)||0),12,26,9);
             const macdOSCE=(macdRawE.histArr5||macdRawE.histArr||[]).slice(-3);
             const macdPosE=macdOSCE.length>=2&&macdOSCE[macdOSCE.length-1]>macdOSCE[0];
-            wlNow[idx].tripleSignal=(wlNow[idx].wkKDLabel==='golden_cross')&&macdPosE&&(wlNow[idx].maCrossLabel!=null);
+            wlNow[idx].osc=macdRawE.hist;
+            wlNow[idx].oscPrev=macdRawE.prev_hist;
+            wlNow[idx].tripleSignal=(wlNow[idx].wkKDLabel==='golden_cross')&&macdPosE&&(wlNow[idx].maPrepare||wlNow[idx].maCrossLabel===1);
           }
           LS.set('watch',wlNow);
         }
@@ -4030,7 +4032,7 @@ async function loadHotVolStocks(forceRefresh){
         const macdOSCEntry=(macdRawEntry.histArr5||macdRawEntry.histArr||[]).slice(-3);
         const macdPositiveEntry=macdOSCEntry.length>=2&&macdOSCEntry[macdOSCEntry.length-1]>macdOSCEntry[0];
         const wkKDLabelEntry=calcWeeklyKDLabel(sorted);
-        const tripleSignalEntry=(wkKDLabelEntry==='golden_cross')&&macdPositiveEntry&&(maCrossLabelEntry!=null);
+        const tripleSignalEntry=(wkKDLabelEntry==='golden_cross')&&macdPositiveEntry&&(maPrepareEntry||maCrossLabelEntry===1);
 
         const entry={
           code:stock.stock_id,
@@ -4045,6 +4047,8 @@ async function loadHotVolStocks(forceRefresh){
           maCrossLabel:maCrossLabelEntry,
           maPrepare:maPrepareEntry,
           todayCrossMA20:todayCrossMA20Entry,
+          osc:macdRawEntry.hist,
+          oscPrev:macdRawEntry.prev_hist,
           tripleSignal:tripleSignalEntry
         };
 
@@ -4295,6 +4299,14 @@ function priceTierLabel(price){
   return '10元以下';
 }
 
+function oscBadgeHtml(s){
+  if(!Number.isFinite(s.osc)||!Number.isFinite(s.oscPrev)) return '';
+  const up=s.osc>s.oscPrev,down=s.osc<s.oscPrev;
+  const color=up?'#dc2626':down?'#16a34a':'#888';
+  const arrow=up?'▲':down?'▼':'━';
+  const value=(s.osc>0?'+':'')+s.osc.toFixed(2);
+  return `<span style="margin-left:24px;color:${color};font-weight:600;white-space:nowrap">OSC ${value} ${arrow}</span>`;
+}
 function stockBadgeHtml(s,tier){
   const monthlyCount=getMonthlyCountFor(s.code);
   const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:var(--red);border:0.5px solid var(--red);font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
@@ -4317,7 +4329,7 @@ function stockBadgeHtml(s,tier){
       </div>
     </div>
     ${orangeBadges.length?`<div style="display:grid;grid-template-columns:repeat(2,max-content);gap:3px 6px;margin-bottom:4px">${orangeBadges.map(b=>`<div>${b}</div>`).join('')}</div>`:''}
-    <div style="font-size:13px;color:var(--text2)">${s.price?`${s.price}　`:''}<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></div>
+    <div style="font-size:13px;color:var(--text2)">${s.price?`${s.price}　`:''}<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span>${oscBadgeHtml(s)}</div>
     <div style="font-size:11px;color:var(--text3);margin-top:2px">目前成交量：${fmtVol(s.todayVol)}</div>
   </div>`;
 }
