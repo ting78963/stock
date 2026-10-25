@@ -4300,7 +4300,7 @@ function priceTierLabel(price){
 }
 
 function oscBadgeHtml(s){
-  if(!Number.isFinite(s.osc)||!Number.isFinite(s.oscPrev)) return '';
+  if(!Number.isFinite(s.osc)||!Number.isFinite(s.oscPrev)) return '<span style="margin-left:24px;color:var(--text3);white-space:nowrap">OSC --</span>';
   const up=s.osc>s.oscPrev,down=s.osc<s.oscPrev;
   const color=up?'#dc2626':down?'#16a34a':'#888';
   const arrow=up?'▲':down?'▼':'━';
