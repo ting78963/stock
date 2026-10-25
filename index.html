@@ -4961,7 +4961,9 @@ async function loadStockDefault(){
     const today=new Date();
     const dateStr=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
     const cached=JSON.parse(localStorage.getItem('hotvol_cache_v5')||'null');
-    if(cached&&cached.date===dateStr && cached.oscCacheVersion===1){
+    if(cached&&cached.date===dateStr){
+      // 舊版快取沒有 OSC：先保留原卡片，背景重算一次後覆蓋
+      if(cached.oscCacheVersion!==1) loadHotVolStocks(true);
       const hvEl=document.getElementById('stock-hotvol-card');
       const vsEl=document.getElementById('stock-vcpsignal-card');
       if(hvEl) renderHotVolCard(hvEl,cached.noVcpStocks,cached.filteredOutStocks||[],cached.fetchTimeStr);
