@@ -4395,10 +4395,10 @@ function renderInstitutionalWatchCard(el,results,fetchTimeStr){
 const DAILY_SNAPSHOT_KEY='daily_snapshot_history_v1';
 const ROLLING_WINDOW_DAYS=20; // 只保留最近20個「有記錄」的交易日，不看日曆月份
 // 啟動時核對既有快照，真正移除非交易日；網路失敗則保留待下次查證。
-setTimeout(()=>{cleanInvalidTradingSnapshots().then(()=>{try{renderStrongStocksCard();}catch(e){}});},1500);
+// 暫停自動刪除歷史快照，避免資料來源異常或日期判斷錯誤造成不可逆損失。
 
 function isValidSnapshotDate(dateStr){
-  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateStr))return false;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(dateStr))return false;
   const d=new Date(dateStr+'T12:00:00');
   return !Number.isNaN(d.getTime())&&d.getFullYear()===Number(dateStr.slice(0,4))&&d.getMonth()+1===Number(dateStr.slice(5,7))&&d.getDate()===Number(dateStr.slice(8,10))&&d.getDay()>=1&&d.getDay()<=5;
 }
