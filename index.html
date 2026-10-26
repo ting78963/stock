@@ -528,7 +528,7 @@ html.font-xl{font-size:19px}
     <div class="home-card" style="margin-bottom:10px">
       <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">📈 強勢股票與出現次數</div>
       <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">「本月第 N 次」等次數標籤，實際計算基礎為本裝置最近最多 20 個有保存紀錄的交易日，並非完整自然月統計。</div>
+        <div style="margin-bottom:7px">股票卡片的「已記錄 N 次｜日期」依本裝置最近最多 20 個有保存紀錄的交易日計算，並非完整自然月統計；盤中當次出現尚未計入，收盤後重新掃描才寫入。</div>
         <div style="margin-bottom:7px">程式在盤中不增加當日紀錄；收盤後執行盤中掃描，才將當日符合條件股票寫入紀錄，同一天重複寫入會覆蓋，不重複累加。</div>
         <div style="margin-bottom:7px">強勢股票分為「首次出現」（近 20 筆紀錄僅 1 次）、「連續出現」（最近至少連續 2 筆紀錄出現）、「累積出現」（曾多次出現但目前非連續）。</div>
         <div style="margin-bottom:7px">次數依本裝置實際保存的日期計算；沒有執行掃描的交易日不會自動補齊。</div>
@@ -582,6 +582,22 @@ html.font-xl{font-size:19px}
         <div style="margin-bottom:7px">「清除收盤存檔」刪除瀏覽器內的研究存檔；已另行下載的 JSON 不受影響。</div>
         <div style="margin-bottom:7px">「強制更新」會重新載入 APP 頁面，主要用於手機顯示舊版畫面時；不等於清空所有 localStorage 歷史紀錄。</div>
         <div style="margin-bottom:7px">盤中快照、日線、法人與國際市場資料可能有不同延遲；盤中指標為暫估參考，所有訊號都不保證後續價格走勢。</div>
+      </div>
+    </div>
+
+    <!-- 實際訊號標籤對照 -->
+    <div class="home-card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:600;color:var(--wine);margin-bottom:10px">🏷️ 系統訊號標籤對照</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.8">
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">週KD✦—準備黃金交叉</span>週 K 值在 D 值下方、差距不超過 5，且 K 值上升。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">週KD✦—黃金交叉第一天</span>上週 K 低於 D，本週 K 已向上穿越 D。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—準備交叉</span>MA5 在 MA20 下方、差距不超過 1%，且 MA5 正在上升。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—黃金交叉 Day1</span>MA5 剛向上穿越 MA20 的第 1 天。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—黃金交叉 Day2～5</span>已經黃金交叉第 2 至第 5 天；不符合強勢買進訊號的 MA Day1 條件。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">20MA✦—今日站上</span>昨日收盤低於日 MA20，今天盤中價格首次站上估算的日 MA20。</div>
+        <div style="margin-bottom:10px"><span style="font-weight:600;color:#e67e22;margin-right:8px">🔥 強勢買進訊號 🔥</span>週 KD 黃金交叉＋日 MACD 動能轉強＋MA5／MA20 準備交叉或 Day1，同時成立。</div>
+        <div style="margin-bottom:10px"><span style="font-weight:600;color:#dc2626;margin-right:8px">OSC +0.40 ▲</span>OSC 比前一交易日上升；<span style="font-weight:600;color:#16a34a">OSC -0.40 ▼</span> 代表下降。箭頭不由正負號決定。</div>
+        <div style="margin-bottom:4px"><b>出現次數：</b>股票卡片直接列出已保存的日期。盤中查詢尚未寫入今日次數；收盤後重新掃描並保存，才會出現在日期清單。</div>
       </div>
     </div>
 
@@ -4408,10 +4424,23 @@ function updateMonthlyCount(stockList){
   try{localStorage.setItem(DAILY_SNAPSHOT_KEY,JSON.stringify(map));}catch(e){}
 }
 
-function getMonthlyCountFor(code){
+function getRecordedAppearances(code){
   const map=getDailySnapshotMap();
   const recentDates=getRecentTradingDates(map,ROLLING_WINDOW_DAYS);
-  return recentDates.filter(d=>map[d].some(s=>s.code===code)).length;
+  return recentDates.filter(d=>Array.isArray(map[d])&&map[d].some(s=>s.code===code)).sort();
+}
+function getMonthlyCountFor(code){
+  return getRecordedAppearances(code).length;
+}
+function appearanceBadgeHtml(code){
+  const dates=getRecordedAppearances(code);
+  const today=getTodayStr();
+  const todayRecorded=dates.includes(today);
+  const isPending=isTradeTime()&&!todayRecorded;
+  const fmt=d=>d.slice(5).replace('-','/');
+  const detail=dates.length?dates.map(fmt).join('、'):'尚無收盤後紀錄';
+  const summary=dates.length?`已記錄${dates.length}次｜${dates.map(fmt).join('、')}`:'尚未記錄';
+  return `<div style="font-size:10px;color:var(--text3);margin-top:3px;line-height:1.6">${summary}${isPending?'｜本次盤中尚未計入':''}</div>`;
 }
 
 // 供「強勢股票」頁面使用：把最近20個交易日的資料，分成三層分類
@@ -4478,8 +4507,7 @@ function oscBadgeHtml(s){
   return `<span style="margin-left:24px;color:${color};font-weight:600;white-space:nowrap">OSC ${value} ${arrow}</span>`;
 }
 function stockBadgeHtml(s,tier){
-  const monthlyCount=getMonthlyCountFor(s.code);
-  const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:var(--red);border:0.5px solid var(--red);font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
+  const countBadge='';
   const wkKDBadge=(!s.tripleSignal&&s.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">${s.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉第一天':'週KD✦—準備黃金交叉'}</span>`:'';
   const maBadgeCard=(!s.tripleSignal&&s.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">5、20MA✦—黃金交叉 Day${s.maCrossLabel}</span>`:'';
   const maPrepareBadgeCard=(!s.tripleSignal&&!s.maCrossLabel&&s.maPrepare)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">5、20MA✦—準備交叉</span>`:'';
@@ -4499,6 +4527,7 @@ function stockBadgeHtml(s,tier){
       </div>
     </div>
     ${orangeBadges.length?`<div style="display:grid;grid-template-columns:repeat(2,max-content);gap:3px 6px;margin-bottom:4px">${orangeBadges.map(b=>`<div>${b}</div>`).join('')}</div>`:''}
+    ${appearanceBadgeHtml(s.code)}
     <div style="font-size:13px;color:var(--text2);display:flex;align-items:center;flex-wrap:wrap;row-gap:4px"><span style="white-space:nowrap">${s.price?`${s.price}　`:''}<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></span>${oscBadgeHtml(s)}</div>
     <div style="font-size:11px;color:var(--text3);margin-top:2px">目前成交量：${fmtVol(s.todayVol)}</div>
   </div>`;
