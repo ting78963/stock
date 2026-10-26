@@ -4467,24 +4467,17 @@ function getRecordedAppearances(code){
   return getRecentTradingDates(map,ROLLING_WINDOW_DAYS).filter(d=>map[d].some(s=>s.code===code)).sort((a,b)=>b.localeCompare(a));
 }
 function getMonthlyCountFor(code){return getRecordedAppearances(code).length;}
-function toggleAppearanceDates(e,id){
-  e.stopPropagation();
-  const el=document.getElementById(id);
-  if(!el)return;
-  const expanded=el.style.display==='block';
-  el.style.display=expanded?'none':'block';
-  e.currentTarget.textContent=expanded?'查看全部日期 ▾':'收合日期 ▴';
-}
 function appearanceBadgeHtml(code){
   const dates=getRecordedAppearances(code),today=getTodayStr();
   const todayRecorded=dates.includes(today),fmt=d=>d.slice(5).replace('-','/');
   const count=todayRecorded?dates.length:dates.length+1;
+  // 第一次不顯示任何次數或日期；從第二次開始才標示。
+  if(count<=1)return '';
   const label=todayRecorded?`已記錄第${count}次`:`盤中第${count}次`;
-  const shortDates=dates.slice(0,3).map(fmt).join('、')||'無';
-  const more=dates.length>3;
-  const id='appearance-'+String(code).replace(/[^a-zA-Z0-9]/g,'');
-  const dateLine=`${todayRecorded?'記錄日期':'歷史日期'}：${shortDates}${more?'…':''}`;
-  return `<div style="font-size:10px;color:var(--text3);margin-top:3px;line-height:1.6"><span style="font-weight:600;color:${todayRecorded?'var(--red)':'#e67e22'}">${label}</span>｜${dateLine}${more?` <span onclick="toggleAppearanceDates(event,'${id}')" style="color:var(--wine);cursor:pointer;white-space:nowrap">查看全部日期 ▾</span><div id="${id}" style="display:none;padding-top:3px">全部日期：${dates.map(fmt).join('、')}</div>`:''}${!todayRecorded?`<div>今日 ${fmt(today)} 尚未正式記錄</div>`:''}</div>`;
+  // 日期由近到遠，最多七筆；盤中當次未存檔，不混入歷史日期。
+  const recentDates=dates.slice(0,7).map(fmt);
+  const dateLine=recentDates.length?`${todayRecorded?'記錄日期':'歷史日期'}：${recentDates.join('、')}`:'';
+  return `<div style="font-size:10px;color:var(--text3);margin-top:3px;line-height:1.6"><span style="font-weight:600;color:${todayRecorded?'var(--red)':'#e67e22'}">${label}</span>${dateLine?`｜${dateLine}`:''}</div>`;
 }
 
 // 供「強勢股票」頁面使用：把最近20個交易日的資料，分成三層分類
