@@ -488,6 +488,51 @@ html.font-xl{font-size:19px}
     <div class="home-card" style="margin-bottom:10px">
       <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">📐 週 KD、日 MA 與交叉標籤</div>
       <div style="font-size:14px;color:var(--text2);line-height:1.9">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0">
+          <div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--bg2)">
+            <div style="font-weight:700;font-size:12px;margin-bottom:4px">週 KD｜準備黃金交叉</div>
+            <svg viewBox="0 0 260 116" role="img" aria-label="橘色K線在藍色D線下方上升接近，但尚未交叉" style="display:block;width:100%;height:auto">
+              <path d="M12 95H248 M12 16V95" stroke="#aaa" stroke-width="1" fill="none"/>
+              <path d="M14 58 L65 56 L116 55 L167 54 L245 53" stroke="#377bb5" stroke-width="3" fill="none"/>
+              <path d="M14 94 L65 88 L116 76 L167 66 L245 57" stroke="#e67e22" stroke-width="3" fill="none"/>
+              <text x="20" y="17" font-size="11" fill="#377bb5">D</text><text x="233" y="78" font-size="11" fill="#e67e22">K</text>
+            </svg>
+            <div style="font-size:11px;color:var(--text2)">K 上升接近 D，仍在 D 下方</div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--bg2)">
+            <div style="font-weight:700;font-size:12px;margin-bottom:4px">週 KD｜黃金交叉第一天</div>
+            <svg viewBox="0 0 260 116" role="img" aria-label="橘色K線由下向上穿過藍色D線" style="display:block;width:100%;height:auto">
+              <path d="M12 95H248 M12 16V95" stroke="#aaa" stroke-width="1" fill="none"/>
+              <path d="M14 58 L80 56 L145 55 L245 54" stroke="#377bb5" stroke-width="3" fill="none"/>
+              <path d="M14 91 L80 76 L145 61 L245 30" stroke="#e67e22" stroke-width="3" fill="none"/>
+              <circle cx="166" cy="54" r="5" fill="#c63232"/>
+              <text x="20" y="17" font-size="11" fill="#377bb5">D</text><text x="233" y="23" font-size="11" fill="#e67e22">K</text>
+            </svg>
+            <div style="font-size:11px;color:var(--text2)">K 由下向上穿過 D</div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--bg2)">
+            <div style="font-weight:700;font-size:12px;margin-bottom:4px">日 MA｜準備交叉</div>
+            <svg viewBox="0 0 260 116" role="img" aria-label="紅色MA5上升靠近藍色MA20，尚未交叉" style="display:block;width:100%;height:auto">
+              <path d="M12 95H248 M12 16V95" stroke="#aaa" stroke-width="1" fill="none"/>
+              <path d="M14 53 L80 53 L145 54 L245 54" stroke="#377bb5" stroke-width="3" fill="none"/>
+              <path d="M14 92 L80 79 L145 65 L245 57" stroke="#c63232" stroke-width="3" fill="none"/>
+              <text x="16" y="18" font-size="11" fill="#377bb5">MA20</text><text x="195" y="84" font-size="11" fill="#c63232">MA5</text>
+            </svg>
+            <div style="font-size:11px;color:var(--text2)">MA5 上升接近 MA20，尚未穿越</div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--bg2)">
+            <div style="font-weight:700;font-size:12px;margin-bottom:4px">日 MA｜黃金交叉 Day1</div>
+            <svg viewBox="0 0 260 116" role="img" aria-label="紅色MA5由下向上穿過藍色MA20" style="display:block;width:100%;height:auto">
+              <path d="M12 95H248 M12 16V95" stroke="#aaa" stroke-width="1" fill="none"/>
+              <path d="M14 55 L80 55 L145 54 L245 54" stroke="#377bb5" stroke-width="3" fill="none"/>
+              <path d="M14 92 L80 79 L145 64 L245 31" stroke="#c63232" stroke-width="3" fill="none"/>
+              <circle cx="176" cy="54" r="5" fill="#c63232"/>
+              <text x="16" y="18" font-size="11" fill="#377bb5">MA20</text><text x="200" y="25" font-size="11" fill="#c63232">MA5</text>
+            </svg>
+            <div style="font-size:11px;color:var(--text2)">MA5 向上穿越 MA20；Day2～5 為交叉後延續</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">圖為概念示意，非個股實際行情；KD 與 MA 各自使用不同數值尺度。</div>
         <div style="margin-bottom:7px">週 KD 依自然週（週一為新的一週）彙整日線，不是機械地每 5 根日 K 算一週；使用 KD 9 期。</div>
         <div style="margin-bottom:7px">「週 KD 黃金交叉第一天」：上一週 K 低於 D、本週 K 高於 D；「準備黃金交叉」：K 仍低於 D、差距不超過 5，且 K 比上週上升。</div>
         <div style="margin-bottom:7px">日 MA5／MA20 黃金交叉：前一日 MA5 不高於 MA20，當日 MA5 上穿 MA20；卡片可標示最近第 1 至第 5 天。</div>
