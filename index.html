@@ -393,6 +393,18 @@ html.font-xl{font-size:19px}
         <div style="margin-top:6px"><span style="color:#dc2626;font-weight:600">OSC +0.40 ▲</span> → OSC 比前一交易日上升；<span style="color:#16a34a;font-weight:600">OSC -0.40 ▼</span> → OSC 比前一交易日下降。</div>
         <div>▲／▼ 比較的是前一交易日 OSC，不是看 OSC 本身正負；數值顯示到小數點後兩位。持平顯示灰色 ━。</div>
         <div style="margin-top:6px"><b>快取：</b>保留最後一次搜尋的 OSC 數值與方向；再次開啟直接讀取，重新搜尋才更新。舊快取未保存 OSC 時可能顯示 OSC --。</div>
+        <div style="font-weight:600;color:var(--wine);margin:14px 0 8px">實際訊號標籤與判斷說明</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.8">
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">週KD✦—準備黃金交叉</span>週 K 值在 D 值下方、差距不超過 5，且 K 值上升。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">週KD✦—黃金交叉第一天</span>上週 K 低於 D，本週 K 已向上穿越 D。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—準備交叉</span>MA5 在 MA20 下方、差距不超過 1%，且 MA5 正在上升。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—黃金交叉 Day1</span>MA5 剛向上穿越 MA20 的第 1 天。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—黃金交叉 Day2～5</span>已經黃金交叉第 2 至第 5 天；不符合強勢買進訊號的 MA Day1 條件。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">20MA✦—今日站上</span>昨日收盤低於日 MA20，今天盤中價格首次站上估算的日 MA20。</div>
+        <div style="margin-bottom:10px"><span style="font-weight:600;color:#e67e22;margin-right:8px">🔥 強勢買進訊號 🔥</span>週 KD 黃金交叉＋日 MACD 動能轉強＋MA5／MA20 準備交叉或 Day1，同時成立。</div>
+        <div style="margin-bottom:10px"><span style="font-weight:600;color:#dc2626;margin-right:8px">OSC +0.40 ▲</span>OSC 比前一交易日上升；<span style="font-weight:600;color:#16a34a">OSC -0.40 ▼</span> 代表下降。箭頭不由正負號決定。</div>
+        <div style="margin-bottom:4px"><b>出現次數：</b>股票卡片在今日尚未正式記錄時顯示「盤中第 N 次」（歷史次數＋今日暫計 1 次）；今日寫入後改顯示「已記錄第 N 次」，並列出實際日期。同一天重複掃描不增加次數。</div>
+      </div>
         <div style="margin-top:8px;margin-bottom:4px"><b>🔥 強勢買進訊號 🔥：</b>以下三項同時成立才顯示：</div>
         <div>① 週 KD 黃金交叉</div>
         <div>② 日 MACD 最近三筆 OSC 的最後一筆高於第一筆（中間不必逐筆上升）</div>
@@ -486,62 +498,6 @@ html.font-xl{font-size:19px}
     </div>
 
     <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">📐 週 KD、日 MA 與交叉標籤</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0">
-          <div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--bg2)">
-            <div style="font-weight:700;font-size:12px;margin-bottom:4px">週 KD｜準備黃金交叉</div>
-            <svg viewBox="0 0 260 116" role="img" aria-label="橘色K線在藍色D線下方上升接近，但尚未交叉" style="display:block;width:100%;height:auto">
-              <path d="M12 95H248 M12 16V95" stroke="#aaa" stroke-width="1" fill="none"/>
-              <path d="M14 58 L65 56 L116 55 L167 54 L245 53" stroke="#377bb5" stroke-width="3" fill="none"/>
-              <path d="M14 94 L65 88 L116 76 L167 66 L245 57" stroke="#e67e22" stroke-width="3" fill="none"/>
-              <text x="20" y="17" font-size="11" fill="#377bb5">D</text><text x="233" y="78" font-size="11" fill="#e67e22">K</text>
-            </svg>
-            <div style="font-size:11px;color:var(--text2)">K 上升接近 D，仍在 D 下方</div>
-          </div>
-          <div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--bg2)">
-            <div style="font-weight:700;font-size:12px;margin-bottom:4px">週 KD｜黃金交叉第一天</div>
-            <svg viewBox="0 0 260 116" role="img" aria-label="橘色K線由下向上穿過藍色D線" style="display:block;width:100%;height:auto">
-              <path d="M12 95H248 M12 16V95" stroke="#aaa" stroke-width="1" fill="none"/>
-              <path d="M14 58 L80 56 L145 55 L245 54" stroke="#377bb5" stroke-width="3" fill="none"/>
-              <path d="M14 91 L80 76 L145 61 L245 30" stroke="#e67e22" stroke-width="3" fill="none"/>
-              <circle cx="166" cy="54" r="5" fill="#c63232"/>
-              <text x="20" y="17" font-size="11" fill="#377bb5">D</text><text x="233" y="23" font-size="11" fill="#e67e22">K</text>
-            </svg>
-            <div style="font-size:11px;color:var(--text2)">K 由下向上穿過 D</div>
-          </div>
-          <div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--bg2)">
-            <div style="font-weight:700;font-size:12px;margin-bottom:4px">日 MA｜準備交叉</div>
-            <svg viewBox="0 0 260 116" role="img" aria-label="紅色MA5上升靠近藍色MA20，尚未交叉" style="display:block;width:100%;height:auto">
-              <path d="M12 95H248 M12 16V95" stroke="#aaa" stroke-width="1" fill="none"/>
-              <path d="M14 53 L80 53 L145 54 L245 54" stroke="#377bb5" stroke-width="3" fill="none"/>
-              <path d="M14 92 L80 79 L145 65 L245 57" stroke="#c63232" stroke-width="3" fill="none"/>
-              <text x="16" y="18" font-size="11" fill="#377bb5">MA20</text><text x="195" y="84" font-size="11" fill="#c63232">MA5</text>
-            </svg>
-            <div style="font-size:11px;color:var(--text2)">MA5 上升接近 MA20，尚未穿越</div>
-          </div>
-          <div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--bg2)">
-            <div style="font-weight:700;font-size:12px;margin-bottom:4px">日 MA｜黃金交叉 Day1</div>
-            <svg viewBox="0 0 260 116" role="img" aria-label="紅色MA5由下向上穿過藍色MA20" style="display:block;width:100%;height:auto">
-              <path d="M12 95H248 M12 16V95" stroke="#aaa" stroke-width="1" fill="none"/>
-              <path d="M14 55 L80 55 L145 54 L245 54" stroke="#377bb5" stroke-width="3" fill="none"/>
-              <path d="M14 92 L80 79 L145 64 L245 31" stroke="#c63232" stroke-width="3" fill="none"/>
-              <circle cx="176" cy="54" r="5" fill="#c63232"/>
-              <text x="16" y="18" font-size="11" fill="#377bb5">MA20</text><text x="200" y="25" font-size="11" fill="#c63232">MA5</text>
-            </svg>
-            <div style="font-size:11px;color:var(--text2)">MA5 向上穿越 MA20；Day2～5 為交叉後延續</div>
-          </div>
-        </div>
-        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">圖為概念示意，非個股實際行情；KD 與 MA 各自使用不同數值尺度。</div>
-        <div style="margin-bottom:7px">週 KD 依自然週（週一為新的一週）彙整日線，不是機械地每 5 根日 K 算一週；使用 KD 9 期。</div>
-        <div style="margin-bottom:7px">「週 KD 黃金交叉第一天」：上一週 K 低於 D、本週 K 高於 D；「準備黃金交叉」：K 仍低於 D、差距不超過 5，且 K 比上週上升。</div>
-        <div style="margin-bottom:7px">日 MA5／MA20 黃金交叉：前一日 MA5 不高於 MA20，當日 MA5 上穿 MA20；卡片可標示最近第 1 至第 5 天。</div>
-        <div style="margin-bottom:7px">「5、20MA 準備交叉」：MA5 還在 MA20 下方、距離不超過 1%，而且 MA5 正在上升。</div>
-        <div style="margin-bottom:7px">🔥 強勢買進訊號的 MA 條件只接受「準備交叉」或「交叉第 1 天」，不接受第 2～5 天；還須同時符合週 KD 黃金交叉及日 MACD 三筆 OSC 動能條件。</div>
-      </div>
-    </div>
-
-    <div class="home-card" style="margin-bottom:10px">
       <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">📍 當日首次站上 MA20</div>
       <div style="font-size:14px;color:var(--text2);line-height:1.9">
         <div style="margin-bottom:7px">盤中另有「今日首次站上日 20MA」提示：比較昨日收盤是否低於昨日 MA20，以及當次快照股價是否已站上用當次價格估算的今日 MA20。</div>
@@ -627,22 +583,6 @@ html.font-xl{font-size:19px}
         <div style="margin-bottom:7px">「清除收盤存檔」刪除瀏覽器內的研究存檔；已另行下載的 JSON 不受影響。</div>
         <div style="margin-bottom:7px">「強制更新」會重新載入 APP 頁面，主要用於手機顯示舊版畫面時；不等於清空所有 localStorage 歷史紀錄。</div>
         <div style="margin-bottom:7px">盤中快照、日線、法人與國際市場資料可能有不同延遲；盤中指標為暫估參考，所有訊號都不保證後續價格走勢。</div>
-      </div>
-    </div>
-
-    <!-- 實際訊號標籤對照 -->
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);margin-bottom:10px">🏷️ 系統訊號標籤對照</div>
-      <div style="font-size:13px;color:var(--text2);line-height:1.8">
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">週KD✦—準備黃金交叉</span>週 K 值在 D 值下方、差距不超過 5，且 K 值上升。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">週KD✦—黃金交叉第一天</span>上週 K 低於 D，本週 K 已向上穿越 D。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—準備交叉</span>MA5 在 MA20 下方、差距不超過 1%，且 MA5 正在上升。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—黃金交叉 Day1</span>MA5 剛向上穿越 MA20 的第 1 天。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—黃金交叉 Day2～5</span>已經黃金交叉第 2 至第 5 天；不符合強勢買進訊號的 MA Day1 條件。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">20MA✦—今日站上</span>昨日收盤低於日 MA20，今天盤中價格首次站上估算的日 MA20。</div>
-        <div style="margin-bottom:10px"><span style="font-weight:600;color:#e67e22;margin-right:8px">🔥 強勢買進訊號 🔥</span>週 KD 黃金交叉＋日 MACD 動能轉強＋MA5／MA20 準備交叉或 Day1，同時成立。</div>
-        <div style="margin-bottom:10px"><span style="font-weight:600;color:#dc2626;margin-right:8px">OSC +0.40 ▲</span>OSC 比前一交易日上升；<span style="font-weight:600;color:#16a34a">OSC -0.40 ▼</span> 代表下降。箭頭不由正負號決定。</div>
-        <div style="margin-bottom:4px"><b>出現次數：</b>股票卡片在今日尚未正式記錄時顯示「盤中第 N 次」（歷史次數＋今日暫計 1 次）；今日寫入後改顯示「已記錄第 N 次」，並列出實際日期。同一天重複掃描不增加次數。</div>
       </div>
     </div>
 
