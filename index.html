@@ -384,6 +384,23 @@ html.font-xl{font-size:19px}
       </div>
     </div>
 
+    <!-- 盤中 OSC 與強勢買進訊號說明 -->
+    <div class="home-card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">📈 個股分析卡片：盤中 OSC 與強勢買進訊號</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.9">
+        <div><b>盤中 OSC：</b>顯示在股價與漲跌幅旁，採用日 MACD（12、26、9）的 OSC 柱值。</div>
+        <div>掃描時以歷史日線搭配當次即時快照價格計算；若沒有當日快照，使用最新可得的歷史日線。這是當次掃描的動能參考，不等於當日最終收盤 OSC。</div>
+        <div style="margin-top:6px"><span style="color:#dc2626;font-weight:600">OSC +0.40 ▲</span> → OSC 比前一交易日上升；<span style="color:#16a34a;font-weight:600">OSC -0.40 ▼</span> → OSC 比前一交易日下降。</div>
+        <div>▲／▼ 比較的是前一交易日 OSC，不是看 OSC 本身正負；數值顯示到小數點後兩位。持平顯示灰色 ━。</div>
+        <div style="margin-top:6px"><b>快取：</b>保留最後一次搜尋的 OSC 數值與方向；再次開啟直接讀取，重新搜尋才更新。舊快取未保存 OSC 時可能顯示 OSC --。</div>
+        <div style="margin-top:8px;margin-bottom:4px"><b>🔥 強勢買進訊號 🔥：</b>以下三項同時成立才顯示：</div>
+        <div>① 週 KD 黃金交叉</div>
+        <div>② 日 MACD 最近三筆 OSC 的最後一筆高於第一筆（中間不必逐筆上升）</div>
+        <div>③ 日 MA5／MA20 準備黃金交叉，或黃金交叉第 1 天</div>
+        <div style="margin-top:6px;color:var(--text3)">※ 卡片的盤中 OSC 只用於動能顯示，不會改動既有強勢買進訊號的判斷資料與條件。</div>
+      </div>
+    </div>
+
     <!-- VCP說明 -->
     <div class="home-card" style="margin-bottom:10px">
       <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">💎 VCP型態與突破追蹤</div>
