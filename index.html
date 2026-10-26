@@ -4255,7 +4255,7 @@ async function loadHotVolStocks(forceRefresh){
     // 期間又有更新的查詢啟動並完成，這次（較舊）的結果就不會覆蓋快取或畫面，避免顯示過期資料
     if(myGeneration!==hotVolScanGeneration) return;
 
-    updateMonthlyCount([...vcpSignalStocks,...noVcpStocks]); // 收盤後才會真正累加，盤中查詢只是讀取顯示
+    await updateMonthlyCount([...vcpSignalStocks,...noVcpStocks]); // 收盤後才會真正累加，盤中查詢只是讀取顯示
     const fetchTimeStr=`${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
     try{
       // 收盤後才備份前一次快取為昨日備份
@@ -4394,6 +4394,8 @@ function renderInstitutionalWatchCard(el,results,fetchTimeStr){
 // 本月出現次數記錄：收盤後（非交易時間）才累加，盤中查詢只讀取不累加
 const DAILY_SNAPSHOT_KEY='daily_snapshot_history_v1';
 const ROLLING_WINDOW_DAYS=20; // 只保留最近20個「有記錄」的交易日，不看日曆月份
+// 啟動時核對既有快照，真正移除非交易日；網路失敗則保留待下次查證。
+setTimeout(()=>{cleanInvalidTradingSnapshots().then(()=>{try{renderStrongStocksCard();}catch(e){}});},1500);
 
 function isValidSnapshotDate(dateStr){
   if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateStr))return false;
@@ -4418,16 +4420,47 @@ function getDailySnapshotMap(){
 function getRecentTradingDates(snapshotMap,n){
   return Object.keys(snapshotMap).filter(isValidSnapshotDate).sort((a,b)=>b.localeCompare(a)).slice(0,n);
 }
-function updateMonthlyCount(stockList){
+// 使用實際日K日期核實是否開市；資料來源失敗時一律不新增紀錄。
+const verifiedTradeDates=new Map();
+async function verifyTaiwanTradingDate(dateStr){
+  if(!isValidSnapshotDate(dateStr))return false;
+  if(verifiedTradeDates.has(dateStr))return verifiedTradeDates.get(dateStr);
+  try{
+    const r=await fetch(`${FUGLE_PROXY}/daily/2330?from=${dateStr}&to=${dateStr}`);
+    const d=await r.json();
+    const valid=!!(r.ok&&d.ok&&Array.isArray(d.data)&&d.data.some(row=>String(row.date||'').slice(0,10)===dateStr&&Number(row.volume)>0));
+    if(valid)verifiedTradeDates.set(dateStr,true);
+    return valid;
+  }catch(e){return false;}
+}
+async function updateMonthlyCount(stockList){
   const now=new Date(),mins=now.getHours()*60+now.getMinutes(),dateStr=getTodayStr();
-  // 僅平日 14:30 後允許寫入，週末、盤前與盤中一律不存。
-  // 台股休市日若有即時資料來源無法判斷，仍須避免以舊行情存成新紀錄。
   if(!isValidSnapshotDate(dateStr)||mins<870)return;
+  // 必須證實當天有成交資料；不能因為星期一至五或快取有股票就寫入。
+  if(!await verifyTaiwanTradingDate(dateStr))return;
   const map=getDailySnapshotMap();
   map[dateStr]=stockList.map(s=>({code:s.code,name:s.name,price:s.price,chgPct:s.chgPct,todayVol:s.todayVol,volRatio:s.volRatio}));
   const keepDates=new Set(getRecentTradingDates(map,ROLLING_WINDOW_DAYS));
   Object.keys(map).forEach(d=>{if(!keepDates.has(d))delete map[d];});
   try{localStorage.setItem(DAILY_SNAPSHOT_KEY,JSON.stringify(map));}catch(e){}
+}
+// 核對並實際刪除舊版平日休市日錯誤快照；查證失敗保留待下次重試，絕不當成已驗證。
+async function cleanInvalidTradingSnapshots(){
+  const map=getDailySnapshotMap(),dates=Object.keys(map);
+  let changed=false;
+  for(const d of dates){
+    if(!isValidSnapshotDate(d)){delete map[d];changed=true;continue;}
+    try{
+      const r=await fetch(`${FUGLE_PROXY}/daily/2330?from=${d}&to=${d}`);
+      if(!r.ok)continue;
+      const data=await r.json();
+      if(!data.ok||!Array.isArray(data.data))continue;
+      const traded=data.data.some(row=>String(row.date||'').slice(0,10)===d&&Number(row.volume)>0);
+      if(!traded){delete map[d];changed=true;}
+      else verifiedTradeDates.set(d,true);
+    }catch(e){}
+  }
+  if(changed)try{localStorage.setItem(DAILY_SNAPSHOT_KEY,JSON.stringify(map));}catch(e){}
 }
 function getRecordedAppearances(code){
   const map=getDailySnapshotMap();
