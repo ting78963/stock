@@ -4255,7 +4255,7 @@ async function loadHotVolStocks(forceRefresh){
     // 期間又有更新的查詢啟動並完成，這次（較舊）的結果就不會覆蓋快取或畫面，避免顯示過期資料
     if(myGeneration!==hotVolScanGeneration) return;
 
-    await updateMonthlyCount([...vcpSignalStocks,...noVcpStocks]); // 收盤後才會真正累加，盤中查詢只是讀取顯示
+    updateMonthlyCount([...vcpSignalStocks,...noVcpStocks]); // 收盤後才會真正累加，盤中查詢只是讀取顯示
     const fetchTimeStr=`${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
     try{
       // 收盤後才備份前一次快取為昨日備份
@@ -4394,130 +4394,55 @@ function renderInstitutionalWatchCard(el,results,fetchTimeStr){
 // 本月出現次數記錄：收盤後（非交易時間）才累加，盤中查詢只讀取不累加
 const DAILY_SNAPSHOT_KEY='daily_snapshot_history_v1';
 const ROLLING_WINDOW_DAYS=20; // 只保留最近20個「有記錄」的交易日，不看日曆月份
-// 啟動時核對既有快照，真正移除非交易日；網路失敗則保留待下次查證。
-// 暫停自動刪除歷史快照，避免資料來源異常或日期判斷錯誤造成不可逆損失。
 
-function isValidSnapshotDate(dateStr){
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(dateStr))return false;
-  const d=new Date(dateStr+'T12:00:00');
-  return !Number.isNaN(d.getTime())&&d.getFullYear()===Number(dateStr.slice(0,4))&&d.getMonth()+1===Number(dateStr.slice(5,7))&&d.getDate()===Number(dateStr.slice(8,10))&&d.getDay()>=1&&d.getDay()<=5;
-}
 function getDailySnapshotMap(){
-  let map={};
-  try{map=JSON.parse(localStorage.getItem(DAILY_SNAPSHOT_KEY)||'{}')||{};}catch(e){}
-  if(!map||typeof map!=='object'||Array.isArray(map))map={};
-  const now=new Date(),today=getTodayStr(),mins=now.getHours()*60+now.getMinutes();
-  // 清理舊版錯誤寫入的週末及當日收盤前紀錄。
-  let changed=false;
-  for(const d of Object.keys(map)){
-    if(!isValidSnapshotDate(d)||!Array.isArray(map[d])||(d===today&&mins<870)){
-      delete map[d];changed=true;
-    }
-  }
-  if(changed)try{localStorage.setItem(DAILY_SNAPSHOT_KEY,JSON.stringify(map));}catch(e){}
-  return map;
-}
-function getRecentTradingDates(snapshotMap,n){
-  return Object.keys(snapshotMap).filter(isValidSnapshotDate).sort((a,b)=>b.localeCompare(a)).slice(0,n);
-}
-// 使用實際日K日期核實是否開市；資料來源失敗時一律不新增紀錄。
-const verifiedTradeDates=new Map();
-async function verifyTaiwanTradingDate(dateStr){
-  if(!isValidSnapshotDate(dateStr))return false;
-  if(verifiedTradeDates.has(dateStr))return verifiedTradeDates.get(dateStr);
   try{
-    const r=await fetch(`${FUGLE_PROXY}/daily/2330?from=${dateStr}&to=${dateStr}`);
-    const d=await r.json();
-    const valid=!!(r.ok&&d.ok&&Array.isArray(d.data)&&d.data.some(row=>String(row.date||'').slice(0,10)===dateStr&&Number(row.volume)>0));
-    if(valid)verifiedTradeDates.set(dateStr,true);
-    return valid;
-  }catch(e){return false;}
+    return JSON.parse(localStorage.getItem(DAILY_SNAPSHOT_KEY)||'{}');
+  }catch(e){return {};}
 }
-async function updateMonthlyCount(stockList){
-  const now=new Date(),mins=now.getHours()*60+now.getMinutes(),dateStr=getTodayStr();
-  if(!isValidSnapshotDate(dateStr)||mins<870)return;
-  // 必須證實當天有成交資料；不能因為星期一至五或快取有股票就寫入。
-  if(!await verifyTaiwanTradingDate(dateStr))return;
+
+// 取得最近N個交易日的日期清單（由新到舊排序），只看「實際有記錄過」的日期，不管日曆
+function getRecentTradingDates(snapshotMap,n){
+  return Object.keys(snapshotMap).sort((a,b)=>b.localeCompare(a)).slice(0,n);
+}
+
+function updateMonthlyCount(stockList){
+  const now=new Date();
+  const day=now.getDay();
+  const mins=now.getHours()*60+now.getMinutes();
+  const isWeekday=day>=1&&day<=5;
+  const isTradingHours=isWeekday&&mins>=540&&mins<=870; // 09:00-14:30
+  if(isTradingHours) return; // 盤中不累加，只有收盤後才記錄
+  const dateStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const map=getDailySnapshotMap();
+  // 存今天完整快照（每支股票的完整資訊），同一天重複按會直接覆蓋成最新版本，不重複累加
   map[dateStr]=stockList.map(s=>({code:s.code,name:s.name,price:s.price,chgPct:s.chgPct,todayVol:s.todayVol,volRatio:s.volRatio}));
-  const keepDates=new Set(getRecentTradingDates(map,ROLLING_WINDOW_DAYS));
-  Object.keys(map).forEach(d=>{if(!keepDates.has(d))delete map[d];});
+  // 只保留最近20個交易日，超過的自動清除，避免無限累積
+  const allDates=Object.keys(map).sort((a,b)=>b.localeCompare(a));
+  const keepDates=new Set(allDates.slice(0,ROLLING_WINDOW_DAYS));
+  Object.keys(map).forEach(d=>{ if(!keepDates.has(d)) delete map[d]; });
   try{localStorage.setItem(DAILY_SNAPSHOT_KEY,JSON.stringify(map));}catch(e){}
 }
-// 核對並實際刪除舊版平日休市日錯誤快照；查證失敗保留待下次重試，絕不當成已驗證。
-async function cleanInvalidTradingSnapshots(){
-  const map=getDailySnapshotMap(),dates=Object.keys(map);
-  let changed=false;
-  for(const d of dates){
-    if(!isValidSnapshotDate(d)){delete map[d];changed=true;continue;}
-    try{
-      const r=await fetch(`${FUGLE_PROXY}/daily/2330?from=${d}&to=${d}`);
-      if(!r.ok)continue;
-      const data=await r.json();
-      if(!data.ok||!Array.isArray(data.data))continue;
-      const traded=data.data.some(row=>String(row.date||'').slice(0,10)===d&&Number(row.volume)>0);
-      if(!traded){delete map[d];changed=true;}
-      else verifiedTradeDates.set(d,true);
-    }catch(e){}
-  }
-  if(changed)try{localStorage.setItem(DAILY_SNAPSHOT_KEY,JSON.stringify(map));}catch(e){}
-}
-// 從獨立收盤歷史存檔恢復已遺失的出現紀錄：只補缺日、不覆蓋原資料、不刪除資料。
-async function restoreAppearancesFromResearchArchive(){
-  const archive=getResearchArchive();
-  const dates=Object.keys(archive||{}).filter(isValidSnapshotDate).sort((a,b)=>b.localeCompare(a));
-  if(!dates.length)return 0;
-  let restored=0;
-  for(const dateStr of dates){
-    const entry=archive[dateStr];
-    if(!entry||!Array.isArray(entry.passed)||!entry.passed.length)continue;
-    const map=getDailySnapshotMap();
-    if(Object.prototype.hasOwnProperty.call(map,dateStr))continue;
-    if(!await verifyTaiwanTradingDate(dateStr))continue;
-    // 重讀最新快照，避免與同時進行的掃描寫入互相覆蓋。
-    const latest=getDailySnapshotMap();
-    if(Object.prototype.hasOwnProperty.call(latest,dateStr))continue;
-    latest[dateStr]=entry.passed.filter(s=>s&&s.code).map(s=>({
-      code:s.code,name:s.name,price:s.price,chgPct:s.chgPct,
-      todayVol:s.todayVol,volRatio:s.volRatio
-    }));
-    try{
-      localStorage.setItem(DAILY_SNAPSHOT_KEY,JSON.stringify(latest));
-      restored++;
-    }catch(e){break;}
-  }
-  if(restored){
-    try{renderStrongStocksCard();}catch(e){}
-    // 若頁面已顯示快取卡片，重新呈現次數標籤。
-    try{
-      const cache=JSON.parse(localStorage.getItem('hotvol_cache_v5')||'null');
-      if(cache){
-        const hot=document.getElementById('hotvol-card');
-        if(hot)renderHotVolCard(hot,cache.noVcpStocks||[],cache.filteredOutStocks||[],cache.fetchTimeStr||'');
-      }
-    }catch(e){}
-  }
-  return restored;
-}
-// 僅補回能從獨立存檔且經實際交易日驗證的日期，不猜測缺失的紀錄。
-setTimeout(()=>{restoreAppearancesFromResearchArchive().catch(e=>console.warn('歷史次數恢復未完成',e));},1800);
 
 function getRecordedAppearances(code){
   const map=getDailySnapshotMap();
-  return getRecentTradingDates(map,ROLLING_WINDOW_DAYS).filter(d=>map[d].some(s=>s.code===code)).sort((a,b)=>b.localeCompare(a));
+  const recentDates=getRecentTradingDates(map,ROLLING_WINDOW_DAYS);
+  return recentDates.filter(d=>Array.isArray(map[d])&&map[d].some(s=>s.code===code)).sort();
 }
-function getMonthlyCountFor(code){return getRecordedAppearances(code).length;}
+function getMonthlyCountFor(code){
+  return getRecordedAppearances(code).length;
+}
 function appearanceBadgeHtml(code){
-  const dates=getRecordedAppearances(code),today=getTodayStr();
-  const todayRecorded=dates.includes(today),fmt=d=>d.slice(5).replace('-','/');
+  const dates=getRecordedAppearances(code);
+  const today=getTodayStr();
+  const todayRecorded=dates.includes(today);
+  const fmt=d=>d.slice(5).replace('-','/');
+  // 今天已存檔：只顯示正式次數；尚未存檔：本次掃描暫列為下一次，不寫入紀錄。
   const count=todayRecorded?dates.length:dates.length+1;
-  // 第一次不顯示任何次數或日期；從第二次開始才標示。
-  if(count<=1)return '';
   const label=todayRecorded?`已記錄第${count}次`:`盤中第${count}次`;
-  // 日期由近到遠，最多七筆；盤中當次未存檔，不混入歷史日期。
-  const recentDates=dates.slice(0,7).map(fmt);
-  const dateLine=recentDates.length?`${todayRecorded?'記錄日期':'歷史日期'}：${recentDates.join('、')}`:'';
-  return `<div style="font-size:10px;color:var(--text3);margin-top:3px;line-height:1.6"><span style="font-weight:600;color:${todayRecorded?'var(--red)':'#e67e22'}">${label}</span>${dateLine?`｜${dateLine}`:''}</div>`;
+  const history=dates.length?dates.map(fmt).join('、'):'無';
+  const detail=todayRecorded?`記錄日期：${history}`:`已記錄日期：${history}｜今日 ${fmt(today)} 尚未正式記錄`;
+  return `<div style="font-size:10px;color:var(--text3);margin-top:3px;line-height:1.6"><span style="font-weight:600;color:${todayRecorded?'var(--red)':'#e67e22'}">${label}</span>｜${detail}</div>`;
 }
 
 // 供「強勢股票」頁面使用：把最近20個交易日的資料，分成三層分類
