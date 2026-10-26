@@ -4462,6 +4462,46 @@ async function cleanInvalidTradingSnapshots(){
   }
   if(changed)try{localStorage.setItem(DAILY_SNAPSHOT_KEY,JSON.stringify(map));}catch(e){}
 }
+// 從獨立收盤歷史存檔恢復已遺失的出現紀錄：只補缺日、不覆蓋原資料、不刪除資料。
+async function restoreAppearancesFromResearchArchive(){
+  const archive=getResearchArchive();
+  const dates=Object.keys(archive||{}).filter(isValidSnapshotDate).sort((a,b)=>b.localeCompare(a));
+  if(!dates.length)return 0;
+  let restored=0;
+  for(const dateStr of dates){
+    const entry=archive[dateStr];
+    if(!entry||!Array.isArray(entry.passed)||!entry.passed.length)continue;
+    const map=getDailySnapshotMap();
+    if(Object.prototype.hasOwnProperty.call(map,dateStr))continue;
+    if(!await verifyTaiwanTradingDate(dateStr))continue;
+    // 重讀最新快照，避免與同時進行的掃描寫入互相覆蓋。
+    const latest=getDailySnapshotMap();
+    if(Object.prototype.hasOwnProperty.call(latest,dateStr))continue;
+    latest[dateStr]=entry.passed.filter(s=>s&&s.code).map(s=>({
+      code:s.code,name:s.name,price:s.price,chgPct:s.chgPct,
+      todayVol:s.todayVol,volRatio:s.volRatio
+    }));
+    try{
+      localStorage.setItem(DAILY_SNAPSHOT_KEY,JSON.stringify(latest));
+      restored++;
+    }catch(e){break;}
+  }
+  if(restored){
+    try{renderStrongStocksCard();}catch(e){}
+    // 若頁面已顯示快取卡片，重新呈現次數標籤。
+    try{
+      const cache=JSON.parse(localStorage.getItem('hotvol_cache_v5')||'null');
+      if(cache){
+        const hot=document.getElementById('hotvol-card');
+        if(hot)renderHotVolCard(hot,cache.noVcpStocks||[],cache.filteredOutStocks||[],cache.fetchTimeStr||'');
+      }
+    }catch(e){}
+  }
+  return restored;
+}
+// 僅補回能從獨立存檔且經實際交易日驗證的日期，不猜測缺失的紀錄。
+setTimeout(()=>{restoreAppearancesFromResearchArchive().catch(e=>console.warn('歷史次數恢復未完成',e));},1800);
+
 function getRecordedAppearances(code){
   const map=getDailySnapshotMap();
   return getRecentTradingDates(map,ROLLING_WINDOW_DAYS).filter(d=>map[d].some(s=>s.code===code)).sort((a,b)=>b.localeCompare(a));
