@@ -528,7 +528,7 @@ html.font-xl{font-size:19px}
     <div class="home-card" style="margin-bottom:10px">
       <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">📈 強勢股票與出現次數</div>
       <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">股票卡片的「已記錄 N 次｜日期」依本裝置最近最多 20 個有保存紀錄的交易日計算，並非完整自然月統計；盤中當次出現尚未計入，收盤後重新掃描才寫入。</div>
+        <div style="margin-bottom:7px">股票卡片若今日尚未正式記錄，顯示「盤中第 N 次」＝歷史已記錄次數加上當次出現；今日已記錄則顯示「已記錄第 N 次」。同一天重複掃描只算一次，並列出歷史記錄日期。統計範圍為本裝置最近最多 20 個有保存紀錄的交易日，並非完整自然月。</div>
         <div style="margin-bottom:7px">程式在盤中不增加當日紀錄；收盤後執行盤中掃描，才將當日符合條件股票寫入紀錄，同一天重複寫入會覆蓋，不重複累加。</div>
         <div style="margin-bottom:7px">強勢股票分為「首次出現」（近 20 筆紀錄僅 1 次）、「連續出現」（最近至少連續 2 筆紀錄出現）、「累積出現」（曾多次出現但目前非連續）。</div>
         <div style="margin-bottom:7px">次數依本裝置實際保存的日期計算；沒有執行掃描的交易日不會自動補齊。</div>
@@ -597,7 +597,7 @@ html.font-xl{font-size:19px}
         <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">20MA✦—今日站上</span>昨日收盤低於日 MA20，今天盤中價格首次站上估算的日 MA20。</div>
         <div style="margin-bottom:10px"><span style="font-weight:600;color:#e67e22;margin-right:8px">🔥 強勢買進訊號 🔥</span>週 KD 黃金交叉＋日 MACD 動能轉強＋MA5／MA20 準備交叉或 Day1，同時成立。</div>
         <div style="margin-bottom:10px"><span style="font-weight:600;color:#dc2626;margin-right:8px">OSC +0.40 ▲</span>OSC 比前一交易日上升；<span style="font-weight:600;color:#16a34a">OSC -0.40 ▼</span> 代表下降。箭頭不由正負號決定。</div>
-        <div style="margin-bottom:4px"><b>出現次數：</b>股票卡片直接列出已保存的日期。盤中查詢尚未寫入今日次數；收盤後重新掃描並保存，才會出現在日期清單。</div>
+        <div style="margin-bottom:4px"><b>出現次數：</b>股票卡片在今日尚未正式記錄時顯示「盤中第 N 次」（歷史次數＋今日暫計 1 次）；今日寫入後改顯示「已記錄第 N 次」，並列出實際日期。同一天重複掃描不增加次數。</div>
       </div>
     </div>
 
@@ -4436,11 +4436,13 @@ function appearanceBadgeHtml(code){
   const dates=getRecordedAppearances(code);
   const today=getTodayStr();
   const todayRecorded=dates.includes(today);
-  const isPending=isTradeTime()&&!todayRecorded;
   const fmt=d=>d.slice(5).replace('-','/');
-  const detail=dates.length?dates.map(fmt).join('、'):'尚無收盤後紀錄';
-  const summary=dates.length?`已記錄${dates.length}次｜${dates.map(fmt).join('、')}`:'尚未記錄';
-  return `<div style="font-size:10px;color:var(--text3);margin-top:3px;line-height:1.6">${summary}${isPending?'｜本次盤中尚未計入':''}</div>`;
+  // 今天已存檔：只顯示正式次數；尚未存檔：本次掃描暫列為下一次，不寫入紀錄。
+  const count=todayRecorded?dates.length:dates.length+1;
+  const label=todayRecorded?`已記錄第${count}次`:`盤中第${count}次`;
+  const history=dates.length?dates.map(fmt).join('、'):'無';
+  const detail=todayRecorded?`記錄日期：${history}`:`已記錄日期：${history}｜今日 ${fmt(today)} 尚未正式記錄`;
+  return `<div style="font-size:10px;color:var(--text3);margin-top:3px;line-height:1.6"><span style="font-weight:600;color:${todayRecorded?'var(--red)':'#e67e22'}">${label}</span>｜${detail}</div>`;
 }
 
 // 供「強勢股票」頁面使用：把最近20個交易日的資料，分成三層分類
