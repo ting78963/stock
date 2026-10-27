@@ -384,23 +384,6 @@ html.font-xl{font-size:19px}
       </div>
     </div>
 
-    <!-- 盤中 OSC 與強勢買進訊號說明 -->
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">📈 個股分析卡片：盤中 OSC 與強勢買進訊號</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div><b>盤中 OSC：</b>顯示在股價與漲跌幅旁，採用日 MACD（12、26、9）的 OSC 柱值。</div>
-        <div>掃描時以歷史日線搭配當次即時快照價格計算；若沒有當日快照，使用最新可得的歷史日線。這是當次掃描的動能參考，不等於當日最終收盤 OSC。</div>
-        <div style="margin-top:6px"><span style="color:#dc2626;font-weight:600">OSC +0.40 ▲</span> → OSC 比前一交易日上升；<span style="color:#16a34a;font-weight:600">OSC -0.40 ▼</span> → OSC 比前一交易日下降。</div>
-        <div>▲／▼ 比較的是前一交易日 OSC，不是看 OSC 本身正負；數值顯示到小數點後兩位。持平顯示灰色 ━。</div>
-        <div style="margin-top:6px"><b>快取：</b>保留最後一次搜尋的 OSC 數值與方向；再次開啟直接讀取，重新搜尋才更新。舊快取未保存 OSC 時可能顯示 OSC --。</div>
-        <div style="margin-top:8px;margin-bottom:4px"><b>🔥 強勢買進訊號 🔥：</b>以下三項同時成立才顯示：</div>
-        <div>① 週 KD 黃金交叉</div>
-        <div>② 日 MACD 最近三筆 OSC 的最後一筆高於第一筆（中間不必逐筆上升）</div>
-        <div>③ 日 MA5／MA20 準備黃金交叉，或黃金交叉第 1 天</div>
-        <div style="margin-top:6px;color:var(--text3)">※ 卡片的盤中 OSC 只用於動能顯示，不會改動既有強勢買進訊號的判斷資料與條件。</div>
-      </div>
-    </div>
-
     <!-- VCP說明 -->
     <div class="home-card" style="margin-bottom:10px">
       <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.08em;margin-bottom:10px">💎 VCP型態與突破追蹤</div>
@@ -447,157 +430,6 @@ html.font-xl{font-size:19px}
         <div>EBITDA（5分）、負債比（4分）</div>
         <div style="margin-top:8px;font-weight:500;color:var(--wine)">80分以上基本面強勁　60-79分良好　60分以下偏弱</div>
         <div style="margin-top:6px;color:var(--text3)">※ 營收成長但毛利率下滑 = 薄利多銷警訊，成長品質待觀察</div>
-      </div>
-    </div>
-
-    <!-- 系統功能對照補充：根據實際程式行為整理 -->
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">🧭 五大頁面與操作入口</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">說明中心：查看選股流程、訊號定義、門檻與資料更新方式。</div>
-        <div style="margin-bottom:7px">強勢股票：依收盤後保存的爆量股紀錄，查看首次出現、連續出現與累積出現的股票。</div>
-        <div style="margin-bottom:7px">個股分析：輸入股票代號或名稱，查看完整個股報告；未搜尋時可查自選股狀態、大盤環境、盤中 VCP／爆量股、法人買超觀察。</div>
-        <div style="margin-bottom:7px">自選清單：追蹤個股、VCP、週 KD、均線交叉與分數變化，可全面更新及移除。</div>
-        <div style="margin-bottom:7px">設定：調整字體、管理收盤存檔、重新載入 APP。</div>
-      </div>
-    </div>
-
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">🔥 盤中爆量股：實際篩選條件</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">按「盤中查詢」取得全市場即時快照；先排除 ETF、特別股、興櫃及程式排除的產業類別，僅保留當次上漲股票。</div>
-        <div style="margin-bottom:7px">第一階段流動性門檻：當次成交金額至少 5,000 萬元、成交量至少 4,000 張。</div>
-        <div style="margin-bottom:7px">第二階段量比：當次累計成交張數 ÷ 歷史最近 5 個交易日平均成交張數；量比至少 1.5 倍才繼續分析。</div>
-        <div style="margin-bottom:7px">有 VCP 訊號的股票進入 VCP 區；沒有 VCP 的股票，需同時達到漲幅至少 3% 且股價站上日 MA20，才進入「今日爆量股」主清單。</div>
-        <div style="margin-bottom:7px">量比達標但漲幅不足 3% 或未站上 MA20，列在「其他上漲股（未達門檻）」折疊區；主清單依價格級距分組，組內按量比排序。</div>
-        <div style="margin-bottom:7px">卡片顯示股價、漲幅、成交張數、量比、OSC、週 KD、MA 訊號及最近紀錄出現次數；按卡片可進入個股分析。</div>
-      </div>
-    </div>
-
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">💎 盤中 VCP 訊號與判定細節</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">VCP 主要觀察近三段價格波動是否逐段收縮（前段標準差 ＞ 中段 ＞ 後段），並參考成交量是否乾涸。</div>
-        <div style="margin-bottom:7px">有效突破的程式條件包括：股價高於先前 20 日高點約 0.3%，且突破量至少達先前 5 日平均量的 1.4 倍，並符合收縮條件。</div>
-        <div style="margin-bottom:7px">「🚀 今日突破爆發」表示鎖定 Pivot 後的第 1 天；第 2 天起顯示「📊 追蹤中」。</div>
-        <div style="margin-bottom:7px">「⚡ 即將突破」代表最後收縮階段；「🟢 收縮整理中」代表仍在收縮。VCP 狀態與強勢買進三條件是不同訊號，不能混為一談。</div>
-        <div style="margin-bottom:7px">Pivot 鎖定後追蹤最多約 10 個交易日；會判斷是否守住 Pivot、續攻、回測或跌破。個股分析另有長上影線與量能的真假突破驗證。</div>
-      </div>
-    </div>
-
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">📐 週 KD、日 MA 與交叉標籤</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">週 KD 依自然週（週一為新的一週）彙整日線，不是機械地每 5 根日 K 算一週；使用 KD 9 期。</div>
-        <div style="margin-bottom:7px">「週 KD 黃金交叉第一天」：上一週 K 低於 D、本週 K 高於 D；「準備黃金交叉」：K 仍低於 D、差距不超過 5，且 K 比上週上升。</div>
-        <div style="margin-bottom:7px">日 MA5／MA20 黃金交叉：前一日 MA5 不高於 MA20，當日 MA5 上穿 MA20；卡片可標示最近第 1 至第 5 天。</div>
-        <div style="margin-bottom:7px">「5、20MA 準備交叉」：MA5 還在 MA20 下方、距離不超過 1%，而且 MA5 正在上升。</div>
-        <div style="margin-bottom:7px">🔥 強勢買進訊號的 MA 條件只接受「準備交叉」或「交叉第 1 天」，不接受第 2～5 天；還須同時符合週 KD 黃金交叉及日 MACD 三筆 OSC 動能條件。</div>
-      </div>
-    </div>
-
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">📍 當日首次站上 MA20</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">盤中另有「今日首次站上日 20MA」提示：比較昨日收盤是否低於昨日 MA20，以及當次快照股價是否已站上用當次價格估算的今日 MA20。</div>
-        <div style="margin-bottom:7px">本裝置在同一天確認過此條件後，會保留當日標記；這是輔助顯示，不參與爆量股進榜、VCP 分類或強勢買進訊號判斷。</div>
-      </div>
-    </div>
-
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">⭐ 自選清單與進場警示</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">可從個股分析手動加入自選清單；盤中 VCP 掃描也可能自動加入有 VCP 型態的股票。自動加入項目隔天轉為一般追蹤項目。</div>
-        <div style="margin-bottom:7px">自選清單依「週 KD 黃金交叉」、「週 KD 準備交叉」、「突破爆發」、「即將突破」、「收縮中」、「其他」分類；週 KD 分類優先。</div>
-        <div style="margin-bottom:7px">「全面更新」會重新取得自選股資料，更新分數、VCP、週 KD、MA5／MA20 與強勢買進訊號；不代表盤中爆量股也會自動重新搜尋。</div>
-        <div style="margin-bottom:7px">自選股警示包含 VCP 最終收縮／剛突破且綜合分數至少 70 分、最近 20 個交易日站上日 MA20，以及近期週 20MA 上穿週 100MA 等條件。</div>
-        <div style="margin-bottom:7px">股票可從清單移除；分數旁可能顯示與上次更新相比的升降。</div>
-      </div>
-    </div>
-
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">📊 法人買超觀察</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">法人觀察以「當日爆量股」最後一次掃描得到的 VCP 清單及無 VCP 主清單為候選，不會獨立掃描全市場。</div>
-        <div style="margin-bottom:7px">逐檔查詢外資、投信最近資料，以最新有資料的日期計算買進減賣出張數；外資或投信任一方淨買超才列出。</div>
-        <div style="margin-bottom:7px">依外資與投信合計買超張數排序；畫面會標示實際資料日期。法人資料通常有發布時間差，因此頁面建議 18:00 後查詢。</div>
-        <div style="margin-bottom:7px">結果以當日快取保存；重新整理才重新查詢。</div>
-      </div>
-    </div>
-
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">📈 強勢股票與出現次數</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">股票卡片若今日尚未正式記錄，顯示「盤中第 N 次」＝歷史已記錄次數加上當次出現；今日已記錄則顯示「已記錄第 N 次」。同一天重複掃描只算一次，並列出歷史記錄日期。統計範圍為本裝置最近最多 20 個有保存紀錄的交易日，並非完整自然月。</div>
-        <div style="margin-bottom:7px">程式在盤中不增加當日紀錄；收盤後執行盤中掃描，才將當日符合條件股票寫入紀錄，同一天重複寫入會覆蓋，不重複累加。</div>
-        <div style="margin-bottom:7px">強勢股票分為「首次出現」（近 20 筆紀錄僅 1 次）、「連續出現」（最近至少連續 2 筆紀錄出現）、「累積出現」（曾多次出現但目前非連續）。</div>
-        <div style="margin-bottom:7px">次數依本裝置實際保存的日期計算；沒有執行掃描的交易日不會自動補齊。</div>
-      </div>
-    </div>
-
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">🌏 大盤環境與市場參考</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">個股分析預設頁提供三項大盤環境：加權指數相對 60 日均線的乖離率、USD/TWD 匯率變動，以及加權指數近 5 日走勢。</div>
-        <div style="margin-bottom:7px">季線乖離達 +14% 或低於 -10%、美元兌台幣升幅達 0.3%（台幣貶值）、大盤近 5 日跌幅達 5% 時，各計一項警示。</div>
-        <div style="margin-bottom:7px">依警示項目 0～3 項顯示市場環境建議；大盤環境資料盤中採約 15 分鐘快取，非交易時間優先顯示最後資料。</div>
-        <div style="margin-bottom:7px">另有國際市場參考，例如 NASDAQ、費城半導體、S&P 500、台積電 ADR、NVIDIA、VIX、日經、韓國指數與台灣期指／夜盤；不同來源更新時間可能不同。</div>
-      </div>
-    </div>
-
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">💾 收盤存檔、JSON 與 CSV</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">「強勢股票」頁提供收盤存檔。一般在收盤後使用當日掃描快取保存通過與未達門檻名單，並下載研究用 JSON。</div>
-        <div style="margin-bottom:7px">交易日盤中操作存檔時，程式改以昨日備份為對象；若缺少對應掃描快取，不能憑空產生名單。</div>
-        <div style="margin-bottom:7px">已保存的日期再次下載 JSON 時，保留原本通過／未通過股票母體，只重新取得 KBar，不重新決定當日入選名單。</div>
-        <div style="margin-bottom:7px">可匯出全部歷史 CSV；本機存檔與下載到裝置的 JSON 是兩份資料，清除本機收盤存檔不會刪除已下載檔案。</div>
-      </div>
-    </div>
-
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">🔄 各功能的快取與更新方式</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">盤中爆量股／VCP：同一天已有搜尋快取時直接顯示最後一次結果；按「重新整理」才重新抓快照、重算並覆蓋。OSC 跟著同一次掃描結果保存。</div>
-        <div style="margin-bottom:7px">法人買超：同一天使用自己的查詢快取，手動重新整理才更新。</div>
-        <div style="margin-bottom:7px">大盤環境：盤中約 15 分鐘快取；非交易時間可顯示最後保存資料。自選清單與市場參考另有各自更新流程，並非所有頁面共用一個快取。</div>
-        <div style="margin-bottom:7px">所有上述紀錄主要存於瀏覽器本機；換手機、換瀏覽器或清除網站資料，可能看不到原本的自選清單、掃描紀錄與存檔。</div>
-      </div>
-    </div>
-
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">🔎 個股搜尋、分析報告與操作</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">在個股分析輸入股票代號或中文名稱，點「分析」或 Enter，會開啟個股報告；可透過搜尋建議與最近搜尋紀錄快速查詢。</div>
-        <div style="margin-bottom:7px">報告包括價格／均線／量能／VCP／突破驗證、籌碼、風險與進出場參考，以及日 KD、日 MACD 能量、近 5 天綜合判斷等模組。</div>
-        <div style="margin-bottom:7px">日 MACD 的盤後能量分析與預設頁盤中股票卡片的即時快照 OSC，使用相同 MACD（12、26、9）公式，但價格時間點可能不同，不能要求數值永遠相同。</div>
-        <div style="margin-bottom:7px">部分資訊需要等待外部資料來源回應；若缺少足夠歷史資料，指標可能顯示資料不足。</div>
-      </div>
-    </div>
-
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">⚙️ 設定與資料限制</div>
-      <div style="font-size:14px;color:var(--text2);line-height:1.9">
-        <div style="margin-bottom:7px">字體大小可選 A、A+、A++。</div>
-        <div style="margin-bottom:7px">「清除收盤存檔」刪除瀏覽器內的研究存檔；已另行下載的 JSON 不受影響。</div>
-        <div style="margin-bottom:7px">「強制更新」會重新載入 APP 頁面，主要用於手機顯示舊版畫面時；不等於清空所有 localStorage 歷史紀錄。</div>
-        <div style="margin-bottom:7px">盤中快照、日線、法人與國際市場資料可能有不同延遲；盤中指標為暫估參考，所有訊號都不保證後續價格走勢。</div>
-      </div>
-    </div>
-
-    <!-- 實際訊號標籤對照 -->
-    <div class="home-card" style="margin-bottom:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--wine);margin-bottom:10px">🏷️ 系統訊號標籤對照</div>
-      <div style="font-size:13px;color:var(--text2);line-height:1.8">
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">週KD✦—準備黃金交叉</span>週 K 值在 D 值下方、差距不超過 5，且 K 值上升。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">週KD✦—黃金交叉第一天</span>上週 K 低於 D，本週 K 已向上穿越 D。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—準備交叉</span>MA5 在 MA20 下方、差距不超過 1%，且 MA5 正在上升。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—黃金交叉 Day1</span>MA5 剛向上穿越 MA20 的第 1 天。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—黃金交叉 Day2～5</span>已經黃金交叉第 2 至第 5 天；不符合強勢買進訊號的 MA Day1 條件。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">20MA✦—今日站上</span>昨日收盤低於日 MA20，今天盤中價格首次站上估算的日 MA20。</div>
-        <div style="margin-bottom:10px"><span style="font-weight:600;color:#e67e22;margin-right:8px">🔥 強勢買進訊號 🔥</span>週 KD 黃金交叉＋日 MACD 動能轉強＋MA5／MA20 準備交叉或 Day1，同時成立。</div>
-        <div style="margin-bottom:10px"><span style="font-weight:600;color:#dc2626;margin-right:8px">OSC +0.40 ▲</span>OSC 比前一交易日上升；<span style="font-weight:600;color:#16a34a">OSC -0.40 ▼</span> 代表下降。箭頭不由正負號決定。</div>
-        <div style="margin-bottom:4px"><b>出現次數：</b>股票卡片在今日尚未正式記錄時顯示「盤中第 N 次」（歷史次數＋今日暫計 1 次）；今日寫入後改顯示「已記錄第 N 次」，並列出實際日期。同一天重複掃描不增加次數。</div>
       </div>
     </div>
 
@@ -4424,25 +4256,10 @@ function updateMonthlyCount(stockList){
   try{localStorage.setItem(DAILY_SNAPSHOT_KEY,JSON.stringify(map));}catch(e){}
 }
 
-function getRecordedAppearances(code){
+function getMonthlyCountFor(code){
   const map=getDailySnapshotMap();
   const recentDates=getRecentTradingDates(map,ROLLING_WINDOW_DAYS);
-  return recentDates.filter(d=>Array.isArray(map[d])&&map[d].some(s=>s.code===code)).sort();
-}
-function getMonthlyCountFor(code){
-  return getRecordedAppearances(code).length;
-}
-function appearanceBadgeHtml(code){
-  const dates=getRecordedAppearances(code);
-  const today=getTodayStr();
-  const todayRecorded=dates.includes(today);
-  const fmt=d=>d.slice(5).replace('-','/');
-  // 今天已存檔：只顯示正式次數；尚未存檔：本次掃描暫列為下一次，不寫入紀錄。
-  const count=todayRecorded?dates.length:dates.length+1;
-  const label=todayRecorded?`已記錄第${count}次`:`盤中第${count}次`;
-  const history=dates.length?dates.map(fmt).join('、'):'無';
-  const detail=todayRecorded?`記錄日期：${history}`:`已記錄日期：${history}｜今日 ${fmt(today)} 尚未正式記錄`;
-  return `<div style="font-size:10px;color:var(--text3);margin-top:3px;line-height:1.6"><span style="font-weight:600;color:${todayRecorded?'var(--red)':'#e67e22'}">${label}</span>｜${detail}</div>`;
+  return recentDates.filter(d=>map[d].some(s=>s.code===code)).length;
 }
 
 // 供「強勢股票」頁面使用：把最近20個交易日的資料，分成三層分類
@@ -4509,7 +4326,8 @@ function oscBadgeHtml(s){
   return `<span style="margin-left:24px;color:${color};font-weight:600;white-space:nowrap">OSC ${value} ${arrow}</span>`;
 }
 function stockBadgeHtml(s,tier){
-  const countBadge='';
+  const monthlyCount=getMonthlyCountFor(s.code);
+  const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:var(--red);border:0.5px solid var(--red);font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
   const wkKDBadge=(!s.tripleSignal&&s.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">${s.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉第一天':'週KD✦—準備黃金交叉'}</span>`:'';
   const maBadgeCard=(!s.tripleSignal&&s.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">5、20MA✦—黃金交叉 Day${s.maCrossLabel}</span>`:'';
   const maPrepareBadgeCard=(!s.tripleSignal&&!s.maCrossLabel&&s.maPrepare)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">5、20MA✦—準備交叉</span>`:'';
@@ -4529,7 +4347,6 @@ function stockBadgeHtml(s,tier){
       </div>
     </div>
     ${orangeBadges.length?`<div style="display:grid;grid-template-columns:repeat(2,max-content);gap:3px 6px;margin-bottom:4px">${orangeBadges.map(b=>`<div>${b}</div>`).join('')}</div>`:''}
-    ${appearanceBadgeHtml(s.code)}
     <div style="font-size:13px;color:var(--text2);display:flex;align-items:center;flex-wrap:wrap;row-gap:4px"><span style="white-space:nowrap">${s.price?`${s.price}　`:''}<span style="color:var(--red);font-weight:600">▲${s.chgPct}%</span></span>${oscBadgeHtml(s)}</div>
     <div style="font-size:11px;color:var(--text3);margin-top:2px">目前成交量：${fmtVol(s.todayVol)}</div>
   </div>`;
