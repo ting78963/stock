@@ -393,18 +393,6 @@ html.font-xl{font-size:19px}
         <div style="margin-top:6px"><span style="color:#dc2626;font-weight:600">OSC +0.40 ▲</span> → OSC 比前一交易日上升；<span style="color:#16a34a;font-weight:600">OSC -0.40 ▼</span> → OSC 比前一交易日下降。</div>
         <div>▲／▼ 比較的是前一交易日 OSC，不是看 OSC 本身正負；數值顯示到小數點後兩位。持平顯示灰色 ━。</div>
         <div style="margin-top:6px"><b>快取：</b>保留最後一次搜尋的 OSC 數值與方向；再次開啟直接讀取，重新搜尋才更新。舊快取未保存 OSC 時可能顯示 OSC --。</div>
-        <div style="font-weight:600;color:var(--wine);margin:14px 0 8px">實際訊號標籤與判斷說明</div>
-      <div style="font-size:13px;color:var(--text2);line-height:1.8">
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">週KD✦—準備黃金交叉</span>週 K 值在 D 值下方、差距不超過 5，且 K 值上升。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">週KD✦—黃金交叉第一天</span>上週 K 低於 D，本週 K 已向上穿越 D。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—準備交叉</span>MA5 在 MA20 下方、差距不超過 1%，且 MA5 正在上升。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—黃金交叉 Day1</span>MA5 剛向上穿越 MA20 的第 1 天。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—黃金交叉 Day2～5</span>已經黃金交叉第 2 至第 5 天；不符合強勢買進訊號的 MA Day1 條件。</div>
-        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">20MA✦—今日站上</span>昨日收盤低於日 MA20，今天盤中價格首次站上估算的日 MA20。</div>
-        <div style="margin-bottom:10px"><span style="font-weight:600;color:#e67e22;margin-right:8px">🔥 強勢買進訊號 🔥</span>週 KD 黃金交叉＋日 MACD 動能轉強＋MA5／MA20 準備交叉或 Day1，同時成立。</div>
-        <div style="margin-bottom:10px"><span style="font-weight:600;color:#dc2626;margin-right:8px">OSC +0.40 ▲</span>OSC 比前一交易日上升；<span style="font-weight:600;color:#16a34a">OSC -0.40 ▼</span> 代表下降。箭頭不由正負號決定。</div>
-        <div style="margin-bottom:4px"><b>出現次數：</b>股票卡片在今日尚未正式記錄時顯示「盤中第 N 次」（歷史次數＋今日暫計 1 次）；今日寫入後改顯示「已記錄第 N 次」，並列出實際日期。同一天重複掃描不增加次數。</div>
-      </div>
         <div style="margin-top:8px;margin-bottom:4px"><b>🔥 強勢買進訊號 🔥：</b>以下三項同時成立才顯示：</div>
         <div>① 週 KD 黃金交叉</div>
         <div>② 日 MACD 最近三筆 OSC 的最後一筆高於第一筆（中間不必逐筆上升）</div>
@@ -498,6 +486,17 @@ html.font-xl{font-size:19px}
     </div>
 
     <div class="home-card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">📐 週 KD、日 MA 與交叉標籤</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.9">
+        <div style="margin-bottom:7px">週 KD 依自然週（週一為新的一週）彙整日線，不是機械地每 5 根日 K 算一週；使用 KD 9 期。</div>
+        <div style="margin-bottom:7px">「週 KD 黃金交叉第一天」：上一週 K 低於 D、本週 K 高於 D；「準備黃金交叉」：K 仍低於 D、差距不超過 5，且 K 比上週上升。</div>
+        <div style="margin-bottom:7px">日 MA5／MA20 黃金交叉：前一日 MA5 不高於 MA20，當日 MA5 上穿 MA20；卡片可標示最近第 1 至第 5 天。</div>
+        <div style="margin-bottom:7px">「5、20MA 準備交叉」：MA5 還在 MA20 下方、距離不超過 1%，而且 MA5 正在上升。</div>
+        <div style="margin-bottom:7px">🔥 強勢買進訊號的 MA 條件只接受「準備交叉」或「交叉第 1 天」，不接受第 2～5 天；還須同時符合週 KD 黃金交叉及日 MACD 三筆 OSC 動能條件。</div>
+      </div>
+    </div>
+
+    <div class="home-card" style="margin-bottom:10px">
       <div style="font-size:13px;font-weight:600;color:var(--wine);letter-spacing:.04em;margin-bottom:10px">📍 當日首次站上 MA20</div>
       <div style="font-size:14px;color:var(--text2);line-height:1.9">
         <div style="margin-bottom:7px">盤中另有「今日首次站上日 20MA」提示：比較昨日收盤是否低於昨日 MA20，以及當次快照股價是否已站上用當次價格估算的今日 MA20。</div>
@@ -583,6 +582,22 @@ html.font-xl{font-size:19px}
         <div style="margin-bottom:7px">「清除收盤存檔」刪除瀏覽器內的研究存檔；已另行下載的 JSON 不受影響。</div>
         <div style="margin-bottom:7px">「強制更新」會重新載入 APP 頁面，主要用於手機顯示舊版畫面時；不等於清空所有 localStorage 歷史紀錄。</div>
         <div style="margin-bottom:7px">盤中快照、日線、法人與國際市場資料可能有不同延遲；盤中指標為暫估參考，所有訊號都不保證後續價格走勢。</div>
+      </div>
+    </div>
+
+    <!-- 實際訊號標籤對照 -->
+    <div class="home-card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:600;color:var(--wine);margin-bottom:10px">🏷️ 系統訊號標籤對照</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.8">
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">週KD✦—準備黃金交叉</span>週 K 值在 D 值下方、差距不超過 5，且 K 值上升。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">週KD✦—黃金交叉第一天</span>上週 K 低於 D，本週 K 已向上穿越 D。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—準備交叉</span>MA5 在 MA20 下方、差距不超過 1%，且 MA5 正在上升。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—黃金交叉 Day1</span>MA5 剛向上穿越 MA20 的第 1 天。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">5、20MA✦—黃金交叉 Day2～5</span>已經黃金交叉第 2 至第 5 天；不符合強勢買進訊號的 MA Day1 條件。</div>
+        <div style="margin-bottom:10px"><span style="display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:#fff;color:#e67e22;border:1px solid #e67e22;font-weight:600;margin-right:8px;white-space:nowrap">20MA✦—今日站上</span>昨日收盤低於日 MA20，今天盤中價格首次站上估算的日 MA20。</div>
+        <div style="margin-bottom:10px"><span style="font-weight:600;color:#e67e22;margin-right:8px">🔥 強勢買進訊號 🔥</span>週 KD 黃金交叉＋日 MACD 動能轉強＋MA5／MA20 準備交叉或 Day1，同時成立。</div>
+        <div style="margin-bottom:10px"><span style="font-weight:600;color:#dc2626;margin-right:8px">OSC +0.40 ▲</span>OSC 比前一交易日上升；<span style="font-weight:600;color:#16a34a">OSC -0.40 ▼</span> 代表下降。箭頭不由正負號決定。</div>
+        <div style="margin-bottom:4px"><b>出現次數：</b>股票卡片在今日尚未正式記錄時顯示「盤中第 N 次」（歷史次數＋今日暫計 1 次）；今日寫入後改顯示「已記錄第 N 次」，並列出實際日期。同一天重複掃描不增加次數。</div>
       </div>
     </div>
 
@@ -4240,8 +4255,7 @@ async function loadHotVolStocks(forceRefresh){
     // 期間又有更新的查詢啟動並完成，這次（較舊）的結果就不會覆蓋快取或畫面，避免顯示過期資料
     if(myGeneration!==hotVolScanGeneration) return;
 
-    await updateMonthlyCount([...vcpSignalStocks,...noVcpStocks]); // 收盤後才會真正累加，盤中查詢只是讀取顯示
-    if(myGeneration!==hotVolScanGeneration)return;
+    updateMonthlyCount([...vcpSignalStocks,...noVcpStocks]); // 收盤後才會真正累加，盤中查詢只是讀取顯示
     const fetchTimeStr=`${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
     try{
       // 收盤後才備份前一次快取為昨日備份
@@ -4378,65 +4392,57 @@ function renderInstitutionalWatchCard(el,results,fetchTimeStr){
 }
 
 // 本月出現次數記錄：收盤後（非交易時間）才累加，盤中查詢只讀取不累加
-// 全新獨立紀錄，舊版資料不讀取、不刪除、不覆蓋。
-const DAILY_SNAPSHOT_KEY='daily_snapshot_history_v2';
-const ROLLING_WINDOW_DAYS=20;
-const verifiedTradingDates=new Set();
+const DAILY_SNAPSHOT_KEY='daily_snapshot_history_v1';
+const ROLLING_WINDOW_DAYS=20; // 只保留最近20個「有記錄」的交易日，不看日曆月份
+
 function getDailySnapshotMap(){
   try{
-    const value=JSON.parse(localStorage.getItem(DAILY_SNAPSHOT_KEY)||'{}');
-    return value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+    return JSON.parse(localStorage.getItem(DAILY_SNAPSHOT_KEY)||'{}');
   }catch(e){return {};}
 }
+
+// 取得最近N個交易日的日期清單（由新到舊排序），只看「實際有記錄過」的日期，不管日曆
 function getRecentTradingDates(snapshotMap,n){
-  return Object.keys(snapshotMap).filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&Array.isArray(snapshotMap[d]))
-    .sort((a,b)=>b.localeCompare(a)).slice(0,n);
+  return Object.keys(snapshotMap).sort((a,b)=>b.localeCompare(a)).slice(0,n);
 }
-// 台積電日K必須明確回傳「當日」成交資料；API失敗或休市一律不寫入。
-async function verifyActualTradingDay(dateStr){
-  if(verifiedTradingDates.has(dateStr))return true;
-  try{
-    const response=await fetch(`${FUGLE_PROXY}/daily/2330?from=${dateStr}&to=${dateStr}`);
-    if(!response.ok)return false;
-    const payload=await response.json();
-    const valid=payload.ok===true&&Array.isArray(payload.data)&&payload.data.some(
-      row=>String(row.date||'').slice(0,10)===dateStr&&Number(row.volume)>0
-    );
-    if(valid)verifiedTradingDates.add(dateStr);
-    return valid;
-  }catch(e){return false;}
-}
-async function updateMonthlyCount(stockList){
-  const now=new Date(),day=now.getDay(),mins=now.getHours()*60+now.getMinutes();
-  if(day===0||day===6||mins<870)return;
-  const dateStr=getTodayStr();
-  if(!await verifyActualTradingDay(dateStr))return;
-  // 若查詢跨日才完成，禁止將前一天的掃描寫成新日期。
-  if(getTodayStr()!==dateStr)return;
+
+function updateMonthlyCount(stockList){
+  const now=new Date();
+  const day=now.getDay();
+  const mins=now.getHours()*60+now.getMinutes();
+  const isWeekday=day>=1&&day<=5;
+  const isTradingHours=isWeekday&&mins>=540&&mins<=870; // 09:00-14:30
+  if(isTradingHours) return; // 盤中不累加，只有收盤後才記錄
+  const dateStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const map=getDailySnapshotMap();
+  // 存今天完整快照（每支股票的完整資訊），同一天重複按會直接覆蓋成最新版本，不重複累加
   map[dateStr]=stockList.map(s=>({code:s.code,name:s.name,price:s.price,chgPct:s.chgPct,todayVol:s.todayVol,volRatio:s.volRatio}));
-  // 只保留最新20筆；沒有自動清理或驗證失敗刪除的路徑。
-  const keep=new Set(getRecentTradingDates(map,ROLLING_WINDOW_DAYS));
-  for(const d of Object.keys(map))if(!keep.has(d))delete map[d];
+  // 只保留最近20個交易日，超過的自動清除，避免無限累積
+  const allDates=Object.keys(map).sort((a,b)=>b.localeCompare(a));
+  const keepDates=new Set(allDates.slice(0,ROLLING_WINDOW_DAYS));
+  Object.keys(map).forEach(d=>{ if(!keepDates.has(d)) delete map[d]; });
   try{localStorage.setItem(DAILY_SNAPSHOT_KEY,JSON.stringify(map));}catch(e){}
 }
+
 function getRecordedAppearances(code){
   const map=getDailySnapshotMap();
-  return getRecentTradingDates(map,ROLLING_WINDOW_DAYS).filter(d=>map[d].some(s=>String(s.code)===String(code)));
+  const recentDates=getRecentTradingDates(map,ROLLING_WINDOW_DAYS);
+  return recentDates.filter(d=>Array.isArray(map[d])&&map[d].some(s=>s.code===code)).sort();
 }
-function getMonthlyCountFor(code){return getRecordedAppearances(code).length;}
+function getMonthlyCountFor(code){
+  return getRecordedAppearances(code).length;
+}
 function appearanceBadgeHtml(code){
-  const dates=getRecordedAppearances(code),today=getTodayStr();
+  const dates=getRecordedAppearances(code);
+  const today=getTodayStr();
   const todayRecorded=dates.includes(today);
-  const now=new Date(),mins=now.getHours()*60+now.getMinutes();
-  // 未正式記錄時僅在交易時段顯示暫計；非交易時段不憑空加一次。
-  const provisional=!todayRecorded&&now.getDay()>=1&&now.getDay()<=5&&mins>=540&&mins<870;
-  const count=dates.length+(provisional?1:0);
-  if(count<2)return '';
   const fmt=d=>d.slice(5).replace('-','/');
-  const label=provisional?`盤中第${count}次`:`已記錄第${count}次`;
-  const history=dates.slice(0,7).map(fmt).join('、');
-  return `<div style="font-size:10px;color:var(--text3);margin-top:3px;line-height:1.6"><span style="font-weight:600;color:${provisional?'#e67e22':'var(--red)'}">${label}</span>${history?`｜${todayRecorded?'記錄日期':'歷史日期'}：${history}`:''}</div>`;
+  // 今天已存檔：只顯示正式次數；尚未存檔：本次掃描暫列為下一次，不寫入紀錄。
+  const count=todayRecorded?dates.length:dates.length+1;
+  const label=todayRecorded?`已記錄第${count}次`:`盤中第${count}次`;
+  const history=dates.length?dates.map(fmt).join('、'):'無';
+  const detail=todayRecorded?`記錄日期：${history}`:`已記錄日期：${history}｜今日 ${fmt(today)} 尚未正式記錄`;
+  return `<div style="font-size:10px;color:var(--text3);margin-top:3px;line-height:1.6"><span style="font-weight:600;color:${todayRecorded?'var(--red)':'#e67e22'}">${label}</span>｜${detail}</div>`;
 }
 
 // 供「強勢股票」頁面使用：把最近20個交易日的資料，分成三層分類
