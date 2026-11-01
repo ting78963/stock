@@ -3026,7 +3026,7 @@ async function updateWatchScores(targetList){
   const wl=LS.get('watch');
   if(!wl.length) return;
   const isAuto=!!targetList;
-  const list=targetList||wl;
+  const list=[...(targetList||wl)];
   const btn=document.getElementById('watch-score-btn');
   const prog=document.getElementById('watch-score-progress');
   if(!isAuto){
