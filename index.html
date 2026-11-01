@@ -2864,10 +2864,10 @@ function rW(){
     const scoreDiff=w.prevScore&&w.score&&w.score!==w.prevScore?w.score-w.prevScore:null;
     const diffHtml=scoreDiff?`<span style="font-size:10px;font-weight:600;color:${scoreDiff>0?'#27ae60':'#e74c3c'};margin-left:3px">${scoreDiff>0?'↑':'↓'}${Math.abs(scoreDiff)}</span>`:'';
     const vcpTag=showVcp&&w.vcpStatus&&vcpLabel[w.vcpStatus]?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${vcpLabel[w.vcpStatus]}</div>`:'';
-    const wkBadgeWatch=(!w.tripleSignal&&w.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">${w.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉第一天':'週KD✦—準備黃金交叉'}</span>`:'';
-    const maBadge=(!w.tripleSignal&&w.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—黃金交叉 Day${w.maCrossLabel}</span>`:'';
-    const dayMABadges=[['dayMA100Label','100'],['dayMA60Label','60']].map(([key,period])=>w[key]?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">日20／${period}MA—${w[key]==='golden_cross'?'黃金交叉第一天':'準備交叉'}</span>`:'').join('');
-    const maPrepareBadge=(!w.tripleSignal&&!w.maCrossLabel&&w.maPrepare)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—準備交叉</span>`:'';
+    const wkBadgeWatch=(!w.tripleSignal&&w.wkKDLabel)?`<span style="display:inline-block;white-space:nowrap;vertical-align:middle;font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">${w.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉 Day1':'週KD✦—準備黃金交叉'}</span>`:'';
+    const maBadge=(!w.tripleSignal&&w.maCrossLabel)?`<span style="display:inline-block;white-space:nowrap;vertical-align:middle;font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—黃金交叉 Day${w.maCrossLabel}</span>`:'';
+    const dayMABadges=[['dayMA100Label','100'],['dayMA60Label','60']].map(([key,period])=>w[key]?`<span style="display:inline-block;white-space:nowrap;vertical-align:middle;font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">日20／${period}MA—${w[key]==='golden_cross'?'黃金交叉 Day1':'準備交叉'}</span>`:'').join('');
+    const maPrepareBadge=(!w.tripleSignal&&!w.maCrossLabel&&w.maPrepare)?`<span style="display:inline-block;white-space:nowrap;vertical-align:middle;font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—準備交叉</span>`:'';
     const tripleBadge=w.tripleSignal?`<span style="font-size:11px;font-weight:600;color:#e67e22;margin-left:6px">🔥 強勢買進訊號 🔥</span>`:'';
     return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}${wkBadgeWatch}${maBadge}${maPrepareBadge}${dayMABadges}${tripleBadge}</div><div class="lna">${displayName}</div>${vcpTag}</div><div class="lr"><div style="display:flex;align-items:center"><div class="spill" style="${scoreStyle}">${scoreDisplay}</div>${diffHtml}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
   };
@@ -2896,11 +2896,11 @@ function rW(){
   };
 
   let html='';
-  html+=sectionHtml('🟡 週KD黃金交叉第一天', groups.wkGolden, '#f5a623', true);
+  html+=sectionHtml('🟡 週KD黃金交叉 Day1', groups.wkGolden, '#f5a623', true);
   html+=sectionHtml('🟠 週KD準備交叉',       groups.wkPrepare, '#f5a623', true);
-  html+=sectionHtml('🟡 日20／100MA黃金交叉第一天', groups.day100Golden, '#f5a623', true);
+  html+=sectionHtml('🟡 日20／100MA黃金交叉 Day1', groups.day100Golden, '#f5a623', true);
   html+=sectionHtml('🟠 日20／100MA準備交叉', groups.day100Prepare, '#f5a623', true);
-  html+=sectionHtml('🟡 日20／60MA黃金交叉第一天', groups.day60Golden, '#f5a623', true);
+  html+=sectionHtml('🟡 日20／60MA黃金交叉 Day1', groups.day60Golden, '#f5a623', true);
   html+=sectionHtml('🟠 日20／60MA準備交叉', groups.day60Prepare, '#f5a623', true);
   html+=sectionHtml('🔥 突破爆發',            groups.broke);
   html+=sectionHtml('🔴 即將突破',            groups.near, 'var(--wine)');
