@@ -17,7 +17,7 @@ function makeContext(stocks,responses){
     calcWeeklyKDLabel:()=>'',calcMA5MA20CrossLabel:()=>'',calcMA5MA20Prepare:()=>false,
     calcMACD:()=>({histArr5:[],hist:0,prev_hist:0}),
     rW:()=>{},localStorage:{setItem:()=>{}},
-    setTimeout:()=>{},Date,Promise,console
+    setTimeout:(fn)=>{fn();return 1},Date,Promise,console
   };
   const data=score=>({score,data:Array.from({length:120},(_,i)=>({date:'2026-01-'+String(i+1).padStart(3,'0'),close:100}))});
   return {ctx,items:()=>items,data};
