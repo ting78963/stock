@@ -2881,10 +2881,10 @@ function rW(){
     day100Prepare: wl.filter(w=>w.dayMA100Label==='prepare'),
     day60Golden: wl.filter(w=>w.dayMA60Label==='golden_cross'),
     day60Prepare: wl.filter(w=>w.dayMA60Label==='prepare'),
-    broke:     wl.filter(w=>!w.wkKDLabel && w.vcpStatus==='just_broke'),
-    near:      wl.filter(w=>!w.wkKDLabel && w.vcpStatus==='final_contraction'),
-    contract:  wl.filter(w=>!w.wkKDLabel && ['contracting','trending_up'].includes(w.vcpStatus)),
-    other:     wl.filter(w=>!w.wkKDLabel && !['just_broke','final_contraction','contracting','trending_up'].includes(w.vcpStatus))
+    broke:     wl.filter(w=>!w.wkKDLabel && !w.dayMA100Label && !w.dayMA60Label && w.vcpStatus==='just_broke'),
+    near:      wl.filter(w=>!w.wkKDLabel && !w.dayMA100Label && !w.dayMA60Label && w.vcpStatus==='final_contraction'),
+    contract:  wl.filter(w=>!w.wkKDLabel && !w.dayMA100Label && !w.dayMA60Label && ['contracting','trending_up'].includes(w.vcpStatus)),
+    other:     wl.filter(w=>!w.wkKDLabel && !w.dayMA100Label && !w.dayMA60Label && !['just_broke','final_contraction','contracting','trending_up'].includes(w.vcpStatus))
   };
   // 其他依分數排序
   groups.other.sort((a,b)=>b.score-a.score);
