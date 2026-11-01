@@ -5,7 +5,9 @@ on:
       - 'index.html'
       - 'tests/watchlist-ma.test.cjs'
       - 'tests/watchlist-browser.cjs'
+      - 'tests/watchlist-refresh.test.cjs'
       - 'tests/watchlist-browser.cjs'
+      - 'tests/watchlist-refresh.test.cjs'
       - '.github/workflows/watchlist-ma-tests.yml'
   push:
     branches:
