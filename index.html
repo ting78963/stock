@@ -1109,6 +1109,15 @@ function analyze(raw){
   const ma60=maOf(cl,60),ma150=maOf(cl,150),ma200=maOf(cl,200);
   const ma20w_prev=wk.length>=21?maOf(wk.slice(0,-1),20):null;
   const ma100w_w=maOf(wk,100),ma100w_w_prev=wk.length>=101?maOf(wk.slice(0,-1),100):null;
+  // 週20MA由下往上靠近週100MA：只預警尚未交叉且週20MA上升的情況。
+  // 使用與既有黃金交叉相同的週K資料，門檻分級不互相重複計數。
+  const wkGapPct=(ma20w!=null&&ma100w_w>0)?((ma100w_w-ma20w)/ma100w_w)*100:null;
+  const wkGapPrevPct=(ma20w_prev!=null&&ma100w_w_prev>0)?((ma100w_w_prev-ma20w_prev)/ma100w_w_prev)*100:null;
+  const wkNearGoldenEligible=wkGapPct!=null&&wkGapPrevPct!=null
+    &&ma20w<ma100w_w&&ma20w_prev<ma100w_w_prev
+    &&ma20w>ma20w_prev&&wkGapPct<wkGapPrevPct&&wkGapPct>0;
+  const wkNearGoldenTier=wkNearGoldenEligible
+    ?(wkGapPct<=0.5?0.5:wkGapPct<=1?1:wkGapPct<=1.5?1.5:null):null;
   const wkGoldenCross=ma20w&&ma100w_w&&ma20w_prev&&ma100w_w_prev?(ma20w_prev<=ma100w_w_prev&&ma20w>ma100w_w):false;
   // 上上週黃金交叉（7天內 = 2根週K內）
   const ma20w_prev2=wk.length>=22?maOf(wk.slice(0,-2),20):null;
@@ -1311,7 +1320,7 @@ function analyze(raw){
     }
   }
 
-  return{cur,prev,dayChg,isLimitUp,curHigh,curLow,ma20d,ma100d,ma20w,ma60,ma150,ma200,ma200_4w,ma100w,dayGoldenCross,dayDeathCross,daysCrossed100,daysDropped100,daysDropped20,dy100_p,wkGoldenCross,wkGoldenCrossPrev,wkDeathCross,wkDeathCrossPrev,ma20w_prev,ma100w_w,ma100w_w_prev,closes:cl,wk,ma20dArr,hi52,lo52,fromHi,fromLo,fromLo26,volR,volR20,curVol,avgV5,avgV20,reqVol,rsVal,t7,pat,wk_p,dy_p,pt_p,vl_p,t1,t2,t3,t_100w,t6,vcp,pe,stop,tgt1,tgt2,pivot20,ec1,ec2,ec2status,ec2vcpStatus,ec3,ec4,ecReady,ecPartial,ecCount,overall,verdict,breakValidation,breakReason};
+  return{cur,prev,dayChg,isLimitUp,curHigh,curLow,ma20d,ma100d,ma20w,ma60,ma150,ma200,ma200_4w,ma100w,dayGoldenCross,dayDeathCross,daysCrossed100,daysDropped100,daysDropped20,dy100_p,wkGapPct,wkGapPrevPct,wkNearGoldenEligible,wkNearGoldenTier,wkGoldenCross,wkGoldenCrossPrev,wkDeathCross,wkDeathCrossPrev,ma20w_prev,ma100w_w,ma100w_w_prev,closes:cl,wk,ma20dArr,hi52,lo52,fromHi,fromLo,fromLo26,volR,volR20,curVol,avgV5,avgV20,reqVol,rsVal,t7,pat,wk_p,dy_p,pt_p,vl_p,t1,t2,t3,t_100w,t6,vcp,pe,stop,tgt1,tgt2,pivot20,ec1,ec2,ec2status,ec2vcpStatus,ec3,ec4,ecReady,ecPartial,ecCount,overall,verdict,breakValidation,breakReason};
 }
 
 function f(v,d=1){return v!=null?v.toFixed(d):'—';}
@@ -1658,6 +1667,11 @@ ${(()=>{
   // 週20MA黃金交叉週100MA（14天內）
   if(a.wkGoldenCross||a.wkGoldenCrossPrev){
     html+=`<div class="gold-alert"><div class="gold-title"><span style="display:inline-block;animation:starSpin 3s linear infinite">🌟</span> 週20MA 黃金交叉 週100MA！</div><div class="gold-desc">週20MA ${f(a.ma20w,2)} 上穿 週100MA ${f(a.ma100w_w,2)}<br>14天內發生，長期多頭強力確認！</div></div>`;
+  }
+  // 尚未交叉的向上靠近預警（嚴格排除由上往下靠近）
+  if(a.wkNearGoldenTier!=null){
+    const level=a.wkNearGoldenTier===0.5?'極接近':a.wkNearGoldenTier===1?'接近':'提前觀察';
+    html+=`<div class="gold-alert"><div class="gold-title">🔔 週20MA 即將黃金交叉（${level}）</div><div class="gold-desc">週20MA ${f(a.ma20w,2)} 由下往上靠近週100MA ${f(a.ma100w_w,2)}<br>目前差距 ${f(a.wkGapPct,2)}%｜預警門檻 ${a.wkNearGoldenTier}%｜尚未正式交叉</div></div>`;
   }
   // 週20MA死亡交叉週100MA（14天內）
   if(a.wkDeathCross||a.wkDeathCrossPrev){
