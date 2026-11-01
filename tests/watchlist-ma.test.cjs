@@ -53,3 +53,16 @@ test('bullish MA20/60 and MA20/100 remain watchlisted beyond Day5',()=>{
   assert.match(area.innerHTML,/週KD準備交叉/);
   assert.equal(watch.length,1);
 });
+
+test('weekly KD counts trading days and expires after Day5',()=>{
+  const source=extract('function calcWeeklyKDLabel(','\nfunction analyzeVCP(');
+  const dates=Array.from({length:75},(_,i)=>{const d=new Date('2026-01-05T12:00:00Z');d.setUTCDate(d.getUTCDate()+Math.floor(i/5)*7+i%5);return {date:d.toISOString().slice(0,10),close:100,high:102,low:98};});
+  const ctx={calcKD:(weekly)=>{const hist=weekly.map((_,i)=>({k:i===weekly.length-1?60:40,d:50}));return {hist};}};
+  const fn=vm.runInNewContext(source+';calcWeeklyKDLabel',ctx);
+  assert.equal(fn(dates.slice(0,71)),'golden_cross_day1');
+  assert.equal(fn(dates.slice(0,75)),'golden_cross_day5');
+  assert.equal(fn(dates.slice(0,70)),null);
+});
+test('analysis card also renders weekly KD day count',()=>{
+  assert.match(html,/s\.wkKDLabel\.startsWith\('golden_cross_day'\)/);
+});
