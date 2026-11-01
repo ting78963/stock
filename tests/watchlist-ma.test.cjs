@@ -70,3 +70,16 @@ test('weekly KD counts trading days and expires after Day5',()=>{
 test('analysis card also renders weekly KD day count',()=>{
   assert.match(html,/s\.wkKDLabel\.startsWith\('golden_cross_day'\)/);
 });
+
+test('MA20/60 and MA20/100 count Day2-Day5 then retain bullish trend',()=>{
+  for(const period of [60,100]){
+    const base=Array.from({length:125},(_,i)=>({date:String(i),close:i<119?100:110}));
+    for(let day=1;day<=5;day++){
+      const sample=base.slice(0,119+day);
+      assert.equal(calc(sample,period),'golden_cross_day'+day,'MA'+period+' Day'+day);
+    }
+    assert.equal(calc(base,period),'bullish');
+    const reversed=base.concat([{date:'reversal',close:30}]);
+    assert.notEqual(calc(reversed,period),'bullish');
+  }
+});
