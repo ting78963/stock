@@ -11,6 +11,11 @@ test('MA20/100 requires enough data',()=>assert.equal(calc(rows(99,100).slice(0,
 test('flat MA does not alert',()=>assert.equal(calc(rows(100,100),100),''));
 test('approaching cross',()=>assert.equal(calc(rows(99,100.25),100),'prepare'));
 test('first golden cross',()=>assert.equal(calc(rows(99.75,104.75),100),'golden_cross'));
+test('MA20/60 requires 61 daily closes',()=>assert.equal(calc(rows(99,100).slice(0,60),60),''));
+test('MA20/60 approaching cross',()=>assert.equal(calc(rows(99,100.25),60),'prepare'));
+test('MA20/60 first golden cross',()=>assert.equal(calc(rows(99.75,104.75),60),'golden_cross'));
+test('MA20/60 flat prices do not alert',()=>assert.equal(calc(rows(100,100),60),''));
+test('MA20/100 ignores a gap wider than 0.75%',()=>assert.equal(calc(rows(98,99),100),''));
 test('score threshold is below 55 in both refresh paths',()=>{
   assert.equal((html.match(/a\.overall<55/g)||[]).length,2);
   assert.equal(54<55,true);assert.equal(55<55,false);
