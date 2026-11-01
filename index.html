@@ -3078,6 +3078,9 @@ async function updateWatchScores(targetList){
               const sorted=[...raw.data].sort((a,b)=>a.date.localeCompare(b.date));
               wlNow[idx].dayMA100Label=calcWatchDayMACross(sorted,100);
               wlNow[idx].dayMA60Label=calcWatchDayMACross(sorted,60);
+              wlNow[idx].wkKDLabel=calcWeeklyKDLabel(sorted);
+              wlNow[idx].maCrossLabel=calcMA5MA20CrossLabel(sorted);
+              wlNow[idx].maPrepare=calcMA5MA20Prepare(sorted);
             }
             LS.set('watch',wlNow);
           }
