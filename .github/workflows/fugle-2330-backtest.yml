@@ -1,0 +1,35 @@
+name: Fugle 2330 MA proximity backtest
+on:
+  push:
+    branches: [feat/weekly-ma-near-cross-20261101]
+    paths: [.github/workflows/fugle-2330-backtest.yml]
+  workflow_dispatch:
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fetch Fugle via existing read-only Render proxy and backtest
+        run: |
+          python - <<'PY'
+          import csv, json, urllib.request
+          from pathlib import Path
+          url='https://stock-alert-91j1.onrender.com/public/fugle/daily/2330?from=2024-07-01&to=2026-10-31'
+          with urllib.request.urlopen(url,timeout=90) as resp:
+              payload=json.load(resp)
+          if not payload.get('ok') or payload.get('symbol')!='2330':
+              raise RuntimeError('Fugle proxy response invalid')
+          rows=payload.get('data',[])
+          if len(rows)<505:
+              raise RuntimeError(f'Insufficient Fugle history: {len(rows)} rows')
+          rows=sorted(rows,key=lambda x:x['date'])
+          with Path('2330_fugle.csv').open('w',newline='',encoding='utf-8') as f:
+              w=csv.writer(f);w.writerow(['date','close'])
+              w.writerows((r['date'],r['close']) for r in rows)
+          print('Fugle 2330 rows:',len(rows),'range:',rows[0]['date'],rows[-1]['date'])
+          PY
+          python research/backtest_weekly_near_cross.py 2330_fugle.csv
