@@ -1136,7 +1136,7 @@ function analyze(raw){
     &&ma20d<ma100d&&ma20d_prev<ma100d_prev
     &&ma20d>ma20d_prev&&dayGapPct<dayGapPrevPct&&dayGapPct>0;
   const dayNearGoldenTier=dayNearGoldenEligible
-    ?(dayGapPct<=0.5?0.5:dayGapPct<=1?1:dayGapPct<=1.5?1.5:null):null;
+    ?(dayGapPct<=0.75?0.75:null):null;
   const ma20dArr=cl.map((_,i)=>i>=19?cl.slice(i-19,i+1).reduce((a,b)=>a+b,0)/20:null);
   const ma200_4w=cl.length>=220?maOf(cl.slice(0,-20),200):null;
   const ma100w=maOf(cl,500); // 100週MA（約500個交易日）
@@ -1727,8 +1727,7 @@ ${(()=>{
   }
   // 日20MA由下往上接近日100MA：尚未交叉才預警
   if(a.dayNearGoldenTier!=null){
-    const level=a.dayNearGoldenTier===0.5?'極接近':a.dayNearGoldenTier===1?'接近':'提前觀察';
-    html+=`<div class="gold-alert"><div class="gold-title">🔔 日20MA 即將黃金交叉（${level}）</div><div class="gold-desc">日20MA ${f(a.ma20d,2)} 由下往上靠近日100MA ${f(a.ma100d,2)}<br>目前差距 ${f(a.dayGapPct,2)}%｜預警門檻 ${a.dayNearGoldenTier}%｜尚未正式交叉</div></div>`;
+    html+=`<div class="gold-alert"><div class="gold-title">🔔 日20MA 準備黃金交叉</div><div class="gold-desc">日20MA ${f(a.ma20d,2)} 由下往上靠近日100MA ${f(a.ma100d,2)}<br>目前差距 ${f(a.dayGapPct,2)}%｜預警門檻 ${a.dayNearGoldenTier}%｜尚未正式交叉</div></div>`;
   }
   // 日20MA黃金交叉日100MA（14天內）→ 金色
   if(a.dayGoldenCross){
