@@ -10,10 +10,10 @@ function rows(base,last){return Array.from({length:120},(_,i)=>({date:String(i),
 test('MA20/100 requires enough data',()=>assert.equal(calc(rows(99,100).slice(0,99),100),''));
 test('flat MA does not alert',()=>assert.equal(calc(rows(100,100),100),''));
 test('approaching cross',()=>assert.equal(calc(rows(99,100.25),100),'prepare'));
-test('first golden cross',()=>assert.equal(calc(rows(99.75,104.75),100),'golden_cross'));
+test('first golden cross',()=>assert.equal(calc(rows(99.75,104.75),100),'golden_cross_day1'));
 test('MA20/60 requires 61 daily closes',()=>assert.equal(calc(rows(99,100).slice(0,60),60),''));
 test('MA20/60 approaching cross',()=>assert.equal(calc(rows(99,100.25),60),'prepare'));
-test('MA20/60 first golden cross',()=>assert.equal(calc(rows(99.75,104.75),60),'golden_cross'));
+test('MA20/60 first golden cross',()=>assert.equal(calc(rows(99.75,104.75),60),'golden_cross_day1'));
 test('MA20/60 flat prices do not alert',()=>assert.equal(calc(rows(100,100),60),''));
 test('MA20/100 ignores a gap wider than 0.75%',()=>assert.equal(calc(rows(98,99),100),''));
 test('score threshold is below 55 in both refresh paths',()=>{
@@ -21,7 +21,7 @@ test('score threshold is below 55 in both refresh paths',()=>{
   assert.equal(54<55,true);assert.equal(55<55,false);
 });
 test('watchlist renders overlapping signals without duplicating stored entries',()=>{
-  let watch=[{sym:'2069',name:'運錩',score:60,wkKDLabel:'prepare',dayMA100Label:'prepare',dayMA60Label:'golden_cross',vcpStatus:'contracting'},{sym:'2330',name:'台積電',score:55,vcpStatus:'just_broke'}];
+  let watch=[{sym:'2069',name:'運錩',score:60,wkKDLabel:'prepare',dayMA100Label:'prepare',dayMA60Label:'golden_cross_day1',vcpStatus:'contracting'},{sym:'2330',name:'台積電',score:55,vcpStatus:'just_broke'}];
   const area={innerHTML:''};
   const ctx={LS:{get:()=>watch,set:(_k,v)=>{watch=v}},document:{getElementById:()=>area},sc:()=> '#777',getStockName:()=>null,updateWatchScores:()=>{}};
   vm.runInNewContext(extract('function rW(){','\nfunction rmW(')+';rW();',ctx);
@@ -37,5 +37,19 @@ test('watchlist signal badges do not break inside labels',()=>{
   const render=extract('function rW(){','\nfunction rmW(');
   assert.equal((render.match(/white-space:nowrap/g)||[]).length,4);
   assert.doesNotMatch(render,/黃金交叉第一天/);
-  assert.match(render,/黃金交叉 Day1/);
+  assert.match(render,/黃金交叉 Day/);
+});
+
+test('bullish MA20/60 and MA20/100 remain watchlisted beyond Day5',()=>{
+  const sustained=Array.from({length:130},(_,i)=>({date:String(i),close:i<105?100:110}));
+  assert.equal(calc(sustained,60),'bullish');
+  assert.equal(calc(sustained,100),'bullish');
+  const watch=[{sym:'1808',name:'潤隆',score:75,dayMA60Label:'bullish',dayMA100Label:'bullish',wkKDLabel:'prepare'}];
+  const area={innerHTML:''};
+  const ctx={LS:{get:()=>watch,set:()=>{}},document:{getElementById:()=>area},sc:()=> '#777',getStockName:()=>null,updateWatchScores:()=>{}};
+  vm.runInNewContext(extract('function rW(){','\nfunction rmW(')+';rW();',ctx);
+  assert.match(area.innerHTML,/日20／60MA多頭觀察/);
+  assert.match(area.innerHTML,/日20／100MA多頭觀察/);
+  assert.match(area.innerHTML,/週KD準備交叉/);
+  assert.equal(watch.length,1);
 });
