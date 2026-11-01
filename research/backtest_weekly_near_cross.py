@@ -1,4 +1,4 @@
-"""Weekly MA20/MA100 near-cross historical backtest.
+"""Daily and weekly MA20/MA100 near-cross historical backtest.
 Input CSV columns: date,close (ascending, one trading day per row).
 Matches index.html's 5-trading-day weekly grouping, including the final partial week.
 Run: python research/backtest_weekly_near_cross.py prices.csv
@@ -30,6 +30,21 @@ def signals(daily):
         approaching = a < b and pa < pb and a > pa and 0 < gap < pgap
         tier = next((t for t in THRESHOLDS if approaching and gap <= t), None)
         out.append(dict(week=end//5, day_index=end-1, gap_pct=round(gap,4),
+                        cross=cross, tier=tier))
+    return out
+
+def daily_signals(daily):
+    """Daily signals using only data available at each day close."""
+    out = []
+    for end in range(101, len(daily)+1):
+        prices = daily[:end]
+        a, b = ma(prices,20), ma(prices,100)
+        pa, pb = ma(prices[:-1],20), ma(prices[:-1],100)
+        gap, pgap = (b-a)/b*100, (pb-pa)/pb*100
+        cross = pa <= pb and a > b
+        approaching = a < b and pa < pb and a > pa and 0 < gap < pgap
+        tier = next((t for t in THRESHOLDS if approaching and gap <= t), None)
+        out.append(dict(week=end, day_index=end-1, gap_pct=round(gap,4),
                         cross=cross, tier=tier))
     return out
 
@@ -71,4 +86,9 @@ if __name__ == "__main__":
         with path.open(encoding="utf-8-sig",newline="") as f:
             data=sorted(((r["date"],float(r["close"])) for r in csv.DictReader(f)),key=lambda x:x[0])
         # Use only closed five-session blocks, matching the original calculation.
-        print(json.dumps(report(signals([x[1] for x in data])),ensure_ascii=False,indent=2))
+        prices = [x[1] for x in data]
+        print(json.dumps({
+            "symbol_file": path.name,
+            "daily": report(daily_signals(prices), horizon=60),
+            "weekly": report(signals(prices), horizon=12),
+        }, ensure_ascii=False, indent=2))
