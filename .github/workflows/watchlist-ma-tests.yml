@@ -36,3 +36,33 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run Chromium mobile watchlist test
         run: node tests/watchlist-browser.cjs
+      - name: Verify real 2330 daily price data without writing to any service
+        shell: bash
+        run: |
+          node <<'NODE'
+          const controller=new AbortController();
+          const timeout=setTimeout(()=>controller.abort(),45000);
+          const start=new Date();
+          start.setMonth(start.getMonth()-26);
+          const from=start.toISOString().slice(0,10);
+          const to=new Date().toISOString().slice(0,10);
+          const url='https://stock-alert-91j1.onrender.com/public/fugle/daily/2330?from='+from+'&to='+to;
+          (async()=>{
+            const response=await fetch(url,{signal:controller.signal,headers:{accept:'application/json'}});
+            if(!response.ok)throw Error('Fugle proxy HTTP '+response.status);
+            const payload=await response.json();
+            if(payload.ok!==true||!Array.isArray(payload.data))throw Error('Unexpected Fugle response format');
+            const rows=payload.data.filter(r=>Number.isFinite(Number(r.close))&&Number(r.close)>0&&r.date).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+            if(rows.length<101)throw Error('Insufficient valid daily bars for MA100: '+rows.length);
+            const close=rows.map(r=>Number(r.close)),n=close.length;
+            const ma=(end,len)=>close.slice(end-len,end).reduce((a,b)=>a+b,0)/len;
+            const signal=(len)=>{
+              const a=ma(n,20),b=ma(n,len),p=ma(n-1,20),q=ma(n-1,len);
+              if(p<q&&a>=b)return 'golden_cross';
+              const gap=(b-a)/b*100,prev=(q-p)/q*100;
+              return b>0&&q>0&&a<b&&p<q&&a>p&&gap>0&&gap<=0.75&&gap<prev?'prepare':'none';
+            };
+            console.log(JSON.stringify({symbol:'2330',validBars:rows.length,firstDate:rows[0].date,lastDate:rows.at(-1).date,MA20_60:signal(60),MA20_100:signal(100)}));
+          })().catch(e=>{console.error('LIVE_SMOKE_FAILED:',e.message);process.exitCode=1}).finally(()=>clearTimeout(timeout));
+          NODE
+
