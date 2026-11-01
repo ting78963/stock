@@ -901,7 +901,8 @@ function calcMA5MA20CrossLabel(sortedDayData){
   const closes=sortedDayData.map(r=>parseFloat(r.close)||0);
   const ma=(arr,n,i)=>arr.slice(i-n+1,i+1).reduce((a,b)=>a+b,0)/n;
   const n=closes.length;
-  // 找最近一次黃金交叉（最近10天內）
+  if(ma(closes,5,n-1)<=ma(closes,20,n-1))return null;
+  // 最近五個交易日內交叉，且目前仍須維持 5MA > 20MA。
   for(let day=1;day<=5;day++){
     const i=n-day;
     if(i<20) break;
