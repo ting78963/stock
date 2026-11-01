@@ -27,8 +27,15 @@ test('watchlist renders overlapping signals without duplicating stored entries',
   vm.runInNewContext(extract('function rW(){','\nfunction rmW(')+';rW();',ctx);
   assert.match(area.innerHTML,/週KD準備交叉/);
   assert.match(area.innerHTML,/日20／100MA準備交叉/);
-  assert.match(area.innerHTML,/日20／60MA黃金交叉第一天/);
+  assert.match(area.innerHTML,/日20／60MA黃金交叉 Day1/);
   assert.equal((area.innerHTML.match(/gs\('2069'\)/g)||[]).length,3);
   assert.equal((area.innerHTML.match(/gs\('2330'\)/g)||[]).length,1);
   assert.equal(watch.length,2);
+});
+
+test('watchlist signal badges do not break inside labels',()=>{
+  const render=extract('function rW(){','\nfunction rmW(');
+  assert.equal((render.match(/white-space:nowrap/g)||[]).length,4);
+  assert.doesNotMatch(render,/黃金交叉第一天/);
+  assert.match(render,/黃金交叉 Day1/);
 });
