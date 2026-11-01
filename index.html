@@ -2981,7 +2981,8 @@ async function fullWatchUpdate(isAuto){
   }
 
   // 記錄今天已更新
-  localStorage.setItem('watch_last_update', new Date().toISOString().slice(0,10));
+  const updatedAt=new Date();
+  localStorage.setItem('watch_last_update', `${updatedAt.getFullYear()}-${String(updatedAt.getMonth()+1).padStart(2,'0')}-${String(updatedAt.getDate()).padStart(2,'0')}`);
 
   updateProgress(total,total,'✅ 更新完成');
   setTimeout(()=>{
@@ -3051,6 +3052,9 @@ async function updateWatchScores(targetList){
             } else {
               wlNow[idx].score=a.overall;
               wlNow[idx].vcpStatus=a.vcp?a.vcp.status:'';
+              const sorted=[...raw.data].sort((a,b)=>a.date.localeCompare(b.date));
+              wlNow[idx].dayMA100Label=calcWatchDayMACross(sorted,100);
+              wlNow[idx].dayMA60Label=calcWatchDayMACross(sorted,60);
             }
             LS.set('watch',wlNow);
           }
@@ -3101,7 +3105,7 @@ function showPage(id, tabEl, navId){
     if(typeof rW==='function') rW();
     // 自動更新：18:00後，今天還沒更新過
     const now=new Date();
-    const today=now.toISOString().slice(0,10);
+    const today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     const lastUpdate=localStorage.getItem('watch_last_update')||'';
     const hour=now.getHours();
     const day=now.getDay();
