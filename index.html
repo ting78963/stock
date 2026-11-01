@@ -957,6 +957,7 @@ function calcWeeklyKDLabel(sortedDayData){
     wk.push(row);
     // 最後一筆資料直接 push
     if(i===sortedDayData.length-1 && wk.length>0){
+      weekStartIndices.push(wkStart);
       weeklyOHLC.push({
         close:parseFloat(wk[wk.length-1].close)||0,
         high:Math.max(...wk.map(r=>parseFloat(r.max||r.high||r.close)||0)),
