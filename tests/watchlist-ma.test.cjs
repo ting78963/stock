@@ -79,7 +79,7 @@ test('MA20/60 and MA20/100 count Day2-Day5 then retain bullish trend',()=>{
       assert.equal(calc(sample,period),'golden_cross_day'+day,'MA'+period+' Day'+day);
     }
     assert.equal(calc(base,period),'bullish');
-    const reversed=base.concat([{date:'reversal',close:30}]);
+    const reversed=base.concat(Array.from({length:20},(_,i)=>({date:'reversal'+i,close:30})));
     assert.notEqual(calc(reversed,period),'bullish');
   }
 });
