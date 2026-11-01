@@ -2828,11 +2828,11 @@ function calcWatchDayMACross(rows,longPeriod){
   const gap=(longNow-shortNow)/longNow*100;
   const prevGap=(longPrev-shortPrev)/longPrev*100;
   // 黃金交叉後維持多頭排列：股票持續留在觀察區，Day 標籤只保留五個交易日。
-  if(shortNow>=longNow){
+  if(shortNow>longNow){
     for(let day=1;day<=5;day++){
       const end=n-day+1;
       if(end<longPeriod+1)break;
-      if(ma(end-1,20)<ma(end-1,longPeriod)&&ma(end,20)>=ma(end,longPeriod))
+      if(ma(end-1,20)<=ma(end-1,longPeriod)&&ma(end,20)>ma(end,longPeriod))
         return 'golden_cross_day'+day;
     }
     return 'bullish';
