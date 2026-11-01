@@ -40,3 +40,14 @@ test('full refresh removes only <55, retains 55 and failures, sets MA labels',as
   assert.equal(f.items()[0].dayMA100Label,'prepare');
   assert.equal(f.items()[0].dayMA60Label,'golden_cross');
 });
+
+test('score refresh does not skip consecutive removals or the next retained stock',async()=>{
+  const f=makeContext([{sym:'54a',score:70},{sym:'54b',score:70},{sym:'55',score:70},{sym:'fail',score:70}],{});
+  f.ctx.fetchStock=async sym=>sym==='fail'?Promise.reject(Error('network')):f.data(sym==='55'?55:54);
+  vm.runInNewContext(update+';this.updateWatchScores=updateWatchScores',f.ctx);
+  await f.ctx.updateWatchScores();
+  assert.deepEqual(f.items().map(x=>x.sym),['55','fail']);
+  assert.equal(f.items()[0].score,55);
+  assert.equal(f.items()[0].dayMA100Label,'prepare');
+  assert.equal(f.items()[0].dayMA60Label,'golden_cross');
+});
