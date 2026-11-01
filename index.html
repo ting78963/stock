@@ -4391,7 +4391,7 @@ function oscBadgeHtml(s){
 function stockBadgeHtml(s,tier){
   const monthlyCount=getMonthlyCountFor(s.code);
   const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:var(--red);border:0.5px solid var(--red);font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
-  const wkKDBadge=(!s.tripleSignal&&s.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">${s.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉第一天':'週KD✦—準備黃金交叉'}</span>`:'';
+  const wkKDBadge=(!s.tripleSignal&&s.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">${s.wkKDLabel.startsWith('golden_cross_day')?'週KD✦—黃金交叉 Day'+s.wkKDLabel.slice(-1):'週KD✦—準備黃金交叉'}</span>`:'';
   const maBadgeCard=(!s.tripleSignal&&s.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">5、20MA✦—黃金交叉 Day${s.maCrossLabel}</span>`:'';
   const maPrepareBadgeCard=(!s.tripleSignal&&!s.maCrossLabel&&s.maPrepare)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">5、20MA✦—準備交叉</span>`:'';
   const todayMA20Badge=s.todayCrossMA20?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">20MA✦—今日站上</span>`:'';
