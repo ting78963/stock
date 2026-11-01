@@ -6,8 +6,6 @@ on:
       - 'tests/watchlist-ma.test.cjs'
       - 'tests/watchlist-browser.cjs'
       - 'tests/watchlist-refresh.test.cjs'
-      - 'tests/watchlist-browser.cjs'
-      - 'tests/watchlist-refresh.test.cjs'
       - '.github/workflows/watchlist-ma-tests.yml'
   push:
     branches:
@@ -15,6 +13,8 @@ on:
     paths:
       - 'index.html'
       - 'tests/watchlist-ma.test.cjs'
+      - 'tests/watchlist-refresh.test.cjs'
+      - 'tests/watchlist-browser.cjs'
       - '.github/workflows/watchlist-ma-tests.yml'
   workflow_dispatch:
 jobs:
@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: '22'
       - name: Run watchlist regression tests
-        run: node --test tests/watchlist-ma.test.cjs
+        run: node --test tests/watchlist-ma.test.cjs tests/watchlist-refresh.test.cjs
 
       - name: Install Playwright and Chromium
         run: |
