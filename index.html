@@ -1128,6 +1128,15 @@ function analyze(raw){
   const wkDeathCrossPrev=ma20w_prev&&ma100w_w_prev&&ma20w_prev2&&ma100w_w_prev2?(ma20w_prev2>=ma100w_w_prev2&&ma20w_prev<ma100w_w_prev):false;
   // ma20dArr：每日的20MA值陣列（供7天站上判斷用）
   const ma100d=maOf(cl,100);
+  const ma20d_prev=n>=21?maOf(cl.slice(0,-1),20):null;
+  const ma100d_prev=n>=101?maOf(cl.slice(0,-1),100):null;
+  const dayGapPct=(ma20d!=null&&ma100d>0)?((ma100d-ma20d)/ma100d)*100:null;
+  const dayGapPrevPct=(ma20d_prev!=null&&ma100d_prev>0)?((ma100d_prev-ma20d_prev)/ma100d_prev)*100:null;
+  const dayNearGoldenEligible=dayGapPct!=null&&dayGapPrevPct!=null
+    &&ma20d<ma100d&&ma20d_prev<ma100d_prev
+    &&ma20d>ma20d_prev&&dayGapPct<dayGapPrevPct&&dayGapPct>0;
+  const dayNearGoldenTier=dayNearGoldenEligible
+    ?(dayGapPct<=0.5?0.5:dayGapPct<=1?1:dayGapPct<=1.5?1.5:null):null;
   const ma20dArr=cl.map((_,i)=>i>=19?cl.slice(i-19,i+1).reduce((a,b)=>a+b,0)/20:null);
   const ma200_4w=cl.length>=220?maOf(cl.slice(0,-20),200):null;
   const ma100w=maOf(cl,500); // 100週MA（約500個交易日）
@@ -1320,7 +1329,7 @@ function analyze(raw){
     }
   }
 
-  return{cur,prev,dayChg,isLimitUp,curHigh,curLow,ma20d,ma100d,ma20w,ma60,ma150,ma200,ma200_4w,ma100w,dayGoldenCross,dayDeathCross,daysCrossed100,daysDropped100,daysDropped20,dy100_p,wkGapPct,wkGapPrevPct,wkNearGoldenEligible,wkNearGoldenTier,wkGoldenCross,wkGoldenCrossPrev,wkDeathCross,wkDeathCrossPrev,ma20w_prev,ma100w_w,ma100w_w_prev,closes:cl,wk,ma20dArr,hi52,lo52,fromHi,fromLo,fromLo26,volR,volR20,curVol,avgV5,avgV20,reqVol,rsVal,t7,pat,wk_p,dy_p,pt_p,vl_p,t1,t2,t3,t_100w,t6,vcp,pe,stop,tgt1,tgt2,pivot20,ec1,ec2,ec2status,ec2vcpStatus,ec3,ec4,ecReady,ecPartial,ecCount,overall,verdict,breakValidation,breakReason};
+  return{cur,prev,dayChg,isLimitUp,curHigh,curLow,ma20d,ma100d,dayGapPct,dayGapPrevPct,dayNearGoldenEligible,dayNearGoldenTier,ma20w,ma60,ma150,ma200,ma200_4w,ma100w,dayGoldenCross,dayDeathCross,daysCrossed100,daysDropped100,daysDropped20,dy100_p,wkGapPct,wkGapPrevPct,wkNearGoldenEligible,wkNearGoldenTier,wkGoldenCross,wkGoldenCrossPrev,wkDeathCross,wkDeathCrossPrev,ma20w_prev,ma100w_w,ma100w_w_prev,closes:cl,wk,ma20dArr,hi52,lo52,fromHi,fromLo,fromLo26,volR,volR20,curVol,avgV5,avgV20,reqVol,rsVal,t7,pat,wk_p,dy_p,pt_p,vl_p,t1,t2,t3,t_100w,t6,vcp,pe,stop,tgt1,tgt2,pivot20,ec1,ec2,ec2status,ec2vcpStatus,ec3,ec4,ecReady,ecPartial,ecCount,overall,verdict,breakValidation,breakReason};
 }
 
 function f(v,d=1){return v!=null?v.toFixed(d):'—';}
@@ -1715,6 +1724,11 @@ ${(()=>{
   // 跌破日100MA（21天內）→ 紅色
   if(a.daysDropped100>0&&a.daysDropped100<=21){
     html+=`<div style="background:var(--rbg);border:1px solid var(--rbr);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px"><div style="font-size:var(--fs-sm);font-weight:700;color:var(--red);margin-bottom:4px">⚠️ ${a.daysDropped100===1?'今日':'近'+a.daysDropped100+'天前'}跌破日100MA</div><div style="font-size:var(--fs-xs);color:var(--text2)">中期支撐轉弱，密切注意是否重新站回</div></div>`;
+  }
+  // 日20MA由下往上接近日100MA：尚未交叉才預警
+  if(a.dayNearGoldenTier!=null){
+    const level=a.dayNearGoldenTier===0.5?'極接近':a.dayNearGoldenTier===1?'接近':'提前觀察';
+    html+=`<div class="gold-alert"><div class="gold-title">🔔 日20MA 即將黃金交叉（${level}）</div><div class="gold-desc">日20MA ${f(a.ma20d,2)} 由下往上靠近日100MA ${f(a.ma100d,2)}<br>目前差距 ${f(a.dayGapPct,2)}%｜預警門檻 ${a.dayNearGoldenTier}%｜尚未正式交叉</div></div>`;
   }
   // 日20MA黃金交叉日100MA（14天內）→ 金色
   if(a.dayGoldenCross){
