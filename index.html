@@ -1109,6 +1109,15 @@ function analyze(raw){
   const ma60=maOf(cl,60),ma150=maOf(cl,150),ma200=maOf(cl,200);
   const ma20w_prev=wk.length>=21?maOf(wk.slice(0,-1),20):null;
   const ma100w_w=maOf(wk,100),ma100w_w_prev=wk.length>=101?maOf(wk.slice(0,-1),100):null;
+  // 週20MA由下往上靠近週100MA：只預警尚未交叉且週20MA上升的情況。
+  // 使用與既有黃金交叉相同的週K資料，門檻分級不互相重複計數。
+  const wkGapPct=(ma20w!=null&&ma100w_w>0)?((ma100w_w-ma20w)/ma100w_w)*100:null;
+  const wkGapPrevPct=(ma20w_prev!=null&&ma100w_w_prev>0)?((ma100w_w_prev-ma20w_prev)/ma100w_w_prev)*100:null;
+  const wkNearGoldenEligible=wkGapPct!=null&&wkGapPrevPct!=null
+    &&ma20w<ma100w_w&&ma20w_prev<ma100w_w_prev
+    &&ma20w>ma20w_prev&&wkGapPct<wkGapPrevPct&&wkGapPct>0;
+  const wkNearGoldenTier=wkNearGoldenEligible
+    ?(wkGapPct<=0.5?0.5:wkGapPct<=1?1:wkGapPct<=1.5?1.5:null):null;
   const wkGoldenCross=ma20w&&ma100w_w&&ma20w_prev&&ma100w_w_prev?(ma20w_prev<=ma100w_w_prev&&ma20w>ma100w_w):false;
   // 上上週黃金交叉（7天內 = 2根週K內）
   const ma20w_prev2=wk.length>=22?maOf(wk.slice(0,-2),20):null;
@@ -1119,6 +1128,15 @@ function analyze(raw){
   const wkDeathCrossPrev=ma20w_prev&&ma100w_w_prev&&ma20w_prev2&&ma100w_w_prev2?(ma20w_prev2>=ma100w_w_prev2&&ma20w_prev<ma100w_w_prev):false;
   // ma20dArr：每日的20MA值陣列（供7天站上判斷用）
   const ma100d=maOf(cl,100);
+  const ma20d_prev=n>=21?maOf(cl.slice(0,-1),20):null;
+  const ma100d_prev=n>=101?maOf(cl.slice(0,-1),100):null;
+  const dayGapPct=(ma20d!=null&&ma100d>0)?((ma100d-ma20d)/ma100d)*100:null;
+  const dayGapPrevPct=(ma20d_prev!=null&&ma100d_prev>0)?((ma100d_prev-ma20d_prev)/ma100d_prev)*100:null;
+  const dayNearGoldenEligible=dayGapPct!=null&&dayGapPrevPct!=null
+    &&ma20d<ma100d&&ma20d_prev<ma100d_prev
+    &&ma20d>ma20d_prev&&dayGapPct<dayGapPrevPct&&dayGapPct>0;
+  const dayNearGoldenTier=dayNearGoldenEligible
+    ?(dayGapPct<=0.75?0.75:null):null;
   const ma20dArr=cl.map((_,i)=>i>=19?cl.slice(i-19,i+1).reduce((a,b)=>a+b,0)/20:null);
   const ma200_4w=cl.length>=220?maOf(cl.slice(0,-20),200):null;
   const ma100w=maOf(cl,500); // 100週MA（約500個交易日）
@@ -1311,7 +1329,7 @@ function analyze(raw){
     }
   }
 
-  return{cur,prev,dayChg,isLimitUp,curHigh,curLow,ma20d,ma100d,ma20w,ma60,ma150,ma200,ma200_4w,ma100w,dayGoldenCross,dayDeathCross,daysCrossed100,daysDropped100,daysDropped20,dy100_p,wkGoldenCross,wkGoldenCrossPrev,wkDeathCross,wkDeathCrossPrev,ma20w_prev,ma100w_w,ma100w_w_prev,closes:cl,wk,ma20dArr,hi52,lo52,fromHi,fromLo,fromLo26,volR,volR20,curVol,avgV5,avgV20,reqVol,rsVal,t7,pat,wk_p,dy_p,pt_p,vl_p,t1,t2,t3,t_100w,t6,vcp,pe,stop,tgt1,tgt2,pivot20,ec1,ec2,ec2status,ec2vcpStatus,ec3,ec4,ecReady,ecPartial,ecCount,overall,verdict,breakValidation,breakReason};
+  return{cur,prev,dayChg,isLimitUp,curHigh,curLow,ma20d,ma100d,dayGapPct,dayGapPrevPct,dayNearGoldenEligible,dayNearGoldenTier,ma20w,ma60,ma150,ma200,ma200_4w,ma100w,dayGoldenCross,dayDeathCross,daysCrossed100,daysDropped100,daysDropped20,dy100_p,wkGapPct,wkGapPrevPct,wkNearGoldenEligible,wkNearGoldenTier,wkGoldenCross,wkGoldenCrossPrev,wkDeathCross,wkDeathCrossPrev,ma20w_prev,ma100w_w,ma100w_w_prev,closes:cl,wk,ma20dArr,hi52,lo52,fromHi,fromLo,fromLo26,volR,volR20,curVol,avgV5,avgV20,reqVol,rsVal,t7,pat,wk_p,dy_p,pt_p,vl_p,t1,t2,t3,t_100w,t6,vcp,pe,stop,tgt1,tgt2,pivot20,ec1,ec2,ec2status,ec2vcpStatus,ec3,ec4,ecReady,ecPartial,ecCount,overall,verdict,breakValidation,breakReason};
 }
 
 function f(v,d=1){return v!=null?v.toFixed(d):'—';}
@@ -1659,6 +1677,11 @@ ${(()=>{
   if(a.wkGoldenCross||a.wkGoldenCrossPrev){
     html+=`<div class="gold-alert"><div class="gold-title"><span style="display:inline-block;animation:starSpin 3s linear infinite">🌟</span> 週20MA 黃金交叉 週100MA！</div><div class="gold-desc">週20MA ${f(a.ma20w,2)} 上穿 週100MA ${f(a.ma100w_w,2)}<br>14天內發生，長期多頭強力確認！</div></div>`;
   }
+  // 尚未交叉的向上靠近預警（嚴格排除由上往下靠近）
+  if(a.wkNearGoldenTier!=null){
+    const level=a.wkNearGoldenTier===0.5?'極接近':a.wkNearGoldenTier===1?'接近':'提前觀察';
+    html+=`<div class="gold-alert"><div class="gold-title">🔔 週20MA 即將黃金交叉（${level}）</div><div class="gold-desc">週20MA ${f(a.ma20w,2)} 由下往上靠近週100MA ${f(a.ma100w_w,2)}<br>目前差距 ${f(a.wkGapPct,2)}%｜預警門檻 ${a.wkNearGoldenTier}%｜尚未正式交叉</div></div>`;
+  }
   // 週20MA死亡交叉週100MA（14天內）
   if(a.wkDeathCross||a.wkDeathCrossPrev){
     html+=`<div style="background:var(--rbg);border:1px solid var(--rbr);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px"><div style="font-size:var(--fs-sm);font-weight:700;color:var(--red);margin-bottom:4px">⚠️ 週20MA 死亡交叉 週100MA</div><div style="font-size:var(--fs-xs);color:var(--text2)">週線轉弱，注意趨勢反轉，密切追蹤是否重新站回</div></div>`;
@@ -1701,6 +1724,10 @@ ${(()=>{
   // 跌破日100MA（21天內）→ 紅色
   if(a.daysDropped100>0&&a.daysDropped100<=21){
     html+=`<div style="background:var(--rbg);border:1px solid var(--rbr);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px"><div style="font-size:var(--fs-sm);font-weight:700;color:var(--red);margin-bottom:4px">⚠️ ${a.daysDropped100===1?'今日':'近'+a.daysDropped100+'天前'}跌破日100MA</div><div style="font-size:var(--fs-xs);color:var(--text2)">中期支撐轉弱，密切注意是否重新站回</div></div>`;
+  }
+  // 日20MA由下往上接近日100MA：尚未交叉才預警
+  if(a.dayNearGoldenTier!=null){
+    html+=`<div class="gold-alert"><div class="gold-title">🔔 日20MA 準備黃金交叉</div><div class="gold-desc">日20MA ${f(a.ma20d,2)} 由下往上靠近日100MA ${f(a.ma100d,2)}<br>目前差距 ${f(a.dayGapPct,2)}%｜預警門檻 ${a.dayNearGoldenTier}%｜尚未正式交叉</div></div>`;
   }
   // 日20MA黃金交叉日100MA（14天內）→ 金色
   if(a.dayGoldenCross){
@@ -2790,6 +2817,21 @@ function confirmAddPos(){
 
 
 
+
+// 日均線交叉狀態：沿用既有收盤價序列，不額外呼叫 API。
+function calcWatchDayMACross(rows,longPeriod){
+  const cl=rows.map(r=>Number(r.close)).filter(Number.isFinite);
+  if(cl.length<longPeriod+1)return '';
+  const ma=(end,n)=>cl.slice(end-n,end).reduce((a,b)=>a+b,0)/n;
+  const n=cl.length,shortNow=ma(n,20),longNow=ma(n,longPeriod);
+  const shortPrev=ma(n-1,20),longPrev=ma(n-1,longPeriod);
+  if(shortPrev<longPrev&&shortNow>=longNow)return 'golden_cross';
+  const gap=(longNow-shortNow)/longNow*100;
+  const prevGap=(longPrev-shortPrev)/longPrev*100;
+  if(longNow>0&&longPrev>0&&shortNow<longNow&&shortPrev<longPrev&&shortNow>shortPrev&&gap>0&&gap<=0.75&&gap<prevGap)return 'prepare';
+  return '';
+}
+
 function rW(){
   let wl=LS.get('watch'),area=document.getElementById('wa');
   if(!wl.length){area.innerHTML=`<div class="empty"><div class="eico">⭐</div>尚未加入任何股票<br>分析後點「加入自選清單」</div>`;return;}
@@ -2824,19 +2866,24 @@ function rW(){
     const vcpTag=showVcp&&w.vcpStatus&&vcpLabel[w.vcpStatus]?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${vcpLabel[w.vcpStatus]}</div>`:'';
     const wkBadgeWatch=(!w.tripleSignal&&w.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">${w.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉第一天':'週KD✦—準備黃金交叉'}</span>`:'';
     const maBadge=(!w.tripleSignal&&w.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—黃金交叉 Day${w.maCrossLabel}</span>`:'';
+    const dayMABadges=[['dayMA100Label','100'],['dayMA60Label','60']].map(([key,period])=>w[key]?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">日20／${period}MA—${w[key]==='golden_cross'?'黃金交叉第一天':'準備交叉'}</span>`:'').join('');
     const maPrepareBadge=(!w.tripleSignal&&!w.maCrossLabel&&w.maPrepare)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—準備交叉</span>`:'';
     const tripleBadge=w.tripleSignal?`<span style="font-size:11px;font-weight:600;color:#e67e22;margin-left:6px">🔥 強勢買進訊號 🔥</span>`:'';
-    return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}${wkBadgeWatch}${maBadge}${maPrepareBadge}${tripleBadge}</div><div class="lna">${displayName}</div>${vcpTag}</div><div class="lr"><div style="display:flex;align-items:center"><div class="spill" style="${scoreStyle}">${scoreDisplay}</div>${diffHtml}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
+    return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}${wkBadgeWatch}${maBadge}${maPrepareBadge}${dayMABadges}${tripleBadge}</div><div class="lna">${displayName}</div>${vcpTag}</div><div class="lr"><div style="display:flex;align-items:center"><div class="spill" style="${scoreStyle}">${scoreDisplay}</div>${diffHtml}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
   };
 
   // 六區塊分類（週KD優先，VCP顯示為小字）
   const groups={
     wkGolden:  wl.filter(w=>w.wkKDLabel==='golden_cross'),
     wkPrepare: wl.filter(w=>w.wkKDLabel==='prepare'),
-    broke:     wl.filter(w=>!w.wkKDLabel && w.vcpStatus==='just_broke'),
-    near:      wl.filter(w=>!w.wkKDLabel && w.vcpStatus==='final_contraction'),
-    contract:  wl.filter(w=>!w.wkKDLabel && ['contracting','trending_up'].includes(w.vcpStatus)),
-    other:     wl.filter(w=>!w.wkKDLabel && !['just_broke','final_contraction','contracting','trending_up'].includes(w.vcpStatus))
+    day100Golden: wl.filter(w=>w.dayMA100Label==='golden_cross'),
+    day100Prepare: wl.filter(w=>w.dayMA100Label==='prepare'),
+    day60Golden: wl.filter(w=>w.dayMA60Label==='golden_cross'),
+    day60Prepare: wl.filter(w=>w.dayMA60Label==='prepare'),
+    broke:     wl.filter(w=>!w.wkKDLabel && !w.dayMA100Label && !w.dayMA60Label && w.vcpStatus==='just_broke'),
+    near:      wl.filter(w=>!w.wkKDLabel && !w.dayMA100Label && !w.dayMA60Label && w.vcpStatus==='final_contraction'),
+    contract:  wl.filter(w=>!w.wkKDLabel && !w.dayMA100Label && !w.dayMA60Label && ['contracting','trending_up'].includes(w.vcpStatus)),
+    other:     wl.filter(w=>!w.wkKDLabel && !w.dayMA100Label && !w.dayMA60Label && !['just_broke','final_contraction','contracting','trending_up'].includes(w.vcpStatus))
   };
   // 其他依分數排序
   groups.other.sort((a,b)=>b.score-a.score);
@@ -2851,6 +2898,10 @@ function rW(){
   let html='';
   html+=sectionHtml('🟡 週KD黃金交叉第一天', groups.wkGolden, '#f5a623', true);
   html+=sectionHtml('🟠 週KD準備交叉',       groups.wkPrepare, '#f5a623', true);
+  html+=sectionHtml('🟡 日20／100MA黃金交叉第一天', groups.day100Golden, '#f5a623', true);
+  html+=sectionHtml('🟠 日20／100MA準備交叉', groups.day100Prepare, '#f5a623', true);
+  html+=sectionHtml('🟡 日20／60MA黃金交叉第一天', groups.day60Golden, '#f5a623', true);
+  html+=sectionHtml('🟠 日20／60MA準備交叉', groups.day60Prepare, '#f5a623', true);
   html+=sectionHtml('🔥 突破爆發',            groups.broke);
   html+=sectionHtml('🔴 即將突破',            groups.near, 'var(--wine)');
   html+=sectionHtml('🟢 收縮中',              groups.contract);
@@ -2898,7 +2949,7 @@ async function fullWatchUpdate(isAuto){
         const wlNow=LS.get('watch');
         const idx=wlNow.findIndex(x=>x.sym===w.sym);
         if(idx>=0){
-          if(a&&typeof a.overall==='number'&&a.overall<=50){
+          if(a&&typeof a.overall==='number'&&a.overall<55){
             wlNow.splice(idx,1);
             deleted++;
           } else {
@@ -2912,6 +2963,8 @@ async function fullWatchUpdate(isAuto){
             wlNow[idx].wkKDLabel=calcWeeklyKDLabel(sorted);
             wlNow[idx].maCrossLabel=calcMA5MA20CrossLabel(sorted);
             wlNow[idx].maPrepare=calcMA5MA20Prepare(sorted);
+             wlNow[idx].dayMA100Label=calcWatchDayMACross(sorted,100);
+             wlNow[idx].dayMA60Label=calcWatchDayMACross(sorted,60);
             const macdRawE=calcMACD(sorted.map(r=>parseFloat(r.close)||0),12,26,9);
             const macdOSCE=(macdRawE.histArr5||macdRawE.histArr||[]).slice(-3);
             const macdPosE=macdOSCE.length>=2&&macdOSCE[macdOSCE.length-1]>macdOSCE[0];
@@ -2921,14 +2974,6 @@ async function fullWatchUpdate(isAuto){
           }
           LS.set('watch',wlNow);
         }
-      } else {
-        const wlNow=LS.get('watch');
-        const idx=wlNow.findIndex(x=>x.sym===w.sym);
-        if(idx>=0&&(wlNow[idx].score||0)<=50&&wlNow[idx].score!==0){
-          wlNow.splice(idx,1);
-          deleted++;
-          LS.set('watch',wlNow);
-        }
       }
     }catch(e){}
     done++;
@@ -2936,7 +2981,8 @@ async function fullWatchUpdate(isAuto){
   }
 
   // 記錄今天已更新
-  localStorage.setItem('watch_last_update', new Date().toISOString().slice(0,10));
+  const updatedAt=new Date();
+  localStorage.setItem('watch_last_update', `${updatedAt.getFullYear()}-${String(updatedAt.getMonth()+1).padStart(2,'0')}-${String(updatedAt.getDate()).padStart(2,'0')}`);
 
   updateProgress(total,total,'✅ 更新完成');
   setTimeout(()=>{
@@ -2980,7 +3026,7 @@ async function updateWatchScores(targetList){
   const wl=LS.get('watch');
   if(!wl.length) return;
   const isAuto=!!targetList;
-  const list=targetList||wl;
+  const list=[...(targetList||wl)];
   const btn=document.getElementById('watch-score-btn');
   const prog=document.getElementById('watch-score-progress');
   if(!isAuto){
@@ -3000,24 +3046,18 @@ async function updateWatchScores(targetList){
           const wlNow=LS.get('watch');
           const idx=wlNow.findIndex(x=>x.sym===w.sym);
           if(idx>=0){
-            if(a.overall<=50){
+            if(a.overall<55){
               wlNow.splice(idx,1);
               deleted++;
             } else {
               wlNow[idx].score=a.overall;
               wlNow[idx].vcpStatus=a.vcp?a.vcp.status:'';
+              const sorted=[...raw.data].sort((a,b)=>a.date.localeCompare(b.date));
+              wlNow[idx].dayMA100Label=calcWatchDayMACross(sorted,100);
+              wlNow[idx].dayMA60Label=calcWatchDayMACross(sorted,60);
             }
             LS.set('watch',wlNow);
           }
-        }
-      } else {
-        // API 失敗時，現有分數 ≤ 50 也刪除
-        const wlNow=LS.get('watch');
-        const idx=wlNow.findIndex(x=>x.sym===w.sym);
-        if(idx>=0 && (wlNow[idx].score||0)<=50 && wlNow[idx].score!==0){
-          wlNow.splice(idx,1);
-          deleted++;
-          LS.set('watch',wlNow);
         }
       }
     }catch(e){}
@@ -3065,7 +3105,7 @@ function showPage(id, tabEl, navId){
     if(typeof rW==='function') rW();
     // 自動更新：18:00後，今天還沒更新過
     const now=new Date();
-    const today=now.toISOString().slice(0,10);
+    const today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     const lastUpdate=localStorage.getItem('watch_last_update')||'';
     const hour=now.getHours();
     const day=now.getDay();
