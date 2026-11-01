@@ -2820,15 +2820,24 @@ function confirmAddPos(){
 
 // 日均線交叉狀態：沿用既有收盤價序列，不額外呼叫 API。
 function calcWatchDayMACross(rows,longPeriod){
-  const cl=rows.map(r=>Number(r.close)).filter(Number.isFinite);
-  if(cl.length<longPeriod+1)return '';
+  const cl=rows.map(r=>Number(r.close));
+  if(cl.length<longPeriod+1||cl.some(v=>!Number.isFinite(v)||v<=0))return '';
   const ma=(end,n)=>cl.slice(end-n,end).reduce((a,b)=>a+b,0)/n;
   const n=cl.length,shortNow=ma(n,20),longNow=ma(n,longPeriod);
   const shortPrev=ma(n-1,20),longPrev=ma(n-1,longPeriod);
-  if(shortPrev<longPrev&&shortNow>=longNow)return 'golden_cross';
   const gap=(longNow-shortNow)/longNow*100;
   const prevGap=(longPrev-shortPrev)/longPrev*100;
-  if(longNow>0&&longPrev>0&&shortNow<longNow&&shortPrev<longPrev&&shortNow>shortPrev&&gap>0&&gap<=0.75&&gap<prevGap)return 'prepare';
+  // 黃金交叉後維持多頭排列：股票持續留在觀察區，Day 標籤只保留五個交易日。
+  if(shortNow>=longNow){
+    for(let day=1;day<=5;day++){
+      const end=n-day+1;
+      if(end<longPeriod+1)break;
+      if(ma(end-1,20)<ma(end-1,longPeriod)&&ma(end,20)>=ma(end,longPeriod))
+        return 'golden_cross_day'+day;
+    }
+    return 'bullish';
+  }
+  if(longNow>0&&longPrev>0&&shortPrev<longPrev&&shortNow>shortPrev&&gap>0&&gap<=0.75&&gap<prevGap)return 'prepare';
   return '';
 }
 
@@ -2866,7 +2875,7 @@ function rW(){
     const vcpTag=showVcp&&w.vcpStatus&&vcpLabel[w.vcpStatus]?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${vcpLabel[w.vcpStatus]}</div>`:'';
     const wkBadgeWatch=(!w.tripleSignal&&w.wkKDLabel)?`<span style="display:inline-block;white-space:nowrap;vertical-align:middle;font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">${w.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉 Day1':'週KD✦—準備黃金交叉'}</span>`:'';
     const maBadge=(!w.tripleSignal&&w.maCrossLabel)?`<span style="display:inline-block;white-space:nowrap;vertical-align:middle;font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—黃金交叉 Day${w.maCrossLabel}</span>`:'';
-    const dayMABadges=[['dayMA100Label','100'],['dayMA60Label','60']].map(([key,period])=>w[key]?`<span style="display:inline-block;white-space:nowrap;vertical-align:middle;font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">日20／${period}MA—${w[key]==='golden_cross'?'黃金交叉 Day1':'準備交叉'}</span>`:'').join('');
+    const dayMABadges=[['dayMA100Label','100'],['dayMA60Label','60']].map(([key,period])=>w[key]?`<span style="display:inline-block;white-space:nowrap;vertical-align:middle;font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">日20／${period}MA—${w[key].startsWith('golden_cross_day')?'黃金交叉 Day'+w[key].slice(-1):w[key]==='bullish'?'多頭趨勢':'準備交叉'}</span>`:'').join('');
     const maPrepareBadge=(!w.tripleSignal&&!w.maCrossLabel&&w.maPrepare)?`<span style="display:inline-block;white-space:nowrap;vertical-align:middle;font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—準備交叉</span>`:'';
     const tripleBadge=w.tripleSignal?`<span style="font-size:11px;font-weight:600;color:#e67e22;margin-left:6px">🔥 強勢買進訊號 🔥</span>`:'';
     return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}${wkBadgeWatch}${maBadge}${maPrepareBadge}${dayMABadges}${tripleBadge}</div><div class="lna">${displayName}</div>${vcpTag}</div><div class="lr"><div style="display:flex;align-items:center"><div class="spill" style="${scoreStyle}">${scoreDisplay}</div>${diffHtml}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
@@ -2876,9 +2885,9 @@ function rW(){
   const groups={
     wkGolden:  wl.filter(w=>w.wkKDLabel==='golden_cross'),
     wkPrepare: wl.filter(w=>w.wkKDLabel==='prepare'),
-    day100Golden: wl.filter(w=>w.dayMA100Label==='golden_cross'),
+    day100Golden: wl.filter(w=>(w.dayMA100Label==='bullish'||w.dayMA100Label?.startsWith('golden_cross_day'))),
     day100Prepare: wl.filter(w=>w.dayMA100Label==='prepare'),
-    day60Golden: wl.filter(w=>w.dayMA60Label==='golden_cross'),
+    day60Golden: wl.filter(w=>(w.dayMA60Label==='bullish'||w.dayMA60Label?.startsWith('golden_cross_day'))),
     day60Prepare: wl.filter(w=>w.dayMA60Label==='prepare'),
     broke:     wl.filter(w=>!w.wkKDLabel && !w.dayMA100Label && !w.dayMA60Label && w.vcpStatus==='just_broke'),
     near:      wl.filter(w=>!w.wkKDLabel && !w.dayMA100Label && !w.dayMA60Label && w.vcpStatus==='final_contraction'),
@@ -2898,9 +2907,9 @@ function rW(){
   let html='';
   html+=sectionHtml('🟡 週KD黃金交叉 Day1', groups.wkGolden, '#f5a623', true);
   html+=sectionHtml('🟠 週KD準備交叉',       groups.wkPrepare, '#f5a623', true);
-  html+=sectionHtml('🟡 日20／100MA黃金交叉 Day1', groups.day100Golden, '#f5a623', true);
+  html+=sectionHtml('🟡 日20／100MA多頭觀察', groups.day100Golden, '#f5a623', true);
   html+=sectionHtml('🟠 日20／100MA準備交叉', groups.day100Prepare, '#f5a623', true);
-  html+=sectionHtml('🟡 日20／60MA黃金交叉 Day1', groups.day60Golden, '#f5a623', true);
+  html+=sectionHtml('🟡 日20／60MA多頭觀察', groups.day60Golden, '#f5a623', true);
   html+=sectionHtml('🟠 日20／60MA準備交叉', groups.day60Prepare, '#f5a623', true);
   html+=sectionHtml('🔥 突破爆發',            groups.broke);
   html+=sectionHtml('🔴 即將突破',            groups.near, 'var(--wine)');
