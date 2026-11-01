@@ -14,7 +14,7 @@ function makeContext(stocks,responses){
     fetchStock:async sym=>{const v=responses[sym];if(v instanceof Error)throw v;return v},
     analyze:raw=>({overall:raw.score,vcp:{status:'contracting'}}),
     calcWatchDayMACross:(_rows,n)=>n===100?'prepare':'golden_cross_day1',
-    calcWeeklyKDLabel:()=>'',calcMA5MA20CrossLabel:()=>'',calcMA5MA20Prepare:()=>false,
+    calcWeeklyKDLabel:()=> 'golden_cross_day2',calcMA5MA20CrossLabel:()=>2,calcMA5MA20Prepare:()=>false,
     calcMACD:()=>({histArr5:[],hist:0,prev_hist:0}),
     rW:()=>{},localStorage:{setItem:()=>{}},
     setTimeout:(fn)=>{fn();return 1},Date,Promise,console
@@ -50,4 +50,14 @@ test('score refresh does not skip consecutive removals or the next retained stoc
   assert.equal(f.items()[0].score,55);
   assert.equal(f.items()[0].dayMA100Label,'prepare');
   assert.equal(f.items()[0].dayMA60Label,'golden_cross_day1');
+});
+
+test('score-only refresh also updates weekly KD and MA5/20 signals',async()=>{
+  const f=makeContext([{sym:'55',score:60,wkKDLabel:'prepare',maCrossLabel:0}],{});
+  f.ctx.fetchStock=async()=>f.data(55);
+  vm.runInNewContext(update+';this.updateWatchScores=updateWatchScores',f.ctx);
+  await f.ctx.updateWatchScores();
+  assert.equal(f.items()[0].wkKDLabel,'golden_cross_day2');
+  assert.equal(f.items()[0].maCrossLabel,2);
+  assert.equal(f.items()[0].maPrepare,false);
 });
