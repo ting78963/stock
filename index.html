@@ -2950,7 +2950,7 @@ async function fullWatchUpdate(isAuto){
         const wlNow=LS.get('watch');
         const idx=wlNow.findIndex(x=>x.sym===w.sym);
         if(idx>=0){
-          if(a&&typeof a.overall==='number'&&a.overall<=50){
+          if(a&&typeof a.overall==='number'&&a.overall<55){
             wlNow.splice(idx,1);
             deleted++;
           } else {
@@ -2978,7 +2978,7 @@ async function fullWatchUpdate(isAuto){
       } else {
         const wlNow=LS.get('watch');
         const idx=wlNow.findIndex(x=>x.sym===w.sym);
-        if(idx>=0&&(wlNow[idx].score||0)<=50&&wlNow[idx].score!==0){
+        if(idx>=0&&(wlNow[idx].score||0)<55&&wlNow[idx].score!==0){
           wlNow.splice(idx,1);
           deleted++;
           LS.set('watch',wlNow);
@@ -3054,7 +3054,7 @@ async function updateWatchScores(targetList){
           const wlNow=LS.get('watch');
           const idx=wlNow.findIndex(x=>x.sym===w.sym);
           if(idx>=0){
-            if(a.overall<=50){
+            if(a.overall<55){
               wlNow.splice(idx,1);
               deleted++;
             } else {
@@ -3065,10 +3065,10 @@ async function updateWatchScores(targetList){
           }
         }
       } else {
-        // API 失敗時，現有分數 ≤ 50 也刪除
+        // API 無資料時，僅以已存在的有效舊分數判斷是否低於 55；不把未知分數視為低分
         const wlNow=LS.get('watch');
         const idx=wlNow.findIndex(x=>x.sym===w.sym);
-        if(idx>=0 && (wlNow[idx].score||0)<=50 && wlNow[idx].score!==0){
+        if(idx>=0 && (wlNow[idx].score||0)<55 && wlNow[idx].score!==0){
           wlNow.splice(idx,1);
           deleted++;
           LS.set('watch',wlNow);
