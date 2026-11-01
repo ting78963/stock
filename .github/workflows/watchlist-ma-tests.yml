@@ -4,6 +4,8 @@ on:
     paths:
       - 'index.html'
       - 'tests/watchlist-ma.test.cjs'
+      - 'tests/watchlist-browser.cjs'
+      - 'tests/watchlist-browser.cjs'
       - '.github/workflows/watchlist-ma-tests.yml'
   push:
     branches:
@@ -25,3 +27,10 @@ jobs:
           node-version: '22'
       - name: Run watchlist regression tests
         run: node --test tests/watchlist-ma.test.cjs
+
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Run Chromium mobile watchlist test
+        run: node tests/watchlist-browser.cjs
