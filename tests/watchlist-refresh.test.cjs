@@ -13,7 +13,7 @@ function makeContext(stocks,responses){
     document:{getElementById:id=>elements[id]||(elements[id]={style:{},textContent:'',innerHTML:''})},
     fetchStock:async sym=>{const v=responses[sym];if(v instanceof Error)throw v;return v},
     analyze:raw=>({overall:raw.score,vcp:{status:'contracting'}}),
-    calcWatchDayMACross:(_rows,n)=>n===100?'prepare':'golden_cross',
+    calcWatchDayMACross:(_rows,n)=>n===100?'prepare':'golden_cross_day1',
     calcWeeklyKDLabel:()=>'',calcMA5MA20CrossLabel:()=>'',calcMA5MA20Prepare:()=>false,
     calcMACD:()=>({histArr5:[],hist:0,prev_hist:0}),
     rW:()=>{},localStorage:{setItem:()=>{}},
@@ -29,7 +29,7 @@ test('score refresh removes only <55, retains 55 and failures, sets MA labels',a
   await f.ctx.updateWatchScores();
   assert.deepEqual(f.items().map(x=>x.sym),['55','fail']);
   assert.equal(f.items()[0].dayMA100Label,'prepare');
-  assert.equal(f.items()[0].dayMA60Label,'golden_cross');
+  assert.equal(f.items()[0].dayMA60Label,'golden_cross_day1');
 });
 test('full refresh removes only <55, retains 55 and failures, sets MA labels',async()=>{
   const f=makeContext([{sym:'54',score:60},{sym:'55',score:60},{sym:'fail',score:60}],{});
@@ -38,7 +38,7 @@ test('full refresh removes only <55, retains 55 and failures, sets MA labels',as
   await f.ctx.fullWatchUpdate(false);
   assert.deepEqual(f.items().map(x=>x.sym),['55','fail']);
   assert.equal(f.items()[0].dayMA100Label,'prepare');
-  assert.equal(f.items()[0].dayMA60Label,'golden_cross');
+  assert.equal(f.items()[0].dayMA60Label,'golden_cross_day1');
 });
 
 test('score refresh does not skip consecutive removals or the next retained stock',async()=>{
@@ -49,5 +49,5 @@ test('score refresh does not skip consecutive removals or the next retained stoc
   assert.deepEqual(f.items().map(x=>x.sym),['55','fail']);
   assert.equal(f.items()[0].score,55);
   assert.equal(f.items()[0].dayMA100Label,'prepare');
-  assert.equal(f.items()[0].dayMA60Label,'golden_cross');
+  assert.equal(f.items()[0].dayMA60Label,'golden_cross_day1');
 });
