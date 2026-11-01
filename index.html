@@ -978,7 +978,7 @@ function calcWeeklyKDLabel(sortedDayData){
     for(let w=wkKD.hist.length-1;w>=Math.max(1,wkKD.hist.length-2);w--){
       const before=wkKD.hist[w-1],after=wkKD.hist[w];
       if(before.k<=before.d&&after.k>after.d){
-        const day=sortedDayData.length-weekStartIndices[w];
+        const day=sortedDayData.length-weekStartIndices[w+8];
         if(day>=1&&day<=5)return 'golden_cross_day'+day;
       }
     }
@@ -2993,7 +2993,7 @@ async function fullWatchUpdate(isAuto){
             const macdPosE=macdOSCE.length>=2&&macdOSCE[macdOSCE.length-1]>macdOSCE[0];
             wlNow[idx].osc=macdRawE.hist;
             wlNow[idx].oscPrev=macdRawE.prev_hist;
-            wlNow[idx].tripleSignal=(wlNow[idx].wkKDLabel==='golden_cross')&&macdPosE&&(wlNow[idx].maPrepare||wlNow[idx].maCrossLabel===1);
+            wlNow[idx].tripleSignal=(wlNow[idx].wkKDLabel?.startsWith('golden_cross_day'))&&macdPosE&&(wlNow[idx].maPrepare||wlNow[idx].maCrossLabel===1);
           }
           LS.set('watch',wlNow);
         }
@@ -4098,7 +4098,7 @@ async function loadHotVolStocks(forceRefresh){
         const macdOSCEntry=(macdRawEntry.histArr5||macdRawEntry.histArr||[]).slice(-3);
         const macdPositiveEntry=macdOSCEntry.length>=2&&macdOSCEntry[macdOSCEntry.length-1]>macdOSCEntry[0];
         const wkKDLabelEntry=calcWeeklyKDLabel(sorted);
-        const tripleSignalEntry=(wkKDLabelEntry==='golden_cross')&&macdPositiveEntry&&(maPrepareEntry||maCrossLabelEntry===1);
+        const tripleSignalEntry=(wkKDLabelEntry?.startsWith('golden_cross_day'))&&macdPositiveEntry&&(maPrepareEntry||maCrossLabelEntry===1);
 
         const entry={
           code:stock.stock_id,
