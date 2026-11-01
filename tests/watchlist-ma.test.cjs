@@ -83,3 +83,11 @@ test('MA20/60 and MA20/100 count Day2-Day5 then retain bullish trend',()=>{
     assert.notEqual(calc(reversed,period),'bullish');
   }
 });
+
+test('MA5/20 cross disappears after bearish reversal even inside Day5',()=>{
+  const fn=vm.runInNewContext(extract('function calcMA5MA20CrossLabel(','\n// 5/20MA 準備上穿')+';calcMA5MA20CrossLabel');
+  const base=Array.from({length:35},(_,i)=>({date:String(i),close:i<30?100:110}));
+  assert.equal(fn(base.slice(0,31)),1);
+  const reversed=base.slice(0,32).concat([{date:'reversal',close:20}]);
+  assert.equal(fn(reversed),null);
+});
