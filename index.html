@@ -2827,7 +2827,13 @@ function calcWatchDayMACross(rows,longPeriod){
   const ma=(end,n)=>cl.slice(end-n,end).reduce((a,b)=>a+b,0)/n;
   const n=cl.length,shortNow=ma(n,20),longNow=ma(n,longPeriod);
   const shortPrev=ma(n-1,20),longPrev=ma(n-1,longPeriod);
-  if(shortPrev<longPrev&&shortNow>=longNow)return 'golden_cross';
+  // 最近五個交易日的首次上穿；只計算有效日K收盤價，不按日曆天數。
+  for(let day=1;day<=5;day++){
+    const end=n-day+1;
+    if(end<longPeriod+1)break;
+    if(ma(end-1,20)<ma(end-1,longPeriod)&&ma(end,20)>=ma(end,longPeriod))
+      return day===1?'golden_cross':'golden_cross_day'+day;
+  }
   const gap=(longNow-shortNow)/longNow*100;
   const prevGap=(longPrev-shortPrev)/longPrev*100;
   if(longNow>0&&longPrev>0&&shortNow<longNow&&shortPrev<longPrev&&shortNow>shortPrev&&gap>0&&gap<=0.75&&gap<prevGap)return 'prepare';
@@ -2868,7 +2874,7 @@ function rW(){
     const vcpTag=showVcp&&w.vcpStatus&&vcpLabel[w.vcpStatus]?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${vcpLabel[w.vcpStatus]}</div>`:'';
     const wkBadgeWatch=(!w.tripleSignal&&w.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">${w.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉 Day1':'週KD✦—準備黃金交叉'}</span>`:'';
     const maBadge=(!w.tripleSignal&&w.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—黃金交叉 Day${w.maCrossLabel}</span>`:'';
-    const dayMABadges=[['dayMA100Label','100'],['dayMA60Label','60']].map(([key,period])=>w[key]?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">日20／${period}MA—${w[key]==='golden_cross'?'黃金交叉 Day1':'準備交叉'}</span>`:'').join('');
+    const dayMABadges=[['dayMA100Label','100'],['dayMA60Label','60']].map(([key,period])=>w[key]?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">日20／${period}MA—${w[key].startsWith('golden_cross')?'黃金交叉 Day'+(w[key].split('_day')[1]||'1'):'準備交叉'}</span>`:'').join('');
     const maPrepareBadge=(!w.tripleSignal&&!w.maCrossLabel&&w.maPrepare)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—準備交叉</span>`:'';
     const tripleBadge=w.tripleSignal?`<span style="font-size:11px;font-weight:600;color:#e67e22;margin-left:6px">🔥 強勢買進訊號 🔥</span>`:'';
     return`<div class="li" onclick="gs('${w.sym}')"><div class="ll watch-stock-main"><div class="watch-symbol">${w.sym}</div><div class="lna">${displayName}</div><div class="watch-signal-tags">${wkBadgeWatch}${maBadge}${maPrepareBadge}${dayMABadges}${tripleBadge}</div>${vcpTag}</div><div class="lr"><div style="display:flex;align-items:center"><div class="spill" style="${scoreStyle}">${scoreDisplay}</div>${diffHtml}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
@@ -2878,9 +2884,9 @@ function rW(){
   const groups={
     wkGolden:  wl.filter(w=>w.wkKDLabel==='golden_cross'),
     wkPrepare: wl.filter(w=>w.wkKDLabel==='prepare'),
-    day100Golden: wl.filter(w=>w.dayMA100Label==='golden_cross'),
+    day100Golden: wl.filter(w=>(w.dayMA100Label||'').startsWith('golden_cross')),
     day100Prepare: wl.filter(w=>w.dayMA100Label==='prepare'),
-    day60Golden: wl.filter(w=>w.dayMA60Label==='golden_cross'),
+    day60Golden: wl.filter(w=>(w.dayMA60Label||'').startsWith('golden_cross')),
     day60Prepare: wl.filter(w=>w.dayMA60Label==='prepare'),
     broke:     wl.filter(w=>!w.wkKDLabel && !w.dayMA100Label && !w.dayMA60Label && w.vcpStatus==='just_broke'),
     near:      wl.filter(w=>!w.wkKDLabel && !w.dayMA100Label && !w.dayMA60Label && w.vcpStatus==='final_contraction'),
