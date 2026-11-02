@@ -30,7 +30,7 @@ const path = require('node:path');
     },html.slice(start,end));
     if(!result.labels.includes('週KD準備交叉'))throw Error('weekly KD section missing');
     if(!result.labels.includes('日20／100MA準備交叉'))throw Error('100MA section missing');
-    if(!result.labels.includes('日20／60MA黃金交叉第一天'))throw Error('60MA section missing');
+    if(!result.labels.includes('日20／60MA黃金交叉 Day1'))throw Error('60MA section missing');
     if(result.stock2069!==3||result.stock2330!==1)throw Error('wrong section item counts: '+JSON.stringify(result));
     if(result.overflow)throw Error('mobile horizontal overflow');
     console.log('Browser watchlist render PASS',JSON.stringify({stock2069:result.stock2069,stock2330:result.stock2330,mobileOverflow:result.overflow}));

@@ -148,6 +148,8 @@ body{font-family:-apple-system,'SF Pro Text','PingFang TC','Noto Sans TC',sans-s
 .eico{font-size:44px;margin-bottom:14px;opacity:.4}
 .li{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
 .li:active{border-color:var(--accent)}
+.watch-signal-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;min-width:0}.watch-signal-tags>span{display:inline-flex;align-items:center;max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.45;margin-left:0!important}.watch-symbol{font-size:var(--fs-lg);font-weight:600}.watch-stock-main{min-width:0}.watch-stock-main .lna{margin-top:3px}@media(max-width:480px){.watch-signal-tags>span{font-size:10px!important}.watch-stock-main{min-width:0}.li:has(.watch-signal-tags){align-items:flex-start}.li:has(.watch-signal-tags)>.lr{flex-shrink:0}}
+
 .ll{flex:1}.lsy{font-size:var(--fs-lg);font-weight:600}.lna{font-size:var(--fs-sm);color:var(--text2);margin-top:3px}.lti{font-size:var(--fs-xs);color:var(--text3);margin-top:4px}
 .lr{display:flex;align-items:center;gap:10px}
 .spill{font-size:var(--fs-md);font-weight:700;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center}
@@ -2864,12 +2866,12 @@ function rW(){
     const scoreDiff=w.prevScore&&w.score&&w.score!==w.prevScore?w.score-w.prevScore:null;
     const diffHtml=scoreDiff?`<span style="font-size:10px;font-weight:600;color:${scoreDiff>0?'#27ae60':'#e74c3c'};margin-left:3px">${scoreDiff>0?'↑':'↓'}${Math.abs(scoreDiff)}</span>`:'';
     const vcpTag=showVcp&&w.vcpStatus&&vcpLabel[w.vcpStatus]?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${vcpLabel[w.vcpStatus]}</div>`:'';
-    const wkBadgeWatch=(!w.tripleSignal&&w.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">${w.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉第一天':'週KD✦—準備黃金交叉'}</span>`:'';
+    const wkBadgeWatch=(!w.tripleSignal&&w.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">${w.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉 Day1':'週KD✦—準備黃金交叉'}</span>`:'';
     const maBadge=(!w.tripleSignal&&w.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—黃金交叉 Day${w.maCrossLabel}</span>`:'';
-    const dayMABadges=[['dayMA100Label','100'],['dayMA60Label','60']].map(([key,period])=>w[key]?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">日20／${period}MA—${w[key]==='golden_cross'?'黃金交叉第一天':'準備交叉'}</span>`:'').join('');
+    const dayMABadges=[['dayMA100Label','100'],['dayMA60Label','60']].map(([key,period])=>w[key]?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">日20／${period}MA—${w[key]==='golden_cross'?'黃金交叉 Day1':'準備交叉'}</span>`:'').join('');
     const maPrepareBadge=(!w.tripleSignal&&!w.maCrossLabel&&w.maPrepare)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—準備交叉</span>`:'';
     const tripleBadge=w.tripleSignal?`<span style="font-size:11px;font-weight:600;color:#e67e22;margin-left:6px">🔥 強勢買進訊號 🔥</span>`:'';
-    return`<div class="li" onclick="gs('${w.sym}')"><div class="ll"><div class="lsy">${w.sym}${wkBadgeWatch}${maBadge}${maPrepareBadge}${dayMABadges}${tripleBadge}</div><div class="lna">${displayName}</div>${vcpTag}</div><div class="lr"><div style="display:flex;align-items:center"><div class="spill" style="${scoreStyle}">${scoreDisplay}</div>${diffHtml}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
+    return`<div class="li" onclick="gs('${w.sym}')"><div class="ll watch-stock-main"><div class="watch-symbol">${w.sym}</div><div class="lna">${displayName}</div><div class="watch-signal-tags">${wkBadgeWatch}${maBadge}${maPrepareBadge}${dayMABadges}${tripleBadge}</div>${vcpTag}</div><div class="lr"><div style="display:flex;align-items:center"><div class="spill" style="${scoreStyle}">${scoreDisplay}</div>${diffHtml}</div><div class="db" onclick="event.stopPropagation();rmW('${w.sym}')">✕</div></div></div>`;
   };
 
   // 六區塊分類（週KD優先，VCP顯示為小字）
@@ -2896,11 +2898,11 @@ function rW(){
   };
 
   let html='';
-  html+=sectionHtml('🟡 週KD黃金交叉第一天', groups.wkGolden, '#f5a623', true);
+  html+=sectionHtml('🟡 週KD黃金交叉 Day1', groups.wkGolden, '#f5a623', true);
   html+=sectionHtml('🟠 週KD準備交叉',       groups.wkPrepare, '#f5a623', true);
-  html+=sectionHtml('🟡 日20／100MA黃金交叉第一天', groups.day100Golden, '#f5a623', true);
+  html+=sectionHtml('🟡 日20／100MA黃金交叉 Day1', groups.day100Golden, '#f5a623', true);
   html+=sectionHtml('🟠 日20／100MA準備交叉', groups.day100Prepare, '#f5a623', true);
-  html+=sectionHtml('🟡 日20／60MA黃金交叉第一天', groups.day60Golden, '#f5a623', true);
+  html+=sectionHtml('🟡 日20／60MA黃金交叉 Day1', groups.day60Golden, '#f5a623', true);
   html+=sectionHtml('🟠 日20／60MA準備交叉', groups.day60Prepare, '#f5a623', true);
   html+=sectionHtml('🔥 突破爆發',            groups.broke);
   html+=sectionHtml('🔴 即將突破',            groups.near, 'var(--wine)');
@@ -4368,7 +4370,7 @@ function oscBadgeHtml(s){
 function stockBadgeHtml(s,tier){
   const monthlyCount=getMonthlyCountFor(s.code);
   const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:var(--red);border:0.5px solid var(--red);font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
-  const wkKDBadge=(!s.tripleSignal&&s.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">${s.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉第一天':'週KD✦—準備黃金交叉'}</span>`:'';
+  const wkKDBadge=(!s.tripleSignal&&s.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">${s.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉 Day1':'週KD✦—準備黃金交叉'}</span>`:'';
   const maBadgeCard=(!s.tripleSignal&&s.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">5、20MA✦—黃金交叉 Day${s.maCrossLabel}</span>`:'';
   const maPrepareBadgeCard=(!s.tripleSignal&&!s.maCrossLabel&&s.maPrepare)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">5、20MA✦—準備交叉</span>`:'';
   const todayMA20Badge=s.todayCrossMA20?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">20MA✦—今日站上</span>`:'';
