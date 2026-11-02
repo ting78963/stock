@@ -14,6 +14,20 @@ test('first golden cross',()=>assert.equal(calc(rows(99.75,104.75),100),'golden_
 test('MA20/60 requires 61 daily closes',()=>assert.equal(calc(rows(99,100).slice(0,60),60),''));
 test('MA20/60 approaching cross',()=>assert.equal(calc(rows(99,100.25),60),'prepare'));
 test('MA20/60 first golden cross',()=>assert.equal(calc(rows(99.75,104.75),60),'golden_cross'));
+test('MA20/100 crossing persists through Day2–Day5, expires Day6',()=>{
+  const base=rows(99.75,104.75);
+  assert.equal(calc(base,100),'golden_cross');
+  for(let day=2;day<=5;day++){
+    const extended=base.concat(Array.from({length:day-1},(_,i)=>({date:'next'+i,close:104.75})));
+    assert.equal(calc(extended,100),'golden_cross_day'+day);
+  }
+  const expired=base.concat(Array.from({length:5},(_,i)=>({date:'next'+i,close:104.75})));
+  assert.equal(calc(expired,100),'');
+});
+test('MA20/60 crossing persists to Day3',()=>{
+  const base=rows(99.75,104.75);
+  assert.equal(calc(base.concat([{date:'next1',close:104.75},{date:'next2',close:104.75}]),60),'golden_cross_day3');
+});
 test('MA20/60 flat prices do not alert',()=>assert.equal(calc(rows(100,100),60),''));
 test('MA20/100 ignores a gap wider than 0.75%',()=>assert.equal(calc(rows(98,99),100),''));
 test('score threshold is below 55 in both refresh paths',()=>{
