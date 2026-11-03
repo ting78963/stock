@@ -48,3 +48,26 @@ test('watchlist renders overlapping signals without duplicating stored entries',
   assert.equal((area.innerHTML.match(/gs\('2330'\)/g)||[]).length,1);
   assert.equal(watch.length,2);
 });
+
+test('weekly KD trading-day labels are Day1–Day5 only while cross remains confirmed',()=>{
+  const source=extract('function calcWeeklyKDCrossTradingDay(', '\nfunction analyzeVCP(');
+  const history=Array.from({length:12},(_,i)=>({date:String(i)}));
+  for(let day=1;day<=5;day++){
+    const firstCrossAt=history.length-day+1;
+    const ctx={calcWeeklyKDLabel:(data)=>data.length>=firstCrossAt?'golden_cross':null};
+    const fn=vm.runInNewContext(source+';calcWeeklyKDCrossTradingDay',ctx);
+    assert.equal(fn(history),day);
+  }
+  const persistent=vm.runInNewContext(source+';calcWeeklyKDCrossTradingDay',{
+    calcWeeklyKDLabel:()=> 'golden_cross'
+  });
+  assert.equal(persistent(history),null);
+  const stopped=vm.runInNewContext(source+';calcWeeklyKDCrossTradingDay',{
+    calcWeeklyKDLabel:(data)=>data.length===12?'prepare':null
+  });
+  assert.equal(stopped(history),null);
+});
+test('weekly KD strong-buy condition still requires original first-day golden_cross',()=>{
+  assert.match(html,/tripleSignal=\(wlNow\[idx\]\.wkKDLabel==='golden_cross'\)/);
+  assert.match(html,/tripleSignalEntry=\(wkKDLabelEntry==='golden_cross'\)/);
+});

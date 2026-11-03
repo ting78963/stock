@@ -14,7 +14,7 @@ function makeContext(stocks,responses){
     fetchStock:async sym=>{const v=responses[sym];if(v instanceof Error)throw v;return v},
     analyze:raw=>({overall:raw.score,vcp:{status:'contracting'}}),
     calcWatchDayMACross:(_rows,n)=>n===100?'prepare':'golden_cross',
-    calcWeeklyKDLabel:()=>'',calcMA5MA20CrossLabel:()=>'',calcMA5MA20Prepare:()=>false,
+    calcWeeklyKDLabel:()=>'',calcWeeklyKDCrossTradingDay:()=>null,calcMA5MA20CrossLabel:()=>'',calcMA5MA20Prepare:()=>false,
     calcMACD:()=>({histArr5:[],hist:0,prev_hist:0}),
     rW:()=>{},localStorage:{setItem:()=>{}},
     setTimeout:(fn)=>{fn();return 1},Date,Promise,console

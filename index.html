@@ -978,6 +978,19 @@ function calcWeeklyKDLabel(sortedDayData){
   return null;
 }
 
+// 週KD交叉的 Day 是「連續被日線資料確認交叉」的交易日數，不是第幾週。
+// 保留 calcWeeklyKDLabel 的原始狀態，避免更動強勢買進條件。
+function calcWeeklyKDCrossTradingDay(sortedDayData){
+  if(calcWeeklyKDLabel(sortedDayData)!=='golden_cross')return null;
+  let count=0;
+  for(let offset=0;offset<=5;offset++){
+    const prefix=offset?sortedDayData.slice(0,-offset):sortedDayData;
+    if(calcWeeklyKDLabel(prefix)!=='golden_cross')break;
+    count++;
+  }
+  return count<=5?count:null;
+}
+
 function analyzeVCP(closes,vols,stockCode,dates){
   const n=closes.length;
   if(n<30)return{status:'data_insufficient',s1:0,s2:0,s3:0,contracting:false,volDry:false,pivot:closes[n-1],justBroke:false,breakDays:0};
@@ -2872,7 +2885,7 @@ function rW(){
     const scoreDiff=w.prevScore&&w.score&&w.score!==w.prevScore?w.score-w.prevScore:null;
     const diffHtml=scoreDiff?`<span style="font-size:10px;font-weight:600;color:${scoreDiff>0?'#27ae60':'#e74c3c'};margin-left:3px">${scoreDiff>0?'↑':'↓'}${Math.abs(scoreDiff)}</span>`:'';
     const vcpTag=showVcp&&w.vcpStatus&&vcpLabel[w.vcpStatus]?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${vcpLabel[w.vcpStatus]}</div>`:'';
-    const wkBadgeWatch=(!w.tripleSignal&&w.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">${w.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉 Day1':'週KD✦—準備黃金交叉'}</span>`:'';
+    const wkBadgeWatch=(!w.tripleSignal&&w.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">${w.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉'+(w.wkKDCrossDay?' Day'+w.wkKDCrossDay:''):'週KD✦—準備黃金交叉'}</span>`:'';
     const maBadge=(!w.tripleSignal&&w.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—黃金交叉 Day${w.maCrossLabel}</span>`:'';
     const dayMABadges=[['dayMA100Label','100'],['dayMA60Label','60']].map(([key,period])=>w[key]?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">日20／${period}MA—${w[key].startsWith('golden_cross')?'黃金交叉 Day'+(w[key].split('_day')[1]||'1'):'準備交叉'}</span>`:'').join('');
     const maPrepareBadge=(!w.tripleSignal&&!w.maCrossLabel&&w.maPrepare)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;margin-left:6px">5、20MA✦—準備交叉</span>`:'';
@@ -2904,7 +2917,7 @@ function rW(){
   };
 
   let html='';
-  html+=sectionHtml('🟡 週KD黃金交叉 Day1', groups.wkGolden, '#f5a623', true);
+  html+=sectionHtml('🟡 週KD黃金交叉（交易日 Day1～Day5）', groups.wkGolden, '#f5a623', true);
   html+=sectionHtml('🟠 週KD準備交叉',       groups.wkPrepare, '#f5a623', true);
   html+=sectionHtml('🟡 日20／100MA黃金交叉 Day1～Day5', groups.day100Golden, '#f5a623', true);
   html+=sectionHtml('🟠 日20／100MA準備交叉', groups.day100Prepare, '#f5a623', true);
@@ -2969,6 +2982,7 @@ async function fullWatchUpdate(isAuto){
             }
             const sorted=[...raw.data].sort((a,b)=>a.date.localeCompare(b.date));
             wlNow[idx].wkKDLabel=calcWeeklyKDLabel(sorted);
+            wlNow[idx].wkKDCrossDay=calcWeeklyKDCrossTradingDay(sorted);
             wlNow[idx].maCrossLabel=calcMA5MA20CrossLabel(sorted);
             wlNow[idx].maPrepare=calcMA5MA20Prepare(sorted);
              wlNow[idx].dayMA100Label=calcWatchDayMACross(sorted,100);
@@ -3018,7 +3032,7 @@ async function scanWatchWeeklyKD(){
         const label=calcWeeklyKDLabel(sorted);
         const wlNow=LS.get('watch');
         const idx=wlNow.findIndex(x=>x.sym===w.sym);
-        if(idx>=0){ wlNow[idx].wkKDLabel=label; LS.set('watch',wlNow); }
+        if(idx>=0){ wlNow[idx].wkKDLabel=label; wlNow[idx].wkKDCrossDay=calcWeeklyKDCrossTradingDay(sorted); LS.set('watch',wlNow); }
       }
     }catch(e){}
     done++;
@@ -4095,6 +4109,7 @@ async function loadHotVolStocks(forceRefresh){
           priceTier:priceTierLabel(stock.close||0),
           vcpInfo,
           wkKDLabel:wkKDLabelEntry,
+          wkKDCrossDay:calcWeeklyKDCrossTradingDay(sorted),
           maCrossLabel:maCrossLabelEntry,
           maPrepare:maPrepareEntry,
           todayCrossMA20:todayCrossMA20Entry,
@@ -4376,7 +4391,7 @@ function oscBadgeHtml(s){
 function stockBadgeHtml(s,tier){
   const monthlyCount=getMonthlyCountFor(s.code);
   const countBadge=monthlyCount>0?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:var(--red);border:0.5px solid var(--red);font-weight:600;margin-left:6px">本月第${monthlyCount}次</span>`:'';
-  const wkKDBadge=(!s.tripleSignal&&s.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">${s.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉 Day1':'週KD✦—準備黃金交叉'}</span>`:'';
+  const wkKDBadge=(!s.tripleSignal&&s.wkKDLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">${s.wkKDLabel==='golden_cross'?'週KD✦—黃金交叉'+(s.wkKDCrossDay?' Day'+s.wkKDCrossDay:''):'週KD✦—準備黃金交叉'}</span>`:'';
   const maBadgeCard=(!s.tripleSignal&&s.maCrossLabel)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">5、20MA✦—黃金交叉 Day${s.maCrossLabel}</span>`:'';
   const maPrepareBadgeCard=(!s.tripleSignal&&!s.maCrossLabel&&s.maPrepare)?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">5、20MA✦—準備交叉</span>`:'';
   const todayMA20Badge=s.todayCrossMA20?`<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#fff;color:#e67e22;border:0.5px solid #e67e22;font-weight:600;white-space:nowrap">20MA✦—今日站上</span>`:'';
