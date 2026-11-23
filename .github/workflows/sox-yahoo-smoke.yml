@@ -3,6 +3,8 @@ on:
   push:
     branches: [fix/sox-display-restore-20261124]
     paths: [.github/workflows/sox-yahoo-smoke.yml]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 jobs:
   check-yahoo:
