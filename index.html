@@ -476,6 +476,7 @@ html.font-xl{font-size:19px}
             <div onclick="loadWatchVcpStatus()" style="text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600;padding:8px 0">🔍 點擊更新自選股VCP狀態</div>
           </div>
         </div>
+        <div id="stock-sox-card" style="padding:12px 14px;margin-bottom:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg2)"><div style="display:flex;justify-content:space-between"><b>費城半導體 SOX</b><span onclick="loadStockSox(true)" style="cursor:pointer;color:var(--wine)">↻ 更新</span></div><div style="margin-top:8px"><strong id="stock-sox-val" style="font-size:22px">--</strong>　<span id="stock-sox-chg">--</span></div><div id="stock-sox-status" style="font-size:11px;color:var(--text3)">尚未取得行情</div></div>
         <!-- 明日參考數值 -->
         <div id="stock-mkt-card" style="margin-bottom:12px">
           <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">載入市場數值中...</div>
@@ -5561,8 +5562,26 @@ function renderSettings(){
     </div>`;
 }
 
+async function loadStockSox(force=false){
+  const val=document.getElementById('stock-sox-val'),chg=document.getElementById('stock-sox-chg'),status=document.getElementById('stock-sox-status');
+  if(!val||!chg||!status)return;
+  status.textContent='正在讀取 Yahoo 費半行情...';
+  try{
+    const key='stock_sox_quote_v1';let data=null;
+    if(!force){try{const cached=JSON.parse(localStorage.getItem(key)||'null');if(cached&&Date.now()-cached.time<30*60*1000)data=cached.data;}catch(e){}}
+    if(!data){const quotes=await fetchYahooBatch(['^SOX']);data=quotes['^SOX']||null;
+      if(data&&Number.isFinite(data.close)&&Number.isFinite(data.chg_pct))localStorage.setItem(key,JSON.stringify({time:Date.now(),data}));}
+    if(!data||!Number.isFinite(data.close)||!Number.isFinite(data.chg_pct))throw new Error('invalid quote');
+    val.textContent=data.close.toLocaleString('en-US',{maximumFractionDigits:2});
+    chg.textContent=(data.chg_pct>=0?'+':'')+data.chg_pct.toFixed(2)+'%';
+    chg.style.color=data.chg_pct>=0?'var(--red)':'var(--green)';
+    status.textContent='Yahoo Finance ^SOX｜報價日期未驗證';
+  }catch(e){status.textContent='費半暫時無法取得，請稍後按更新';}
+}
+
 window.addEventListener('load', ()=>{
   showPage('stock',null,'nav-stock');
+  loadStockSox();
   loadHomePage();
   const savedFont=localStorage.getItem('font_size');if(savedFont) setFont(savedFont);
   // 所有ⓘ按鈕事件（委託）
