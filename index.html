@@ -476,6 +476,7 @@ html.font-xl{font-size:19px}
             <div onclick="loadWatchVcpStatus()" style="text-align:center;color:var(--wine);font-size:13px;cursor:pointer;font-weight:600;padding:8px 0">🔍 點擊更新自選股VCP狀態</div>
           </div>
         </div>
+        <div id="stock-sox-card" style="padding:12px 14px;margin-bottom:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg2)"><div style="display:flex;justify-content:space-between"><b>費城半導體 SOX</b><span onclick="loadStockSox(true)" style="cursor:pointer;color:var(--wine)">↻ 更新</span></div><div style="margin-top:8px"><strong id="stock-sox-val" style="font-size:22px">--</strong>　<span id="stock-sox-chg">--</span></div><div id="stock-sox-status" style="font-size:11px;color:var(--text3)">尚未取得行情</div></div>
         <!-- 明日參考數值 -->
         <div id="stock-mkt-card" style="margin-bottom:12px">
           <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">載入市場數值中...</div>
@@ -5239,29 +5240,31 @@ function startMktTimer(){
 
 async function fetchYahooBatch(symbols){
   const syms=symbols.join(',');
-  const yahooUrl=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=regularMarketPrice,regularMarketPreviousClose,regularMarketChangePercent`;
+  const yahooUrl=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}`;
   const proxies=[
-    `https://corsproxy.io/?${yahooUrl}`,
+    `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`,
     `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`,
     `https://thingproxy.freeboard.io/fetch/${yahooUrl}`,
   ];
   for(const url of proxies){
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),6000);
     try{
-      const ctrl=new AbortController();
-      const timer=setTimeout(()=>ctrl.abort(),6000);
       const r=await fetch(url,{signal:ctrl.signal});
-      clearTimeout(timer);
-      if(!r.ok) continue;
-      const d=await r.json();
+      if(!r.ok)continue;
+      let d=await r.json();
+      if(d&&typeof d.contents==='string'){try{d=JSON.parse(d.contents);}catch(e){continue;}}
       const result={};
       (d.quoteResponse?.result||[]).forEach(q=>{
-        const close=q.regularMarketPrice||0;
-        const prev=q.regularMarketPreviousClose||0;
-        const chg_pct=q.regularMarketChangePercent||0;
-        result[q.symbol]={close:Math.round(close*100)/100,prev:Math.round(prev*100)/100,chg_pct:Math.round(chg_pct*100)/100};
+        const close=Number(q.regularMarketPrice),prev=Number(q.regularMarketPreviousClose);
+        const pct=Number(q.regularMarketChangePercent);
+        if(!q.symbol||!Number.isFinite(close)||close<=0||!Number.isFinite(prev)||prev<=0)return;
+        const chg_pct=Number.isFinite(pct)?pct:(close-prev)/prev*100;
+        result[q.symbol]={close:Math.round(close*100)/100,prev:Math.round(prev*100)/100,chg_pct:Math.round(chg_pct*100)/100,
+          quote_time:Number(q.regularMarketTime)||null};
       });
-      if(Object.keys(result).length>0) return result;
-    }catch(e){ continue; }
+      if(Object.keys(result).length)return result;
+    }catch(e){}finally{clearTimeout(timer);}
   }
   return {};
 }
@@ -5561,8 +5564,45 @@ function renderSettings(){
     </div>`;
 }
 
+async function fetchSoxYahooChart(){
+  const target='https://query1.finance.yahoo.com/v8/finance/chart/%5ESOX?range=5d&interval=1d';
+  const urls=[`https://corsproxy.io/?${encodeURIComponent(target)}`,`https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`];
+  for(const url of urls){
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),6000);
+    try{
+      const response=await fetch(url,{signal:ctrl.signal});
+      if(!response.ok)continue;
+      let json=await response.json();
+      if(typeof json.contents==='string')json=JSON.parse(json.contents);
+      const item=json.chart?.result?.[0],meta=item?.meta;
+      const close=Number(meta?.regularMarketPrice),prev=Number(meta?.chartPreviousClose??meta?.previousClose);
+      if(!Number.isFinite(close)||close<=0||!Number.isFinite(prev)||prev<=0)continue;
+      return {close,prev,chg_pct:Math.round((close-prev)/prev*10000)/100,quote_time:Number(meta.regularMarketTime)||null};
+    }catch(e){}finally{clearTimeout(timer);}
+  }
+  return null;
+}
+
+async function loadStockSox(force=false){
+  const val=document.getElementById('stock-sox-val'),chg=document.getElementById('stock-sox-chg'),status=document.getElementById('stock-sox-status');
+  if(!val||!chg||!status)return;
+  status.textContent='正在讀取 Yahoo 費半行情...';
+  try{
+    const key='stock_sox_quote_v1';let data=null;
+    if(!force){try{const cached=JSON.parse(localStorage.getItem(key)||'null');if(cached&&Date.now()-cached.time<30*60*1000)data=cached.data;}catch(e){}}
+    if(!data){const quotes=await fetchYahooBatch(['^SOX']);data=quotes['^SOX']||await fetchSoxYahooChart();
+      if(data&&Number.isFinite(data.close)&&Number.isFinite(data.chg_pct))localStorage.setItem(key,JSON.stringify({time:Date.now(),data}));}
+    if(!data||!Number.isFinite(data.close)||!Number.isFinite(data.chg_pct))throw new Error('invalid quote');
+    val.textContent=data.close.toLocaleString('en-US',{maximumFractionDigits:2});
+    chg.textContent=(data.chg_pct>=0?'+':'')+data.chg_pct.toFixed(2)+'%';
+    chg.style.color=data.chg_pct>=0?'var(--red)':'var(--green)';
+    status.textContent=data.quote_time ? 'Yahoo Finance ^SOX｜美股報價 '+new Date(data.quote_time*1000).toLocaleString('zh-TW',{timeZone:'America/New_York',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})+' (美東)' : 'Yahoo Finance ^SOX｜報價日期未驗證';
+  }catch(e){status.textContent='費半暫時無法取得，請稍後按更新';}
+}
+
 window.addEventListener('load', ()=>{
   showPage('stock',null,'nav-stock');
+  loadStockSox();
   loadHomePage();
   const savedFont=localStorage.getItem('font_size');if(savedFont) setFont(savedFont);
   // 所有ⓘ按鈕事件（委託）
