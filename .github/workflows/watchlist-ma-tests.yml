@@ -5,6 +5,7 @@ on:
       - 'index.html'
       - 'tests/watchlist-ma.test.cjs'
       - 'tests/watchlist-browser.cjs'
+      - 'tests/sox-browser.cjs'
       - 'tests/watchlist-refresh.test.cjs'
       - '.github/workflows/watchlist-ma-tests.yml'
   push:
@@ -35,7 +36,9 @@ jobs:
           npm install --no-save playwright@1.58.2
           npx playwright install --with-deps chromium
       - name: Run Chromium mobile watchlist test
-        run: node tests/watchlist-browser.cjs
+        run: |
+          node tests/watchlist-browser.cjs
+          node tests/sox-browser.cjs
       - name: Verify real 2330 daily price data without writing to any service
         shell: bash
         run: |
